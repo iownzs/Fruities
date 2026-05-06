@@ -1,0 +1,39 @@
+{
+  "rules": {
+    "stores": {
+      "$storeId": {
+        ".read": "auth != null",
+        "settings": {
+          ".write": "auth != null && root.child('stores/' + $storeId + '/users/' + auth.uid + '/role').val() === 'admin'"
+        },
+        "users": {
+          ".write": "auth != null && root.child('stores/' + $storeId + '/users/' + auth.uid + '/role').val() === 'admin'"
+        },
+        "roles": {
+          ".write": "auth != null && root.child('stores/' + $storeId + '/users/' + auth.uid + '/role').val() === 'admin'"
+        },
+        "products": {
+          ".write": "auth != null && (root.child('stores/' + $storeId + '/users/' + auth.uid + '/role').val() === 'admin' || root.child('stores/' + $storeId + '/users/' + auth.uid + '/role').val() === 'cashier')"
+        },
+        "orders": {
+          ".write": "auth != null"
+        },
+        "inventoryLogs": {
+          ".write": "auth != null"
+        },
+        "billing": {
+          ".write": "auth != null && root.child('stores/' + $storeId + '/users/' + auth.uid + '/role').val() === 'admin'"
+        },
+        "billingPayments": {
+          ".write": "auth != null && root.child('stores/' + $storeId + '/users/' + auth.uid + '/role').val() === 'admin'"
+        },
+        "chat": {
+          ".write": "auth != null"
+        },
+        "activityLogs": {
+          ".write": "auth != null"
+        }
+      }
+    }
+  }
+}

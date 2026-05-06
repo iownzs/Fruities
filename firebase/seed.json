@@ -1,0 +1,98 @@
+{
+  "stores": {
+    "fruit-story-main": {
+      "settings": {
+        "storeName": "Fruit Story",
+        "currency": "₱",
+        "timezone": "Asia/Manila",
+        "theme": "light",
+        "logoUrl": "",
+        "createdAt": 1777996800000,
+        "updatedAt": 1777996800000
+      },
+      "roles": {
+        "admin": {
+          "dashboard": true,
+          "pos": true,
+          "orders": true,
+          "kitchen": true,
+          "delivery": true,
+          "pickup": true,
+          "stocks": true,
+          "products": true,
+          "accounts": true,
+          "journal": true,
+          "billing": true,
+          "chat": true
+        },
+        "cashier": {
+          "dashboard": true,
+          "pos": true,
+          "orders": true,
+          "kitchen": false,
+          "delivery": false,
+          "pickup": true,
+          "stocks": false,
+          "products": false,
+          "accounts": false,
+          "journal": false,
+          "billing": false,
+          "chat": true
+        },
+        "kitchen": {
+          "dashboard": false,
+          "pos": false,
+          "orders": true,
+          "kitchen": true,
+          "delivery": false,
+          "pickup": true,
+          "stocks": false,
+          "products": false,
+          "accounts": false,
+          "journal": false,
+          "billing": false,
+          "chat": true
+        },
+        "rider": {
+          "dashboard": false,
+          "pos": false,
+          "orders": false,
+          "kitchen": false,
+          "delivery": true,
+          "pickup": false,
+          "stocks": false,
+          "products": false,
+          "accounts": false,
+          "journal": false,
+          "billing": false,
+          "chat": true
+        }
+      },
+      "billing": {
+        "posAccessEnabled": true,
+        "status": "active",
+        "monthlyFee": 0,
+        "nextDueDate": "2026-06-01",
+        "lastPaymentAt": 1777996800000,
+        "paidMonths": 1,
+        "lockedAt": null,
+        "updatedBy": "seed",
+        "updatedAt": 1777996800000
+      },
+      "chat": {
+        "channels": {
+          "general": {
+            "name": "General",
+            "icon": "💬",
+            "color": "#1e8a52",
+            "pinned": true,
+            "members": {},
+            "createdBy": "seed",
+            "createdAt": 1777996800000,
+            "updatedAt": 1777996800000
+          }
+        }
+      }
+    }
+  }
+}
