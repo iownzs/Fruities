@@ -11490,9 +11490,60 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
       if(key)map[key] = order;
     });
 
-    firebaseOrders.forEach(function(order){
-      var key = orderKey(order);
-      if(key)map[key] = Object.assign({}, map[key] || {}, order, {firebaseSynced:true});
+    firebaseOrders.forEach(function(remoteOrder){
+      var key = orderKey(remoteOrder);
+      if(!key)return;
+
+      var localOrder = map[key];
+
+      if(!localOrder){
+        map[key] = Object.assign({}, remoteOrder, {firebaseSynced:true});
+        return;
+      }
+
+      var localStatus = {
+        status: localOrder.status,
+        payStatus: localOrder.payStatus,
+        kitchenStatus: localOrder.kitchenStatus,
+        deliveryStatus: localOrder.deliveryStatus,
+        pickupStatus: localOrder.pickupStatus,
+        rider: localOrder.rider,
+        riderName: localOrder.riderName,
+        readyAt: localOrder.readyAt,
+        sentOutAt: localOrder.sentOutAt,
+        deliveredAt: localOrder.deliveredAt,
+        pickedUpAt: localOrder.pickedUpAt
+      };
+
+      var remoteStatus = {
+        status: remoteOrder.status,
+        payStatus: remoteOrder.payStatus,
+        kitchenStatus: remoteOrder.kitchenStatus,
+        deliveryStatus: remoteOrder.deliveryStatus,
+        pickupStatus: remoteOrder.pickupStatus,
+        rider: remoteOrder.rider,
+        riderName: remoteOrder.riderName,
+        readyAt: remoteOrder.readyAt,
+        sentOutAt: remoteOrder.sentOutAt,
+        deliveredAt: remoteOrder.deliveredAt,
+        pickedUpAt: remoteOrder.pickedUpAt
+      };
+
+      var localDigest = JSON.stringify(localStatus);
+      var remoteDigest = JSON.stringify(remoteStatus);
+
+      if(localDigest !== remoteDigest){
+        // Local POS has an unsynced status change. Keep it, then let status write-back upload it.
+        map[key] = Object.assign({}, remoteOrder, localOrder, {
+          firebaseSynced: true,
+          firebaseStatusPending: true
+        });
+      }else{
+        map[key] = Object.assign({}, localOrder, remoteOrder, {
+          firebaseSynced: true,
+          firebaseStatusPending: false
+        });
+      }
     });
 
     return sortOrders(Object.keys(map).map(function(key){return map[key];}));
