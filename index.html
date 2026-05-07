@@ -13040,5 +13040,161 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 })();
 </script>
 
+
+<script id="firebase-orders-to-deliveries-bridge-v1">
+(function(){
+  function isDeliveryOrder(o){
+    if(!o)return false;
+
+    var type = String(o.fulfillmentType || o.orderType || o.type || '').toLowerCase();
+
+    return (
+      type === 'delivery' ||
+      o.deliveryStatus === 'waiting' ||
+      o.deliveryStatus === 'assigned' ||
+      o.deliveryStatus === 'out_for_delivery' ||
+      o.deliveryStatus === 'out' ||
+      o.deliveryStatus === 'delivered' ||
+      o.kitStatus === 'out'
+    ) && !o.kitForPickup && !o.kitPickup && o.pickupStatus !== 'ready' && o.pickupStatus !== 'picked_up';
+  }
+
+  function shouldBeInDelivery(o){
+    if(!isDeliveryOrder(o))return false;
+
+    return (
+      o.kitStatus === 'out' ||
+      o.kitchenStatus === 'out' ||
+      o.deliveryStatus === 'waiting' ||
+      o.deliveryStatus === 'assigned' ||
+      o.deliveryStatus === 'out_for_delivery' ||
+      o.deliveryStatus === 'out' ||
+      o.deliveryStatus === 'delivered'
+    );
+  }
+
+  function deliveryIdForOrder(o){
+    return o.deliveryId || ('DEL-' + String(o.id || o.orderNumber || o.no || Date.now()).replace(/^ORD-?/i, ''));
+  }
+
+  function deliveryStatusFromOrder(o){
+    if(o.deliveryStatus === 'delivered' || o.deliveredAt)return 'delivered';
+    if(o.deliveryStatus === 'out_for_delivery')return 'out';
+    if(o.deliveryStatus === 'out')return 'out';
+    if(o.outForDeliveryAt || o.deliveryOutAt)return 'out';
+    return o.deliveryStatus || 'waiting';
+  }
+
+  function itemsText(o){
+    try{
+      return (o.items || []).map(function(i){
+        return (i.e || '') + ' ' + (i.n || i.name || 'Item') + ' ×' + (i.q || i.qty || 1);
+      }).join(', ');
+    }catch(e){
+      return '';
+    }
+  }
+
+  function buildDeliveryFromOrder(o){
+    var now = Date.now();
+
+    return {
+      id: deliveryIdForOrder(o),
+      oid: o.id || o.orderNumber || o.no || '',
+      cust: o.cust || o.customerName || (o.customer && o.customer.name) || 'Walk-in',
+      phone: o.phone || (o.customer && o.customer.phone) || '',
+      recipient: o.recipient || o.recipientName || o.pickupName || '',
+      recipientPhone: o.recipientPhone || o.pickupPhone || '',
+      addr: o.addr || o.address || o.deliveryAddress || '',
+      items: itemsText(o),
+      total: Number(o.total || 0),
+      rider: o.rider || o.riderName || '',
+      riderName: o.riderName || o.rider || '',
+      status: deliveryStatusFromOrder(o),
+      time: o.kitOutAt || o.createdAt || o.created || o.time || now,
+      timerStart: o.outForDeliveryAt || o.deliveryOutAt || null,
+      timerEnd: o.deliveredAt || null,
+      deliveryDate: o.deliveryDate || o.delivery_date || o.scheduledDate || '',
+      deliveryTime: o.deliveryTime || o.delivery_time || o.scheduledTime || ''
+    };
+  }
+
+  function upsertDelivery(delivery){
+    if(!delivery || !delivery.id)return;
+
+    if(!Array.isArray(S.deliveries))S.deliveries = [];
+
+    var idx = S.deliveries.findIndex(function(d){
+      return String(d.id) === String(delivery.id) ||
+             String(d.oid || '') === String(delivery.oid || '');
+    });
+
+    if(idx >= 0){
+      S.deliveries[idx] = Object.assign({}, S.deliveries[idx], delivery);
+    }else{
+      S.deliveries.push(delivery);
+    }
+  }
+
+  function rebuildDeliveriesFromOrders(){
+    try{
+      if(typeof S === 'undefined' || !S || !Array.isArray(S.orders))return;
+
+      if(!Array.isArray(S.deliveries))S.deliveries = [];
+
+      S.orders.forEach(function(o){
+        if(shouldBeInDelivery(o)){
+          upsertDelivery(buildDeliveryFromOrder(o));
+        }
+      });
+
+      try{ if(typeof sv === 'function')sv(); }catch(e){}
+      try{ if(typeof rDel === 'function')rDel(); }catch(e){}
+
+      console.log('[Orders→Deliveries bridge] deliveries:', S.deliveries.length);
+    }catch(e){
+      console.warn('[Orders→Deliveries bridge] failed:', e);
+    }
+  }
+
+  function wrapRenderer(){
+    if(window.__ordersToDeliveriesBridgeWrapped)return;
+    window.__ordersToDeliveriesBridgeWrapped = true;
+
+    var oldRDel = window.rDel || (typeof globalThis.rDel === 'function' ? globalThis.rDel : null);
+
+    if(typeof oldRDel === 'function'){
+      var wrapped = function(){
+        rebuildDeliveriesFromOrders();
+        return oldRDel.apply(this, arguments);
+      };
+
+      window.rDel = wrapped;
+      try{ globalThis.rDel = wrapped; }catch(e){}
+      try{ rDel = wrapped; }catch(e){}
+    }
+  }
+
+  function boot(){
+    wrapRenderer();
+
+    rebuildDeliveriesFromOrders();
+
+    setInterval(function(){
+      wrapRenderer();
+      rebuildDeliveriesFromOrders();
+    }, 3000);
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){
+      setTimeout(boot, 2000);
+    });
+  }else{
+    setTimeout(boot, 2000);
+  }
+})();
+</script>
+
 </body>
 </html>
