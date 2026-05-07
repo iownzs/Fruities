@@ -15346,5 +15346,104 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 })();
 </script>
 
+
+<script id="remove-old-duplicate-role-panel-v1">
+(function(){
+  function text(el){
+    return String(el && el.textContent || '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+  }
+
+  function looksLikeOldRoleTable(table){
+    var t = text(table);
+
+    return (
+      t.indexOf('dashboard') !== -1 &&
+      t.indexOf('pos terminal') !== -1 &&
+      t.indexOf('admin') !== -1 &&
+      t.indexOf('sales') !== -1 &&
+      t.indexOf('kitchen') !== -1 &&
+      t.indexOf('rider') !== -1
+    );
+  }
+
+  function findSectionWrapper(el){
+    var node = el;
+
+    for(var i = 0; i < 8 && node && node !== document.body; i++){
+      var t = text(node);
+
+      if(
+        t.indexOf('role permissions') !== -1 ||
+        t.indexOf('feature/page') !== -1 ||
+        t.indexOf('pos terminal') !== -1
+      ){
+        return node;
+      }
+
+      node = node.parentElement;
+    }
+
+    return el;
+  }
+
+  function removeOldRoleMatrix(){
+    var view = document.getElementById('view-accounts');
+    if(!view)return;
+
+    var editor = document.getElementById('firebase-role-editor');
+    if(editor){
+      editor.style.display = '';
+    }
+
+    [
+      'firebase-save-roles-manual-button',
+      'firebase-refresh-roles-button',
+      'firebase-admin-save-button'
+    ].forEach(function(id){
+      var el = document.getElementById(id);
+      if(el){
+        try{ el.remove(); }catch(e){}
+      }
+    });
+
+    Array.from(view.querySelectorAll('table')).forEach(function(table){
+      if(looksLikeOldRoleTable(table)){
+        var section = findSectionWrapper(table);
+        try{ section.remove(); }catch(e){ table.remove(); }
+      }
+    });
+
+    Array.from(view.querySelectorAll('h1,h2,h3,h4,p,div')).forEach(function(el){
+      var t = text(el);
+
+      if(t === 'role permissions' || t === 'role permissions matrix'){
+        try{ el.remove(); }catch(e){ el.style.display = 'none'; }
+      }
+    });
+  }
+
+  function boot(){
+    removeOldRoleMatrix();
+
+    setTimeout(removeOldRoleMatrix, 500);
+    setTimeout(removeOldRoleMatrix, 1500);
+    setInterval(removeOldRoleMatrix, 3000);
+
+    console.log('[Accounts cleanup] Old duplicate role matrix removed');
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){
+      setTimeout(boot, 1200);
+    });
+  }else{
+    setTimeout(boot, 1200);
+  }
+})();
+</script>
+
 </body>
 </html>
