@@ -1949,25 +1949,6 @@ body.dark #chat-minimize-channels-btn.is-collapsed{background:#14281e!important;
 <!-- CLEANED 2026-04-28: Removed superseded duplicate patch blocks. Kept latest stable POS cart, checkout, orders, kitchen, delivery, and groupchat overrides. -->
 <!-- CHECKPOINT SAVED 2026-05-01: Cleaned from uploaded pickup-tabs file. Baseline includes Kitchen tabs and Pick up waiting/picked tabs. -->
 
-<style id="firebase-role-menu-no-flicker">
-  body:not(.firebase-role-menu-ready) aside *,
-  body:not(.firebase-role-menu-ready) nav *,
-  body:not(.firebase-role-menu-ready) .sidebar *,
-  body:not(.firebase-role-menu-ready) #sidebar *,
-  body:not(.firebase-role-menu-ready) .bottom-nav *,
-  body:not(.firebase-role-menu-ready) .bottom * {
-    visibility: hidden;
-  }
-
-  body.firebase-role-menu-ready aside *,
-  body.firebase-role-menu-ready nav *,
-  body.firebase-role-menu-ready .sidebar *,
-  body.firebase-role-menu-ready #sidebar *,
-  body.firebase-role-menu-ready .bottom-nav *,
-  body.firebase-role-menu-ready .bottom * {
-    visibility: visible;
-  }
-</style>
 
 
 <script id="firebase-role-cache-fast-unlock">
@@ -1986,33 +1967,21 @@ body.dark #chat-minimize-channels-btn.is-collapsed{background:#14281e!important;
 </script>
 
 
-<style id="role-menu-no-flicker-v2">
-  body:not(.role-menu-filtered) aside *,
-  body:not(.role-menu-filtered) nav *,
-  body:not(.role-menu-filtered) .sidebar *,
-  body:not(.role-menu-filtered) #sidebar *,
-  body:not(.role-menu-filtered) [class*="side"] *,
-  body:not(.role-menu-filtered) [class*="nav"] * {
+
+
+
+
+<style id="firebase-unified-role-menu-style-v1">
+  body:not(.firebase-menu-ready) .sb-nav,
+  body:not(.firebase-menu-ready) .bottom-nav {
     visibility: hidden !important;
   }
 
-  body.role-menu-filtered aside *,
-  body.role-menu-filtered nav *,
-  body.role-menu-filtered .sidebar *,
-  body.role-menu-filtered #sidebar *,
-  body.role-menu-filtered [class*="side"] *,
-  body.role-menu-filtered [class*="nav"] * {
-    visibility: visible;
-  }
-
-  [data-role-direct-allowed="false"],
-  [data-firebase-perm-allowed="false"] {
+  [data-firebase-role-allowed="false"] {
     display: none !important;
     visibility: hidden !important;
   }
 </style>
-
-
 
 </head>
 <body>
@@ -14411,666 +14380,8 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 </script>
 
 
-<script id="firebase-role-permission-enforcer-v1">
-(function(){
-  var DB_URL = 'https://fruities-pos-default-rtdb.asia-southeast1.firebasedatabase.app';
-  var STORE_ID = 'fruit-story-main';
-  var latestRoles = {};
 
-  var PAGE_ALIASES = {
-    dashboard: ['dashboard', 'home'],
-    pos: ['pos', 'pos terminal', 'terminal'],
-    orders: ['orders', 'order'],
-    kitchen: ['kitchen', 'kitchen board'],
-    delivery: ['delivery'],
-    pickup: ['pickup', 'pick up'],
-    stocks: ['stocks', 'stock'],
-    products: ['products', 'product'],
-    accounts: ['accounts', 'admin panel', 'admin', 'users'],
-    journal: ['journal', 'journal / reports', 'reports'],
-    billing: ['billing', 'pos billing'],
-    chat: ['chat', 'group chat']
-  };
 
-  function normalizeRoleKey(role){
-    role = String(role || '').trim().toLowerCase();
-
-    if(role === 'cashier') return 'sales';
-    if(role === 'administrator') return 'admin';
-
-    return role;
-  }
-
-  function getCurrentUser(){
-    try{
-      return (S && S.cur) || {};
-    }catch(e){
-      return {};
-    }
-  }
-
-  function getCurrentRoleKey(){
-    var cur = getCurrentUser();
-
-    var role =
-      cur.roleKey ||
-      cur.role ||
-      cur.type ||
-      cur.accountRole ||
-      '';
-
-    // Some app states store user object differently
-    if(!role && cur.user && Array.isArray(S.accounts)){
-      var account = S.accounts.find(function(a){
-        return String(a.user || a.username || a.id) === String(cur.user);
-      });
-
-      if(account){
-        role = account.roleKey || account.role;
-      }
-    }
-
-    return normalizeRoleKey(role || 'sales');
-  }
-
-  function getPerms(){
-    var roleKey = getCurrentRoleKey();
-
-    var role =
-      latestRoles[roleKey] ||
-      latestRoles[roleKey.toLowerCase()] ||
-      (S && S.roles && (S.roles[roleKey] || S.roles[roleKey.toLowerCase()])) ||
-      (S && S.rolePerms && (S.rolePerms[roleKey] || S.rolePerms[roleKey.toLowerCase()])) ||
-      {};
-
-    return role || {};
-  }
-
-  function canAccess(pageKey){
-    pageKey = String(pageKey || '').toLowerCase();
-
-    var perms = getPerms();
-
-    if(getCurrentRoleKey() === 'admin') return true;
-
-    if(Object.prototype.hasOwnProperty.call(perms, pageKey)){
-      return !!perms[pageKey];
-    }
-
-    return false;
-  }
-
-  function detectPageFromText(text){
-    text = String(text || '')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .toLowerCase();
-
-    var found = '';
-
-    Object.keys(PAGE_ALIASES).forEach(function(pageKey){
-      PAGE_ALIASES[pageKey].forEach(function(alias){
-        if(text === alias || text.indexOf(alias) !== -1){
-          if(!found || alias.length > found.length){
-            found = pageKey;
-          }
-        });
-      });
-    });
-
-    return found;
-  }
-
-  function detectPageFromElement(el){
-    if(!el) return '';
-
-    var attrs = [
-      el.getAttribute && el.getAttribute('data-view'),
-      el.getAttribute && el.getAttribute('data-page'),
-      el.getAttribute && el.getAttribute('onclick'),
-      el.id,
-      el.className,
-      el.textContent
-    ].join(' ');
-
-    return detectPageFromText(attrs);
-  }
-
-  function hideBlockedNav(){
-    try{
-      var selectors = [
-        'nav a',
-        'nav button',
-        '.sidebar a',
-        '.sidebar button',
-        '.side a',
-        '.side button',
-        '#sidebar a',
-        '#sidebar button',
-        '.bottom-nav a',
-        '.bottom-nav button',
-        '.bottom a',
-        '.bottom button',
-        '[data-view]',
-        '[data-page]'
-      ];
-
-      var nodes = Array.from(document.querySelectorAll(selectors.join(',')));
-
-      nodes.forEach(function(el){
-        var pageKey = detectPageFromElement(el);
-
-        if(!pageKey) return;
-
-        var allowed = canAccess(pageKey);
-
-        // Keep logout/login available.
-        var txt = String(el.textContent || '').toLowerCase();
-        if(txt.indexOf('log out') !== -1 || txt.indexOf('logout') !== -1) return;
-
-        el.style.display = allowed ? '' : 'none';
-        el.setAttribute('data-firebase-perm-page', pageKey);
-        el.setAttribute('data-firebase-perm-allowed', allowed ? 'true' : 'false');
-      });
-    }catch(e){
-      console.warn('[Role enforcer] hideBlockedNav failed', e);
-    }
-  }
-
-  function currentViewKey(){
-    try{
-      var active = document.querySelector('.view.on, section.on, main .on, [id^="view-"].on');
-      if(active){
-        var id = String(active.id || '');
-        if(id.indexOf('view-') === 0){
-          return id.replace('view-', '');
-        }
-      }
-    }catch(e){}
-
-    return '';
-  }
-
-  function goToFirstAllowed(){
-    var order = [
-      'dashboard',
-      'pos',
-      'orders',
-      'kitchen',
-      'delivery',
-      'pickup',
-      'stocks',
-      'products',
-      'journal',
-      'billing',
-      'chat',
-      'accounts'
-    ];
-
-    var first = order.find(canAccess);
-
-    if(first && typeof window.go === 'function'){
-      try{ window.go(first); }catch(e){}
-    }
-  }
-
-  function enforceCurrentView(){
-    var view = currentViewKey();
-
-    if(!view) return;
-
-    if(!canAccess(view)){
-      try{
-        if(typeof toast === 'function') toast('Access denied for this role', 'err');
-      }catch(e){}
-
-      goToFirstAllowed();
-    }
-  }
-
-  function wrapGo(){
-    if(window.__firebaseRoleGoWrappedV1) return;
-    if(typeof window.go !== 'function' && typeof go !== 'function') return;
-
-    var originalGo = window.go || go;
-
-    var wrapped = function(page){
-      var pageKey = String(page || '').toLowerCase();
-
-      if(pageKey && !canAccess(pageKey)){
-        try{
-          if(typeof toast === 'function') toast('Access denied for this role', 'err');
-        }catch(e){}
-        return false;
-      }
-
-      var result = originalGo.apply(this, arguments);
-
-      setTimeout(function(){
-        hideBlockedNav();
-        enforceCurrentView();
-      }, 100);
-
-      return result;
-    };
-
-    window.go = wrapped;
-    try{ go = wrapped; }catch(e){}
-
-    window.__firebaseRoleGoWrappedV1 = true;
-
-    console.log('[Role enforcer] go() wrapped');
-  }
-
-  function applyRoles(data){
-    latestRoles = {};
-
-    Object.keys(data || {}).forEach(function(key){
-      var roleKey = normalizeRoleKey(key);
-      latestRoles[roleKey] = Object.assign({}, data[key] || {});
-    });
-
-    if(latestRoles.cashier && !latestRoles.sales){
-      latestRoles.sales = latestRoles.cashier;
-    }
-
-    if(latestRoles.sales && !latestRoles.cashier){
-      latestRoles.cashier = latestRoles.sales;
-    }
-
-    try{
-      S.roles = S.roles || {};
-      S.rolePerms = S.rolePerms || {};
-
-      Object.keys(latestRoles).forEach(function(key){
-        var title = key.charAt(0).toUpperCase() + key.slice(1);
-
-        S.roles[key] = latestRoles[key];
-        S.roles[title] = latestRoles[key];
-
-        S.rolePerms[key] = latestRoles[key];
-        S.rolePerms[title] = latestRoles[key];
-      });
-
-      if(latestRoles.sales){
-        S.roles.Cashier = latestRoles.sales;
-        S.rolePerms.Cashier = latestRoles.sales;
-      }
-    }catch(e){}
-
-    wrapGo();
-    hideBlockedNav();
-    enforceCurrentView();
-
-    console.log('[Role enforcer] Roles applied for role:', getCurrentRoleKey(), getPerms());
-  }
-
-
-  function loadCachedRoles(){
-    try{
-      var cached = JSON.parse(localStorage.getItem(ROLE_CACHE_KEY) || '{}') || {};
-      if(cached && Object.keys(cached).length){
-        roles = cached;
-        filterMenus();
-        blockCurrentView();
-        wrapGo();
-        document.body.classList.add('firebase-role-menu-ready');
-        console.log('[Hard role menu filter] loaded cached roles:', roleKey(), roles[roleKey()]);
-        return true;
-      }
-    }catch(e){}
-    return false;
-  }
-
-  function saveCachedRoles(){
-    try{
-      localStorage.setItem(ROLE_CACHE_KEY, JSON.stringify(roles || {}));
-    }catch(e){}
-  }
-
-  function fetchRoles(){
-    fetch(DB_URL + '/stores/' + STORE_ID + '/roles.json', { cache: 'no-store' })
-      .then(function(res){
-        if(!res.ok){
-          return res.text().then(function(t){
-            throw new Error('Roles read failed ' + res.status + ': ' + t);
-          });
-        }
-        return res.json();
-      })
-      .then(applyRoles)
-      .catch(function(err){
-        console.warn('[Role enforcer] roles fetch failed', err);
-      });
-  }
-
-  function boot(){
-    loadCachedRoles();
-    fetchRoles();
-    wrapGo();
-
-    setTimeout(function(){
-      hideBlockedNav();
-      enforceCurrentView();
-    }, 800);
-
-    setTimeout(function(){
-      hideBlockedNav();
-      enforceCurrentView();
-    }, 1800);
-
-    setInterval(function(){
-      fetchRoles();
-      hideBlockedNav();
-      enforceCurrentView();
-    }, 5000);
-
-    // Also enforce after clicks/login/navigation changes.
-    document.addEventListener('click', function(){
-      setTimeout(function(){
-        hideBlockedNav();
-        enforceCurrentView();
-      }, 150);
-    }, true);
-
-    console.log('[Role enforcer] Started');
-  }
-
-  if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', function(){
-      setTimeout(boot, 50);
-    });
-  }else{
-    setTimeout(boot, 50);
-  }
-})();
-</script>
-
-
-<script id="firebase-hard-role-menu-filter-v1">
-(function(){
-  var DB_URL = 'https://fruities-pos-default-rtdb.asia-southeast1.firebasedatabase.app';
-  var STORE_ID = 'fruit-story-main';
-  var roles = {};
-
-  var MENU_MAP = {
-    'dashboard': 'dashboard',
-    'home': 'dashboard',
-    'pos terminal': 'pos',
-    'pos': 'pos',
-    'orders': 'orders',
-    'kitchen': 'kitchen',
-    'delivery': 'delivery',
-    'pick up': 'pickup',
-    'pickup': 'pickup',
-    'stocks': 'stocks',
-    'products': 'products',
-    'accounts': 'accounts',
-    'admin panel': 'accounts',
-    'journal': 'journal',
-    'pos billing': 'billing',
-    'system': 'billing',
-    'billing': 'billing',
-    'group chat': 'chat',
-    'chat': 'chat'
-  };
-
-  function roleKey(){
-    try{
-      var cur = S && S.cur ? S.cur : {};
-      var role = cur.roleKey || cur.role || '';
-
-      if(!role && cur.user && Array.isArray(S.accounts)){
-        var acc = S.accounts.find(function(a){
-          return String(a.user || a.username || a.id).toLowerCase() === String(cur.user).toLowerCase();
-        });
-        if(acc) role = acc.roleKey || acc.role;
-      }
-
-      role = String(role || '').toLowerCase();
-      if(role === 'cashier') role = 'sales';
-      if(role === 'administrator') role = 'admin';
-
-      return role || 'sales';
-    }catch(e){
-      return 'sales';
-    }
-  }
-
-  function perms(){
-    var key = roleKey();
-
-    return roles[key] ||
-           (window.S && S.roles && (S.roles[key] || S.roles[key.charAt(0).toUpperCase() + key.slice(1)])) ||
-           (window.S && S.rolePerms && (S.rolePerms[key] || S.rolePerms[key.charAt(0).toUpperCase() + key.slice(1)])) ||
-           {};
-  }
-
-  function allowed(page){
-    if(roleKey() === 'admin') return true;
-
-    var p = perms();
-
-    if(Object.prototype.hasOwnProperty.call(p, page)){
-      return !!p[page];
-    }
-
-    return false;
-  }
-
-  function textPage(text){
-    text = String(text || '').replace(/\s+/g, ' ').trim().toLowerCase();
-
-    if(!text) return '';
-
-    var keys = Object.keys(MENU_MAP);
-
-    for(var i = 0; i < keys.length; i++){
-      var label = keys[i];
-
-      if(text === label || text.indexOf(label) !== -1){
-        return MENU_MAP[label];
-      }
-    }
-
-    return '';
-  }
-
-  function findMenuRow(el){
-    var node = el;
-
-    for(var i = 0; i < 5 && node && node !== document.body; i++){
-      var txt = String(node.textContent || '').replace(/\s+/g, ' ').trim();
-
-      if(txt.length > 0 && txt.length < 80){
-        return node;
-      }
-
-      node = node.parentElement;
-    }
-
-    return el;
-  }
-
-  function filterMenus(){
-    try{
-      var candidates = Array.from(document.querySelectorAll(
-        'aside *, nav *, .sidebar *, #sidebar *, .bottom-nav *, .bottom *, [class*="side"] *, [class*="nav"] *'
-      ));
-
-      candidates.forEach(function(el){
-        var raw = String(el.textContent || '').replace(/\s+/g, ' ').trim();
-
-        if(!raw || raw.length > 40) return;
-        if(raw.toLowerCase().indexOf('log out') !== -1) return;
-        if(raw.toLowerCase().indexOf('logout') !== -1) return;
-
-        var page = textPage(raw);
-        if(!page) return;
-
-        var row = findMenuRow(el);
-        var can = allowed(page);
-
-        row.style.display = can ? '' : 'none';
-        row.setAttribute('data-role-filter-page', page);
-        row.setAttribute('data-role-filter-allowed', can ? 'true' : 'false');
-      });
-    }catch(e){
-      console.warn('[Hard role menu filter] filter failed', e);
-    }
-  }
-
-  function currentView(){
-    var active = document.querySelector('[id^="view-"].on, .view.on, section.on');
-    if(!active || !active.id) return '';
-    return active.id.replace(/^view-/, '');
-  }
-
-  function firstAllowed(){
-    var pages = ['dashboard','pos','orders','kitchen','delivery','pickup','stocks','products','journal','billing','chat','accounts'];
-
-    for(var i = 0; i < pages.length; i++){
-      if(allowed(pages[i])) return pages[i];
-    }
-
-    return 'dashboard';
-  }
-
-  function blockCurrentView(){
-    var view = currentView();
-
-    if(view && !allowed(view)){
-      var next = firstAllowed();
-
-      try{
-        if(typeof go === 'function') go(next);
-      }catch(e){}
-
-      try{
-        if(typeof toast === 'function') toast('Access denied for this role', 'err');
-      }catch(e){}
-    }
-  }
-
-  function wrapGo(){
-    if(window.__hardRoleMenuFilterGoWrapped) return;
-
-    var oldGo = window.go || (typeof go === 'function' ? go : null);
-    if(typeof oldGo !== 'function') return;
-
-    var wrapped = function(page){
-      var key = String(page || '').toLowerCase();
-
-      if(key && !allowed(key)){
-        try{
-          if(typeof toast === 'function') toast('Access denied for this role', 'err');
-        }catch(e){}
-        return false;
-      }
-
-      var result = oldGo.apply(this, arguments);
-
-      setTimeout(function(){
-        filterMenus();
-        blockCurrentView();
-      }, 150);
-
-      return result;
-    };
-
-    window.go = wrapped;
-    try{ go = wrapped; }catch(e){}
-
-    window.__hardRoleMenuFilterGoWrapped = true;
-  }
-
-
-  function loadCachedRoles(){
-    try{
-      var cached = JSON.parse(localStorage.getItem(ROLE_CACHE_KEY) || '{}') || {};
-      if(cached && Object.keys(cached).length){
-        roles = cached;
-        filterMenus();
-        blockCurrentView();
-        wrapGo();
-        document.body.classList.add('firebase-role-menu-ready');
-        console.log('[Hard role menu filter] loaded cached roles:', roleKey(), roles[roleKey()]);
-        return true;
-      }
-    }catch(e){}
-    return false;
-  }
-
-  function saveCachedRoles(){
-    try{
-      localStorage.setItem(ROLE_CACHE_KEY, JSON.stringify(roles || {}));
-    }catch(e){}
-  }
-
-  function fetchRoles(){
-    fetch(DB_URL + '/stores/' + STORE_ID + '/roles.json', {cache:'no-store'})
-      .then(function(res){ return res.json(); })
-      .then(function(data){
-        roles = {};
-
-        Object.keys(data || {}).forEach(function(key){
-          var k = String(key).toLowerCase();
-          if(k === 'cashier') k = 'sales';
-          roles[k] = data[key] || {};
-        });
-
-        if(roles.sales) roles.cashier = roles.sales;
-
-        saveCachedRoles();
-
-        filterMenus();
-        blockCurrentView();
-        wrapGo();
-
-        try{ document.body.classList.add('firebase-role-menu-ready'); }catch(e){}
-
-        console.log('[Hard role menu filter] role:', roleKey(), roles[roleKey()]);
-      })
-      .catch(function(err){
-        console.warn('[Hard role menu filter] roles fetch failed', err);
-      });
-  }
-
-  function boot(){
-    fetchRoles();
-    wrapGo();
-
-    setTimeout(filterMenus, 500);
-    setTimeout(filterMenus, 1500);
-    setTimeout(blockCurrentView, 1800);
-
-    setInterval(function(){
-      fetchRoles();
-      filterMenus();
-      blockCurrentView();
-    }, 3000);
-
-    document.addEventListener('click', function(){
-      setTimeout(function(){
-        filterMenus();
-        blockCurrentView();
-      }, 150);
-    }, true);
-
-    setTimeout(function(){
-      try{ document.body.classList.add('firebase-role-menu-ready'); }catch(e){}
-    }, 300);
-
-    console.log('[Hard role menu filter] started');
-  }
-
-  if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 50); });
-  }else{
-    setTimeout(boot, 50);
-  }
-})();
-</script>
 
 
 
@@ -15205,713 +14516,12 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 </script>
 
 
-<script id="firebase-role-page-access-override-v1">
-(function(){
-  var DB_URL = 'https://fruities-pos-default-rtdb.asia-southeast1.firebasedatabase.app';
-  var STORE_ID = 'fruit-story-main';
-  var ROLE_CACHE_KEY = 'fruities_cached_firebase_roles_v1';
-  var latestRoles = {};
 
-  function normalizeRoleKey(role){
-    role = String(role || '').trim().toLowerCase();
-    if(role === 'cashier')role = 'sales';
-    if(role === 'administrator')role = 'admin';
-    return role || 'sales';
-  }
 
-  function currentUser(){
-    try{return S && S.cur ? S.cur : {};}catch(e){return {};}
-  }
 
-  function currentRoleKey(){
-    var cur = currentUser();
-    var role = cur.roleKey || cur.role || cur.type || '';
 
-    try{
-      if(!role && cur.user && Array.isArray(S.accounts)){
-        var account = S.accounts.find(function(a){
-          return String(a.user || a.username || a.id).toLowerCase() === String(cur.user).toLowerCase();
-        });
 
-        if(account){
-          role = account.roleKey || account.role;
-        }
-      }
-    }catch(e){}
 
-    return normalizeRoleKey(role);
-  }
-
-  function pageKey(page){
-    page = String(page || '').trim().toLowerCase();
-
-    var map = {
-      home: 'dashboard',
-      dashboard: 'dashboard',
-      pos: 'pos',
-      terminal: 'pos',
-      orders: 'orders',
-      kitchen: 'kitchen',
-      delivery: 'delivery',
-      pickup: 'pickup',
-      'pick up': 'pickup',
-      stocks: 'stocks',
-      stock: 'stocks',
-      products: 'products',
-      product: 'products',
-      accounts: 'accounts',
-      admin: 'accounts',
-      system: 'billing',
-      journal: 'journal',
-      reports: 'journal',
-      billing: 'billing',
-      chat: 'chat'
-    };
-
-    return map[page] || page;
-  }
-
-  function rolePerms(){
-    var key = currentRoleKey();
-
-    var role =
-      latestRoles[key] ||
-      latestRoles[key.toLowerCase()] ||
-      (window.S && S.roles && (S.roles[key] || S.roles[key.toLowerCase()])) ||
-      (window.S && S.rolePerms && (S.rolePerms[key] || S.rolePerms[key.toLowerCase()])) ||
-      {};
-
-    return role || {};
-  }
-
-  function canAccessPage(page){
-    var key = pageKey(page);
-
-    if(currentRoleKey() === 'admin')return true;
-
-    var perms = rolePerms();
-
-    if(Object.prototype.hasOwnProperty.call(perms, key)){
-      return !!perms[key];
-    }
-
-    return false;
-  }
-
-  function applyRoles(data){
-    latestRoles = {};
-
-    Object.keys(data || {}).forEach(function(key){
-      var roleKey = normalizeRoleKey(key);
-      latestRoles[roleKey] = Object.assign({}, data[key] || {});
-    });
-
-    if(latestRoles.sales)latestRoles.cashier = latestRoles.sales;
-    if(latestRoles.cashier && !latestRoles.sales)latestRoles.sales = latestRoles.cashier;
-
-    try{
-      localStorage.setItem(ROLE_CACHE_KEY, JSON.stringify(latestRoles));
-    }catch(e){}
-
-    try{
-      S.roles = S.roles || {};
-      S.rolePerms = S.rolePerms || {};
-
-      Object.keys(latestRoles).forEach(function(key){
-        var title = key.charAt(0).toUpperCase() + key.slice(1);
-        if(key === 'sales')title = 'Sales';
-        if(key === 'dispatcher')title = 'Dispatcher';
-
-        S.roles[key] = latestRoles[key];
-        S.roles[title] = latestRoles[key];
-        S.rolePerms[key] = latestRoles[key];
-        S.rolePerms[title] = latestRoles[key];
-      });
-
-      if(latestRoles.sales){
-        S.roles.cashier = latestRoles.sales;
-        S.roles.Cashier = latestRoles.sales;
-        S.rolePerms.cashier = latestRoles.sales;
-        S.rolePerms.Cashier = latestRoles.sales;
-      }
-
-      if(typeof sv === 'function')sv();
-    }catch(e){}
-
-    installOverrides();
-  }
-
-  function loadCachedRoles(){
-    try{
-      var cached = JSON.parse(localStorage.getItem(ROLE_CACHE_KEY) || '{}') || {};
-      if(Object.keys(cached).length){
-        applyRoles(cached);
-      }
-    }catch(e){}
-  }
-
-  function fetchRoles(){
-    fetch(DB_URL + '/stores/' + STORE_ID + '/roles.json', {cache:'no-store'})
-      .then(function(res){return res.json();})
-      .then(applyRoles)
-      .catch(function(err){console.warn('[Page access override] roles fetch failed', err);});
-  }
-
-  function installOverrides(){
-    window.firebaseCanAccessPage = canAccessPage;
-
-    // Override common permission functions if they exist.
-    [
-      'canAccess',
-      'hasAccess',
-      'canView',
-      'allowed',
-      'hasPerm',
-      'can'
-    ].forEach(function(name){
-      var old = window[name] || (typeof globalThis[name] === 'function' ? globalThis[name] : null);
-
-      if(typeof old === 'function' && !old.__firebasePageAccessOverrideV1){
-        var wrapped = function(page){
-          var key = pageKey(page);
-
-          if([
-            'dashboard','pos','orders','kitchen','delivery','pickup',
-            'stocks','products','accounts','journal','billing','chat'
-          ].indexOf(key) !== -1){
-            return canAccessPage(key);
-          }
-
-          return old.apply(this, arguments);
-        };
-
-        wrapped.__firebasePageAccessOverrideV1 = true;
-        window[name] = wrapped;
-        try{ globalThis[name] = wrapped; }catch(e){}
-        try{ eval(name + ' = window["' + name + '"]'); }catch(e){}
-      }
-    });
-
-    // Re-wrap go() so direct navigation also uses Firebase permissions.
-    var oldGo = window.go || (typeof globalThis.go === 'function' ? globalThis.go : null);
-
-    if(typeof oldGo === 'function' && !oldGo.__firebasePageAccessOverrideV1){
-      var wrappedGo = function(page){
-        var key = pageKey(page);
-
-        if([
-          'dashboard','pos','orders','kitchen','delivery','pickup',
-          'stocks','products','accounts','journal','billing','chat'
-        ].indexOf(key) !== -1 && !canAccessPage(key)){
-          try{ if(typeof toast === 'function')toast('Access restricted for your role', 'err'); }catch(e){}
-          return false;
-        }
-
-        return oldGo.apply(this, arguments);
-      };
-
-      wrappedGo.__firebasePageAccessOverrideV1 = true;
-      window.go = wrappedGo;
-      try{ globalThis.go = wrappedGo; }catch(e){}
-      try{ go = wrappedGo; }catch(e){}
-    }
-
-    console.log('[Page access override] installed for role:', currentRoleKey(), rolePerms());
-  }
-
-  function boot(){
-    loadCachedRoles();
-    fetchRoles();
-    installOverrides();
-
-    setTimeout(function(){
-      loadCachedRoles();
-      fetchRoles();
-      installOverrides();
-    }, 800);
-
-    setInterval(function(){
-      fetchRoles();
-      installOverrides();
-    }, 5000);
-  }
-
-  if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 100); });
-  }else{
-    setTimeout(boot, 100);
-  }
-})();
-</script>
-
-
-<script id="firebase-role-off-menu-direct-hide-v1">
-(function(){
-  var DB_URL = 'https://fruities-pos-default-rtdb.asia-southeast1.firebasedatabase.app';
-  var STORE_ID = 'fruit-story-main';
-  var CACHE_KEY = 'fruities_cached_firebase_roles_v1';
-  var roles = {};
-
-  var LABEL_TO_PERMISSION = {
-    'dashboard': 'dashboard',
-    'home': 'dashboard',
-    'pos terminal': 'pos',
-    'pos': 'pos',
-    'orders': 'orders',
-    'kitchen': 'kitchen',
-    'delivery': 'delivery',
-    'pick up': 'pickup',
-    'pickup': 'pickup',
-    'stocks': 'stocks',
-    'products': 'products',
-    'accounts': 'accounts',
-    'admin panel': 'accounts',
-    'journal': 'journal',
-    'journal / reports': 'journal',
-    'pos billing': 'billing',
-    'system': 'billing',
-    'billing': 'billing',
-    'group chat': 'chat',
-    'chat': 'chat'
-  };
-
-  function cleanText(el){
-    return String(el && el.textContent || '')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .toLowerCase();
-  }
-
-  function roleKey(){
-    try{
-      var cur = S && S.cur ? S.cur : {};
-      var role = cur.roleKey || cur.role || '';
-
-      if(!role && cur.user && Array.isArray(S.accounts)){
-        var account = S.accounts.find(function(a){
-          return String(a.user || a.username || a.id).toLowerCase() === String(cur.user).toLowerCase();
-        });
-        if(account) role = account.roleKey || account.role;
-      }
-
-      role = String(role || '').toLowerCase();
-
-      if(role === 'cashier') role = 'sales';
-      if(role === 'administrator') role = 'admin';
-
-      return role || 'sales';
-    }catch(e){
-      return 'sales';
-    }
-  }
-
-  function getPerms(){
-    var key = roleKey();
-
-    return roles[key] ||
-      (window.S && S.roles && (S.roles[key] || S.roles[key.charAt(0).toUpperCase() + key.slice(1)])) ||
-      (window.S && S.rolePerms && (S.rolePerms[key] || S.rolePerms[key.charAt(0).toUpperCase() + key.slice(1)])) ||
-      {};
-  }
-
-  function isAllowed(permission){
-    if(roleKey() === 'admin') return true;
-
-    var p = getPerms();
-
-    if(Object.prototype.hasOwnProperty.call(p, permission)){
-      return !!p[permission];
-    }
-
-    return false;
-  }
-
-  function detectPermissionFromText(text){
-    text = String(text || '').replace(/\s+/g, ' ').trim().toLowerCase();
-
-    // Exact match first.
-    if(LABEL_TO_PERMISSION[text]) return LABEL_TO_PERMISSION[text];
-
-    // Strong contains match for multi-word menu rows.
-    if(text.indexOf('pos billing') !== -1) return 'billing';
-    if(text.indexOf('group chat') !== -1) return 'chat';
-    if(text.indexOf('pos terminal') !== -1) return 'pos';
-    if(text.indexOf('pick up') !== -1) return 'pickup';
-    if(text.indexOf('admin panel') !== -1) return 'accounts';
-
-    // Single-label fallback.
-    var keys = Object.keys(LABEL_TO_PERMISSION);
-    for(var i = 0; i < keys.length; i++){
-      if(text === keys[i]) return LABEL_TO_PERMISSION[keys[i]];
-    }
-
-    return '';
-  }
-
-  function menuRow(el){
-    var node = el;
-
-    for(var i = 0; i < 7 && node && node !== document.body; i++){
-      var t = cleanText(node);
-
-      if(t && t.length <= 80){
-        return node;
-      }
-
-      node = node.parentElement;
-    }
-
-    return el;
-  }
-
-  function hideOffMenus(){
-    try{
-      var selectors = [
-        'aside *',
-        'nav *',
-        '.sidebar *',
-        '#sidebar *',
-        '.bottom-nav *',
-        '.bottom *',
-        '[class*="side"] *',
-        '[class*="nav"] *',
-        '[onclick]',
-        '[data-view]',
-        '[data-page]'
-      ];
-
-      var nodes = Array.from(document.querySelectorAll(selectors.join(',')));
-
-      nodes.forEach(function(el){
-        var text = cleanText(el);
-
-        if(!text || text.length > 60) return;
-        if(text.indexOf('log out') !== -1 || text.indexOf('logout') !== -1) return;
-
-        var permission = detectPermissionFromText(text);
-        if(!permission) return;
-
-        var row = menuRow(el);
-        var allowed = isAllowed(permission);
-
-        row.style.display = allowed ? '' : 'none';
-        row.setAttribute('data-role-direct-permission', permission);
-        row.setAttribute('data-role-direct-allowed', allowed ? 'true' : 'false');
-      });
-
-      try{ document.body.classList.add('role-menu-filtered'); }catch(e){}
-    }catch(e){
-      console.warn('[Role direct hide] failed', e);
-    }
-  }
-
-  function applyRoles(data){
-    roles = {};
-
-    Object.keys(data || {}).forEach(function(key){
-      var k = String(key).toLowerCase();
-      if(k === 'cashier') k = 'sales';
-      roles[k] = data[key] || {};
-    });
-
-    if(roles.sales) roles.cashier = roles.sales;
-
-    try{
-      localStorage.setItem(CACHE_KEY, JSON.stringify(roles));
-    }catch(e){}
-
-    hideOffMenus();
-
-    console.log('[Role direct hide] applied', roleKey(), getPerms());
-  }
-
-  function loadCache(){
-    try{
-      var cached = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}') || {};
-      if(Object.keys(cached).length){
-        roles = cached;
-        hideOffMenus();
-      }
-    }catch(e){}
-  }
-
-  function fetchRoles(){
-    fetch(DB_URL + '/stores/' + STORE_ID + '/roles.json', {cache:'no-store'})
-      .then(function(res){ return res.json(); })
-      .then(applyRoles)
-      .catch(function(err){ console.warn('[Role direct hide] fetch failed', err); });
-  }
-
-  function boot(){
-    loadCache();
-    hideOffMenus();
-    fetchRoles();
-
-    setTimeout(hideOffMenus, 100);
-    setTimeout(hideOffMenus, 400);
-    setTimeout(hideOffMenus, 1000);
-
-    setInterval(function(){
-      loadCache();
-      hideOffMenus();
-      fetchRoles();
-    }, 3000);
-
-    document.addEventListener('click', function(){
-      setTimeout(hideOffMenus, 100);
-    }, true);
-
-    setTimeout(function(){ try{ document.body.classList.add('role-menu-filtered'); }catch(e){} }, 800); // role-menu-filtered fallback
-
-    console.log('[Role direct hide] started');
-  }
-
-  if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 50); });
-  }else{
-    setTimeout(boot, 50);
-  }
-})();
-</script>
-
-
-
-
-<script id="firebase-safe-access-override-v2">
-(function(){
-  var DB_URL = 'https://fruities-pos-default-rtdb.asia-southeast1.firebasedatabase.app';
-  var STORE_ID = 'fruit-story-main';
-  var CACHE_KEY = 'fruities_cached_firebase_roles_v1';
-  var roles = {};
-
-  var PAGE_MAP = {
-    home: 'dashboard',
-    dashboard: 'dashboard',
-    pos: 'pos',
-    terminal: 'pos',
-    orders: 'orders',
-    kitchen: 'kitchen',
-    delivery: 'delivery',
-    pickup: 'pickup',
-    'pick up': 'pickup',
-    stocks: 'stocks',
-    stock: 'stocks',
-    products: 'products',
-    product: 'products',
-    accounts: 'accounts',
-    admin: 'accounts',
-    system: 'billing',
-    journal: 'journal',
-    reports: 'journal',
-    billing: 'billing',
-    'pos billing': 'billing',
-    'system': 'billing',
-    chat: 'chat',
-    'group chat': 'chat'
-  };
-
-  function normalizeRole(role){
-    role = String(role || '').trim().toLowerCase();
-    if(role === 'cashier') role = 'sales';
-    if(role === 'administrator') role = 'admin';
-    return role || 'sales';
-  }
-
-  function currentRole(){
-    try{
-      var cur = S && S.cur ? S.cur : {};
-      var role = cur.roleKey || cur.role || '';
-
-      if(!role && cur.user && Array.isArray(S.accounts)){
-        var account = S.accounts.find(function(a){
-          return String(a.user || a.username || a.id).toLowerCase() === String(cur.user).toLowerCase();
-        });
-        if(account) role = account.roleKey || account.role;
-      }
-
-      return normalizeRole(role);
-    }catch(e){
-      return 'sales';
-    }
-  }
-
-  function pageKey(page){
-    page = String(page || '').trim().toLowerCase();
-    return PAGE_MAP[page] || page;
-  }
-
-  function perms(){
-    var key = currentRole();
-
-    return roles[key] ||
-      (window.S && S.roles && (S.roles[key] || S.roles[key.charAt(0).toUpperCase() + key.slice(1)])) ||
-      (window.S && S.rolePerms && (S.rolePerms[key] || S.rolePerms[key.charAt(0).toUpperCase() + key.slice(1)])) ||
-      {};
-  }
-
-  function firebaseAllowed(page){
-    var key = pageKey(page);
-
-    if(currentRole() === 'admin') return true;
-
-    var p = perms();
-
-    if(Object.prototype.hasOwnProperty.call(p, key)){
-      return !!p[key];
-    }
-
-    return false;
-  }
-
-  function applyRoles(data){
-    roles = {};
-
-    Object.keys(data || {}).forEach(function(key){
-      var roleKey = normalizeRole(key);
-      roles[roleKey] = Object.assign({}, data[key] || {});
-    });
-
-    if(roles.sales) roles.cashier = roles.sales;
-    if(roles.cashier && !roles.sales) roles.sales = roles.cashier;
-
-    try{
-      localStorage.setItem(CACHE_KEY, JSON.stringify(roles));
-    }catch(e){}
-
-    try{
-      S.roles = S.roles || {};
-      S.rolePerms = S.rolePerms || {};
-
-      Object.keys(roles).forEach(function(key){
-        var title = key.charAt(0).toUpperCase() + key.slice(1);
-        if(key === 'sales') title = 'Sales';
-        if(key === 'dispatcher') title = 'Dispatcher';
-
-        S.roles[key] = roles[key];
-        S.roles[title] = roles[key];
-        S.rolePerms[key] = roles[key];
-        S.rolePerms[title] = roles[key];
-      });
-
-      if(roles.sales){
-        S.roles.cashier = roles.sales;
-        S.roles.Cashier = roles.sales;
-        S.rolePerms.cashier = roles.sales;
-        S.rolePerms.Cashier = roles.sales;
-      }
-
-      if(typeof sv === 'function') sv();
-    }catch(e){}
-
-    installOverrides();
-
-    console.log('[Safe access override] roles applied:', currentRole(), perms());
-  }
-
-  function loadCache(){
-    try{
-      var cached = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}') || {};
-      if(Object.keys(cached).length){
-        applyRoles(cached);
-      }
-    }catch(e){}
-  }
-
-  function fetchRoles(){
-    fetch(DB_URL + '/stores/' + STORE_ID + '/roles.json', {cache:'no-store'})
-      .then(function(res){ return res.json(); })
-      .then(applyRoles)
-      .catch(function(err){ console.warn('[Safe access override] fetch failed', err); });
-  }
-
-  function installOverrides(){
-    window.firebaseAllowed = firebaseAllowed;
-    window.firebaseCanAccessPage = firebaseAllowed;
-
-    [
-      'canAccess',
-      'hasAccess',
-      'canView',
-      'hasPerm',
-      'allowed',
-      'can'
-    ].forEach(function(name){
-      var old = window[name] || (typeof globalThis[name] === 'function' ? globalThis[name] : null);
-
-      if(typeof old === 'function' && !old.__firebaseSafeAccessOverrideV2){
-        var wrapped = function(page){
-          var key = pageKey(page);
-
-          if([
-            'dashboard','pos','orders','kitchen','delivery','pickup',
-            'stocks','products','accounts','journal','billing','chat'
-          ].indexOf(key) !== -1){
-            return firebaseAllowed(key);
-          }
-
-          return old.apply(this, arguments);
-        };
-
-        wrapped.__firebaseSafeAccessOverrideV2 = true;
-
-        window[name] = wrapped;
-        try{ globalThis[name] = wrapped; }catch(e){}
-        try{ eval(name + ' = window["' + name + '"]'); }catch(e){}
-      }
-    });
-
-    // Important: do NOT force-open views here.
-    // Let the original app's go() function handle page routing.
-    var oldGo = window.go || (typeof globalThis.go === 'function' ? globalThis.go : null);
-
-    if(typeof oldGo === 'function' && !oldGo.__firebaseSafeAccessOverrideV2){
-      var wrappedGo = function(page){
-        var key = pageKey(page);
-
-        if([
-          'dashboard','pos','orders','kitchen','delivery','pickup',
-          'stocks','products','accounts','journal','billing','chat'
-        ].indexOf(key) !== -1 && !firebaseAllowed(key)){
-          try{ if(typeof toast === 'function') toast('Access restricted for your role', 'err'); }catch(e){}
-          return false;
-        }
-
-        return oldGo.apply(this, arguments);
-      };
-
-      wrappedGo.__firebaseSafeAccessOverrideV2 = true;
-      window.go = wrappedGo;
-      try{ globalThis.go = wrappedGo; }catch(e){}
-      try{ go = wrappedGo; }catch(e){}
-    }
-  }
-
-  function boot(){
-    loadCache();
-    fetchRoles();
-    installOverrides();
-
-    setTimeout(function(){
-      loadCache();
-      fetchRoles();
-      installOverrides();
-    }, 700);
-
-    setInterval(function(){
-      fetchRoles();
-      installOverrides();
-    }, 5000);
-
-    console.log('[Safe access override] started');
-  }
-
-  if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 100); });
-  }else{
-    setTimeout(boot, 100);
-  }
-})();
-</script>
 
 
 <script id="firebase-billing-permission-alias-v1">
@@ -16123,6 +14733,262 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 
 
 
+
+
+<script id="firebase-unified-role-menu-filter-v1">
+(function(){
+  var DB_URL = 'https://fruities-pos-default-rtdb.asia-southeast1.firebasedatabase.app';
+  var STORE_ID = 'fruit-story-main';
+  var CACHE_KEY = 'fruities_cached_firebase_roles_v1';
+  var roles = {};
+
+  function normalizeRole(role){
+    role = String(role || '').trim().toLowerCase();
+    if(role === 'cashier') role = 'sales';
+    if(role === 'administrator') role = 'admin';
+    return role || 'sales';
+  }
+
+  function currentRole(){
+    try{
+      var cur = S && S.cur ? S.cur : {};
+      var role = cur.roleKey || cur.role || '';
+
+      if(!role && cur.user && Array.isArray(S.accounts)){
+        var acc = S.accounts.find(function(a){
+          return String(a.user || a.username || a.id).toLowerCase() === String(cur.user).toLowerCase();
+        });
+
+        if(acc) role = acc.roleKey || acc.role;
+      }
+
+      return normalizeRole(role);
+    }catch(e){
+      return 'sales';
+    }
+  }
+
+  function pageFromMenuItem(el){
+    var dataV = String(el.getAttribute('data-v') || '').toLowerCase();
+    var text = String(el.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+
+    // Important: original POS Billing uses data-v="system".
+    if(dataV === 'system' && text.indexOf('billing') !== -1){
+      return 'billing';
+    }
+
+    if(text.indexOf('pos billing') !== -1){
+      return 'billing';
+    }
+
+    var map = {
+      dashboard: 'dashboard',
+      pos: 'pos',
+      orders: 'orders',
+      kitchen: 'kitchen',
+      delivery: 'delivery',
+      pickup: 'pickup',
+      stocks: 'stocks',
+      products: 'products',
+      accounts: 'accounts',
+      journal: 'journal',
+      chat: 'chat',
+      system: 'billing'
+    };
+
+    return map[dataV] || dataV;
+  }
+
+  function getRolePerms(){
+    var key = currentRole();
+
+    return roles[key] ||
+      (window.S && S.roles && (S.roles[key] || S.roles[key.charAt(0).toUpperCase() + key.slice(1)])) ||
+      (window.S && S.rolePerms && (S.rolePerms[key] || S.rolePerms[key.charAt(0).toUpperCase() + key.slice(1)])) ||
+      {};
+  }
+
+  function allowed(page){
+    if(currentRole() === 'admin') return true;
+
+    var perms = getRolePerms();
+
+    if(page === 'billing'){
+      return !!(
+        perms.billing ||
+        perms.system ||
+        perms.posBilling ||
+        perms.pos_billing ||
+        perms.billingAccess
+      );
+    }
+
+    if(Object.prototype.hasOwnProperty.call(perms, page)){
+      return !!perms[page];
+    }
+
+    return false;
+  }
+
+  function applyRoles(data){
+    roles = {};
+
+    Object.keys(data || {}).forEach(function(key){
+      var roleKey = normalizeRole(key);
+      var role = Object.assign({}, data[key] || {});
+
+      // Keep billing aliases consistent.
+      var bill = !!(
+        role.billing ||
+        role.system ||
+        role.posBilling ||
+        role.pos_billing ||
+        role.billingAccess
+      );
+
+      role.billing = bill;
+      role.system = bill;
+      role.posBilling = bill;
+      role.pos_billing = bill;
+      role.billingAccess = bill;
+
+      roles[roleKey] = role;
+    });
+
+    if(roles.sales) roles.cashier = roles.sales;
+
+    try{
+      localStorage.setItem(CACHE_KEY, JSON.stringify(roles));
+    }catch(e){}
+
+    try{
+      S.roles = S.roles || {};
+      S.rolePerms = S.rolePerms || {};
+
+      Object.keys(roles).forEach(function(key){
+        var title = key.charAt(0).toUpperCase() + key.slice(1);
+        if(key === 'sales') title = 'Sales';
+        if(key === 'dispatcher') title = 'Dispatcher';
+
+        S.roles[key] = roles[key];
+        S.roles[title] = roles[key];
+
+        S.rolePerms[key] = roles[key];
+        S.rolePerms[title] = roles[key];
+      });
+
+      if(roles.sales){
+        S.roles.cashier = roles.sales;
+        S.roles.Cashier = roles.sales;
+        S.rolePerms.cashier = roles.sales;
+        S.rolePerms.Cashier = roles.sales;
+      }
+
+      if(typeof sv === 'function') sv();
+    }catch(e){}
+
+    filterMenu();
+  }
+
+  function loadCachedRoles(){
+    try{
+      var cached = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}') || {};
+      if(Object.keys(cached).length){
+        applyRoles(cached);
+        return true;
+      }
+    }catch(e){}
+    return false;
+  }
+
+  function fetchRoles(){
+    fetch(DB_URL + '/stores/' + STORE_ID + '/roles.json', {cache:'no-store'})
+      .then(function(res){ return res.json(); })
+      .then(applyRoles)
+      .catch(function(err){
+        console.warn('[Unified role filter] roles fetch failed', err);
+        filterMenu();
+      });
+  }
+
+  function filterMenu(){
+    try{
+      document.querySelectorAll('.ni[data-v], .mni[data-v]').forEach(function(item){
+        var page = pageFromMenuItem(item);
+        if(!page) return;
+
+        var can = allowed(page);
+
+        item.setAttribute('data-firebase-role-page', page);
+        item.setAttribute('data-firebase-role-allowed', can ? 'true' : 'false');
+        item.style.display = can ? '' : 'none';
+      });
+
+      document.body.classList.add('firebase-menu-ready');
+      document.body.classList.add('role-menu-filtered');
+      document.body.classList.add('firebase-role-menu-ready');
+    }catch(e){
+      console.warn('[Unified role filter] filter failed', e);
+      document.body.classList.add('firebase-menu-ready');
+    }
+  }
+
+  function wrapGo(){
+    if(window.__firebaseUnifiedRoleGoWrapped) return;
+
+    var oldGo = window.go || (typeof go === 'function' ? go : null);
+    if(typeof oldGo !== 'function') return;
+
+    var wrapped = function(v){
+      var page = String(v || '').toLowerCase();
+
+      // Original POS Billing route is system, but permission is billing.
+      var permissionPage = page === 'system' ? 'billing' : page;
+
+      if([
+        'dashboard','pos','orders','kitchen','delivery','pickup',
+        'stocks','products','accounts','journal','billing','chat','system'
+      ].indexOf(page) !== -1 && !allowed(permissionPage)){
+        try{ if(typeof toast === 'function') toast('Access restricted for your role', 'err'); }catch(e){}
+        return false;
+      }
+
+      return oldGo.apply(this, arguments);
+    };
+
+    window.go = wrapped;
+    try{ go = wrapped; }catch(e){}
+
+    window.__firebaseUnifiedRoleGoWrapped = true;
+  }
+
+  function boot(){
+    loadCachedRoles();
+    filterMenu();
+    wrapGo();
+    fetchRoles();
+
+    setTimeout(filterMenu, 100);
+    setTimeout(filterMenu, 400);
+    setTimeout(filterMenu, 1200);
+
+    setInterval(function(){
+      loadCachedRoles();
+      filterMenu();
+    }, 1000);
+
+    setInterval(fetchRoles, 5000);
+
+    console.log('[Unified role filter] started');
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 50); });
+  }else{
+    setTimeout(boot, 50);
+  }
+})();
+</script>
 
 </body>
 </html>
