@@ -1990,40 +1990,6 @@ body.dark #chat-minimize-channels-btn.is-collapsed{background:#14281e!important;
 
 
 
-<style id="superadmin-safe-ui-fix-style-v4">
-  body.superadmin-mode #mnav {
-    display: none !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
-  }
-
-  body.superadmin-mode #ct {
-    bottom: 0 !important;
-    padding-bottom: 150px !important;
-    scroll-padding-bottom: 150px !important;
-  }
-
-  body.superadmin-mode #view-superadmin {
-    padding-bottom: 180px !important;
-    min-height: calc(100dvh - 58px) !important;
-  }
-
-  body.superadmin-mode #superadmin-nav-item {
-    display: flex !important;
-    visibility: visible !important;
-  }
-
-  @media(max-width:768px){
-    body.superadmin-mode #ct {
-      bottom: 0 !important;
-      padding-bottom: 170px !important;
-    }
-
-    body.superadmin-mode #view-superadmin {
-      padding-bottom: 200px !important;
-    }
-  }
-</style>
 
 </head>
 <body>
@@ -15190,6 +15156,11 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
         }
 
         openSuperadmin();
+
+        try{
+          history.replaceState(null, '', '/');
+        }catch(e){}
+
         return false;
       };
 
@@ -15548,7 +15519,15 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
     prefillSuperadminLogin();
 
     if(isSuperadmin()){
-      setTimeout(openSuperadmin, 300);
+      setTimeout(function(){
+        openSuperadmin();
+
+        // Important: /su is only an entry link.
+        // After opening Superadmin, return URL to root so normal sidebar navigation works.
+        try{
+          history.replaceState(null, '', '/');
+        }catch(e){}
+      }, 300);
     }
   }
 
@@ -15594,214 +15573,6 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 
 
 
-<script id="superadmin-safe-ui-fix-v4">
-(function(){
-  var openedSuOnce = false;
-
-  function roleKey(){
-    try{
-      var cur = S && S.cur ? S.cur : {};
-      var role = cur.roleKey || cur.role || '';
-
-      if(!role && cur.user && Array.isArray(S.accounts)){
-        var acc = S.accounts.find(function(a){
-          return String(a.user || a.username || a.id).toLowerCase() === String(cur.user).toLowerCase();
-        });
-        if(acc) role = acc.roleKey || acc.role;
-      }
-
-      role = String(role || '').trim().toLowerCase();
-      if(role === 'administrator') role = 'admin';
-      if(role === 'cashier') role = 'sales';
-
-      return role;
-    }catch(e){
-      return '';
-    }
-  }
-
-  function isSuperadmin(){
-    return roleKey() === 'superadmin';
-  }
-
-  function isSuPath(){
-    return location.pathname === '/su' || location.pathname === '/su/';
-  }
-
-  function superView(){
-    return document.getElementById('view-superadmin');
-  }
-
-  function activeViewId(){
-    var active = document.querySelector('.view.on, [id^="view-"].on');
-    if(active && active.id) return active.id;
-
-    var visible = Array.from(document.querySelectorAll('.view, [id^="view-"]')).find(function(v){
-      return v.id && v.style.display !== 'none';
-    });
-
-    return visible && visible.id ? visible.id : '';
-  }
-
-  function isSuperadminActive(){
-    return activeViewId() === 'view-superadmin';
-  }
-
-  function setTopbarTitleForSuperadmin(){
-    if(!isSuperadminActive()) return;
-
-    var topbar = document.getElementById('topbar');
-    if(!topbar) return;
-
-    Array.from(topbar.querySelectorAll('*')).forEach(function(el){
-      var t = String(el.textContent || '').trim();
-
-      if(
-        t === 'Dashboard' ||
-        t === 'Admin Panel' ||
-        t === 'Products' ||
-        t === 'Orders' ||
-        t === 'Kitchen Board' ||
-        t === 'Delivery' ||
-        t === 'Pick up' ||
-        t === 'POS Terminal'
-      ){
-        el.textContent = 'Superadmin Panel';
-      }
-    });
-
-    document.title = 'Superadmin Panel · Fruit Story POS';
-  }
-
-  function updateMode(){
-    if(isSuperadminActive()){
-      document.body.classList.add('superadmin-mode');
-      setTopbarTitleForSuperadmin();
-    }else{
-      document.body.classList.remove('superadmin-mode');
-
-      var mnav = document.getElementById('mnav');
-      if(mnav){
-        mnav.style.display = '';
-        mnav.style.visibility = '';
-        mnav.style.pointerEvents = '';
-      }
-    }
-  }
-
-  function showSuperadminNavOnlyForSuperadmin(){
-    var item = document.getElementById('superadmin-nav-item');
-    if(!item) return;
-
-    item.style.display = isSuperadmin() ? '' : 'none';
-    item.style.visibility = isSuperadmin() ? 'visible' : 'hidden';
-  }
-
-  function openSuperadminOnceFromSu(){
-    if(openedSuOnce) return;
-    if(!isSuPath()) return;
-    if(!isSuperadmin()) return;
-
-    var v = superView();
-    if(!v) return;
-
-    openedSuOnce = true;
-
-    if(typeof window.openSuperadmin === 'function'){
-      window.openSuperadmin();
-    }else{
-      document.querySelectorAll('[id^="view-"], .view').forEach(function(x){
-        x.classList.remove('on');
-        x.style.display = 'none';
-      });
-
-      v.classList.add('on');
-      v.style.display = 'block';
-    }
-
-    setTimeout(updateMode, 100);
-  }
-
-  function patchSuperadminNavClick(){
-    var item = document.getElementById('superadmin-nav-item');
-    if(!item || item.__superadminSafeClickV4) return;
-
-    item.__superadminSafeClickV4 = true;
-
-    item.addEventListener('click', function(e){
-      if(!isSuperadmin()) return;
-
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-
-      if(typeof window.openSuperadmin === 'function'){
-        window.openSuperadmin();
-      }
-
-      setTimeout(updateMode, 100);
-      return false;
-    }, true);
-  }
-
-  function patchNormalNavClicks(){
-    if(window.__superadminSafeNormalNavV4) return;
-    window.__superadminSafeNormalNavV4 = true;
-
-    document.addEventListener('click', function(e){
-      var nav = e.target && e.target.closest ? e.target.closest('.ni[data-v], .mni[data-v]') : null;
-      if(!nav) return;
-
-      if(nav.id === 'superadmin-nav-item') return;
-
-      // User clicked a normal page. Stop forcing Superadmin mode.
-      openedSuOnce = true;
-
-      setTimeout(function(){
-        if(!isSuperadminActive()){
-          document.body.classList.remove('superadmin-mode');
-        }
-        updateMode();
-      }, 180);
-    }, true);
-  }
-
-  function boot(){
-    showSuperadminNavOnlyForSuperadmin();
-    patchSuperadminNavClick();
-    patchNormalNavClicks();
-
-    openSuperadminOnceFromSu();
-    updateMode();
-
-    setTimeout(function(){
-      showSuperadminNavOnlyForSuperadmin();
-      patchSuperadminNavClick();
-      openSuperadminOnceFromSu();
-      updateMode();
-    }, 800);
-
-    setTimeout(function(){
-      showSuperadminNavOnlyForSuperadmin();
-      updateMode();
-    }, 1800);
-
-    setInterval(function(){
-      showSuperadminNavOnlyForSuperadmin();
-      patchSuperadminNavClick();
-      updateMode();
-    }, 2000);
-
-    console.log('[Superadmin safe UI fix v4] started');
-  }
-
-  if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 400); });
-  }else{
-    setTimeout(boot, 400);
-  }
-})();
-</script>
 
 </body>
 </html>
