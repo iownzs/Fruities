@@ -1994,28 +1994,64 @@ body.dark #chat-minimize-channels-btn.is-collapsed{background:#14281e!important;
 
 
 
+
+
+<script id="firebase-billing-early-checking-v1">
+  document.documentElement.classList.add('firebase-billing-checking');
+</script>
+
 <style id="firebase-billing-lock-no-flicker-v1">
-  body.firebase-billing-checking #app,
-  body.firebase-billing-checking #main,
-  body.firebase-billing-checking #sb,
-  body.firebase-billing-checking #mnav,
-  body.firebase-billing-checking #topbar,
-  body.firebase-billing-checking #ct {
-    visibility: hidden !important;
+  html.firebase-billing-checking body {
+    background: linear-gradient(135deg,#fff7f7,#f7f4ec) !important;
   }
 
-  body.firebase-billing-ready #app,
-  body.firebase-billing-ready #main,
-  body.firebase-billing-ready #sb,
-  body.firebase-billing-ready #mnav,
-  body.firebase-billing-ready #topbar,
-  body.firebase-billing-ready #ct {
-    visibility: visible;
+  html.firebase-billing-checking body::before {
+    content: "🔒";
+    position: fixed;
+    left: 50%;
+    top: calc(50% - 54px);
+    transform: translate(-50%,-50%);
+    z-index: 999998;
+    font-size: 54px;
+  }
+
+  html.firebase-billing-checking body::after {
+    content: "Checking POS access...";
+    position: fixed;
+    left: 50%;
+    top: calc(50% + 10px);
+    transform: translate(-50%,-50%);
+    z-index: 999998;
+    font-family: Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    font-size: 15px;
+    font-weight: 900;
+    color: #7f1d1d;
+  }
+
+  html.firebase-billing-checking #app,
+  html.firebase-billing-checking #login-screen,
+  html.firebase-billing-checking #main,
+  html.firebase-billing-checking #sb,
+  html.firebase-billing-checking #mnav,
+  html.firebase-billing-checking #topbar,
+  html.firebase-billing-checking #ct,
+  html.firebase-billing-checking #pr,
+  html.firebase-billing-checking .plo,
+  html.firebase-billing-checking .plo-card,
+  html.firebase-billing-checking .payment-lock,
+  html.firebase-billing-checking [id*="lock"],
+  html.firebase-billing-checking [class*="lock"] {
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+
+  html.firebase-billing-ready body::before,
+  html.firebase-billing-ready body::after {
+    content: none !important;
+    display: none !important;
   }
 </style>
-<script>
-  document.body.classList.add('firebase-billing-checking');
-</script>
 
 </head>
 <body>
@@ -15325,8 +15361,9 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
     billingCache = billing || {};
     applyBillingToLocal(billingCache);
 
-    document.body.classList.remove('firebase-billing-checking');
-    document.body.classList.add('firebase-billing-ready');
+
+    document.documentElement.classList.remove('firebase-billing-checking');
+    document.documentElement.classList.add('firebase-billing-ready');
 
     if(isBillingLocked(billingCache)){
       showLockedOverlay(billingCache);
@@ -15346,9 +15383,7 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
       })
       .catch(function(err){
         console.warn('[Billing Lock Enforcer] fetch failed', err);
-        document.body.classList.remove('firebase-billing-checking');
-        document.body.classList.add('firebase-billing-ready');
-      });
+              });
   }
 
   function patchRequireMonthlyAccess(){
