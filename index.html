@@ -14356,6 +14356,7 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
     data = data || {};
 
     var roles = {};
+  var ROLE_CACHE_KEY = 'fruities_cached_firebase_roles_v1';
 
     ROLE_OPTIONS.forEach(function(role){
       roles[role.key] = Object.assign({}, data[role.key] || {});
@@ -14963,6 +14964,29 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
     console.log('[Role enforcer] Roles applied for role:', getCurrentRoleKey(), getPerms());
   }
 
+
+  function loadCachedRoles(){
+    try{
+      var cached = JSON.parse(localStorage.getItem(ROLE_CACHE_KEY) || '{}') || {};
+      if(cached && Object.keys(cached).length){
+        roles = cached;
+        filterMenus();
+        blockCurrentView();
+        wrapGo();
+        document.body.classList.add('firebase-role-menu-ready');
+        console.log('[Hard role menu filter] loaded cached roles:', roleKey(), roles[roleKey()]);
+        return true;
+      }
+    }catch(e){}
+    return false;
+  }
+
+  function saveCachedRoles(){
+    try{
+      localStorage.setItem(ROLE_CACHE_KEY, JSON.stringify(roles || {}));
+    }catch(e){}
+  }
+
   function fetchRoles(){
     fetch(DB_URL + '/stores/' + STORE_ID + '/roles.json', { cache: 'no-store' })
       .then(function(res){
@@ -14980,6 +15004,7 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
   }
 
   function boot(){
+    loadCachedRoles();
     fetchRoles();
     wrapGo();
 
@@ -15217,6 +15242,29 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
     window.__hardRoleMenuFilterGoWrapped = true;
   }
 
+
+  function loadCachedRoles(){
+    try{
+      var cached = JSON.parse(localStorage.getItem(ROLE_CACHE_KEY) || '{}') || {};
+      if(cached && Object.keys(cached).length){
+        roles = cached;
+        filterMenus();
+        blockCurrentView();
+        wrapGo();
+        document.body.classList.add('firebase-role-menu-ready');
+        console.log('[Hard role menu filter] loaded cached roles:', roleKey(), roles[roleKey()]);
+        return true;
+      }
+    }catch(e){}
+    return false;
+  }
+
+  function saveCachedRoles(){
+    try{
+      localStorage.setItem(ROLE_CACHE_KEY, JSON.stringify(roles || {}));
+    }catch(e){}
+  }
+
   function fetchRoles(){
     fetch(DB_URL + '/stores/' + STORE_ID + '/roles.json', {cache:'no-store'})
       .then(function(res){ return res.json(); })
@@ -15230,6 +15278,8 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
         });
 
         if(roles.sales) roles.cashier = roles.sales;
+
+        saveCachedRoles();
 
         filterMenus();
         blockCurrentView();
@@ -15267,7 +15317,7 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 
     setTimeout(function(){
       try{ document.body.classList.add('firebase-role-menu-ready'); }catch(e){}
-    }, 4000);
+    }, 1200);
 
     console.log('[Hard role menu filter] started');
   }
