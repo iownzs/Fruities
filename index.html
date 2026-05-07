@@ -14819,7 +14819,7 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
   }
 
   function allowed(page){
-    if(currentRole() === 'admin') return true;
+    if((currentRole() === 'admin' || currentRole() === 'superadmin')) return true;
 
     var perms = getRolePerms();
 
@@ -15013,6 +15013,180 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 
 
 
+
+
+<script id="superadmin-full-access-fix-v1">
+(function(){
+  function normalizeRole(role){
+    role = String(role || '').trim().toLowerCase();
+    if(role === 'administrator') role = 'admin';
+    if(role === 'cashier') role = 'sales';
+    return role;
+  }
+
+  function getCurrentRole(){
+    try{
+      var cur = window.S && S.cur ? S.cur : {};
+      var role = cur.roleKey || cur.role || '';
+
+      if(!role && cur.user && Array.isArray(S.accounts)){
+        var account = S.accounts.find(function(a){
+          return String(a.user || a.username || a.id).toLowerCase() === String(cur.user).toLowerCase();
+        });
+
+        if(account){
+          role = account.roleKey || account.role;
+        }
+      }
+
+      return normalizeRole(role);
+    }catch(e){
+      return '';
+    }
+  }
+
+  function isSuperadmin(){
+    return getCurrentRole() === 'superadmin';
+  }
+
+  function grantSuperadminLocalAccess(){
+    if(!isSuperadmin()) return;
+
+    var full = {
+      superadmin: true,
+      dashboard: true,
+      pos: true,
+      orders: true,
+      kitchen: true,
+      delivery: true,
+      pickup: true,
+      stocks: true,
+      products: true,
+      accounts: true,
+      journal: true,
+      billing: true,
+      system: true,
+      chat: true,
+      storeManagement: true,
+      billingManagement: true,
+      posLock: true,
+      databaseTools: true,
+      backupExport: true,
+      emergencyAccess: true
+    };
+
+    try{
+      S.roles = S.roles || {};
+      S.rolePerms = S.rolePerms || {};
+
+      S.roles.superadmin = full;
+      S.roles.Superadmin = full;
+      S.roles['Super Admin'] = full;
+
+      S.rolePerms.superadmin = full;
+      S.rolePerms.Superadmin = full;
+      S.rolePerms['Super Admin'] = full;
+
+      if(S.cur){
+        S.cur.roleKey = 'superadmin';
+        S.cur.role = 'Superadmin';
+      }
+    }catch(e){}
+  }
+
+  function showAllMenusForSuperadmin(){
+    if(!isSuperadmin()) return;
+
+    document.querySelectorAll('.ni[data-v], .mni[data-v]').forEach(function(item){
+      item.style.display = '';
+      item.style.visibility = 'visible';
+      item.style.pointerEvents = '';
+      item.setAttribute('data-firebase-role-allowed', 'true');
+      item.setAttribute('data-role-direct-allowed', 'true');
+    });
+  }
+
+  function patchPermissionFunctions(){
+    [
+      'canAccess',
+      'hasAccess',
+      'canView',
+      'hasPerm',
+      'allowed',
+      'can'
+    ].forEach(function(name){
+      var old = window[name] || (typeof globalThis[name] === 'function' ? globalThis[name] : null);
+
+      if(typeof old === 'function' && !old.__superadminFullAccessFixV1){
+        var wrapped = function(){
+          if(isSuperadmin()) return true;
+          return old.apply(this, arguments);
+        };
+
+        wrapped.__superadminFullAccessFixV1 = true;
+
+        window[name] = wrapped;
+        try{ globalThis[name] = wrapped; }catch(e){}
+        try{ eval(name + ' = window["' + name + '"]'); }catch(e){}
+      }
+    });
+  }
+
+  function patchGo(){
+    if(window.__superadminGoFullAccessFixV1) return;
+
+    var oldGo = window.go || (typeof go === 'function' ? go : null);
+    if(typeof oldGo !== 'function') return;
+
+    var wrapped = function(v){
+      grantSuperadminLocalAccess();
+
+      if(isSuperadmin()){
+        return oldGo.apply(this, arguments);
+      }
+
+      return oldGo.apply(this, arguments);
+    };
+
+    window.go = wrapped;
+    try{ go = wrapped; }catch(e){}
+
+    window.__superadminGoFullAccessFixV1 = true;
+  }
+
+  function boot(){
+    grantSuperadminLocalAccess();
+    patchPermissionFunctions();
+    patchGo();
+    showAllMenusForSuperadmin();
+
+    setTimeout(function(){
+      grantSuperadminLocalAccess();
+      patchPermissionFunctions();
+      patchGo();
+      showAllMenusForSuperadmin();
+    }, 500);
+
+    setTimeout(function(){
+      grantSuperadminLocalAccess();
+      showAllMenusForSuperadmin();
+    }, 1500);
+
+    setInterval(function(){
+      grantSuperadminLocalAccess();
+      showAllMenusForSuperadmin();
+    }, 3000);
+
+    console.log('[Superadmin full access fix] started');
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 300); });
+  }else{
+    setTimeout(boot, 300);
+  }
+})();
+</script>
 
 </body>
 </html>
