@@ -11427,5 +11427,158 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 })();
 </script>
 
+
+<script id="firebase-order-read-classic-v1">
+(function(){
+  var DB_URL = 'https://fruities-pos-default-rtdb.asia-southeast1.firebasedatabase.app';
+  var STORE_ID = 'fruit-story-main';
+  var LAST_HASH = '';
+
+  function getLocalOrders(){
+    try{
+      if(typeof S === 'undefined' || !S)return [];
+      if(!Array.isArray(S.orders))S.orders = [];
+      return S.orders;
+    }catch(e){
+      return [];
+    }
+  }
+
+  function orderKey(order){
+    return String(
+      (order && (order.id || order.orderNumber || order.no || order.num)) || ''
+    );
+  }
+
+  function normalizeFirebaseOrders(data){
+    if(!data)return [];
+
+    if(Array.isArray(data)){
+      return data.filter(function(order){
+        return order && typeof order === 'object';
+      });
+    }
+
+    return Object.keys(data).map(function(key){
+      var order = data[key] || {};
+      if(!order.id)order.id = key;
+      if(!order.orderNumber)order.orderNumber = order.no || key;
+      return order;
+    });
+  }
+
+  function sortOrders(orders){
+    return orders.slice().sort(function(a,b){
+      var at = Number(a.createdAt || a.created || a.time || 0);
+      var bt = Number(b.createdAt || b.created || b.time || 0);
+
+      if(bt !== at)return bt - at;
+
+      var an = String(a.orderNumber || a.id || '');
+      var bn = String(b.orderNumber || b.id || '');
+
+      return bn.localeCompare(an);
+    });
+  }
+
+  function mergeOrders(firebaseOrders){
+    var localOrders = getLocalOrders();
+    var map = {};
+
+    localOrders.forEach(function(order){
+      var key = orderKey(order);
+      if(key)map[key] = order;
+    });
+
+    firebaseOrders.forEach(function(order){
+      var key = orderKey(order);
+      if(key)map[key] = Object.assign({}, map[key] || {}, order, {firebaseSynced:true});
+    });
+
+    return sortOrders(Object.keys(map).map(function(key){return map[key];}));
+  }
+
+  function refreshOrderScreens(){
+    try{ if(typeof sv === 'function')sv(); }catch(e){}
+
+    try{ if(typeof rOrds === 'function')rOrds(); }catch(e){}
+    try{ if(typeof rDash === 'function')rDash(); }catch(e){}
+    try{ if(typeof rKitchen === 'function')rKitchen(); }catch(e){}
+    try{ if(typeof rDel === 'function')rDel(); }catch(e){}
+    try{ if(typeof rPickup === 'function')rPickup(); }catch(e){}
+    try{ if(typeof rJnl === 'function')rJnl(); }catch(e){}
+  }
+
+  function applyFirebaseOrders(data){
+    var firebaseOrders = normalizeFirebaseOrders(data);
+
+    if(!firebaseOrders.length){
+      console.warn('[Firebase order read] No Firebase orders found; keeping local orders');
+      return;
+    }
+
+    var hash = JSON.stringify(firebaseOrders.map(function(order){
+      return {
+        id: order.id,
+        orderNumber: order.orderNumber,
+        status: order.status,
+        kitchenStatus: order.kitchenStatus,
+        deliveryStatus: order.deliveryStatus,
+        pickupStatus: order.pickupStatus,
+        updatedAt: order.updatedAt,
+        syncedAt: order.syncedAt
+      };
+    }));
+
+    if(hash === LAST_HASH)return;
+    LAST_HASH = hash;
+
+    try{
+      if(typeof S === 'undefined' || !S)return;
+
+      S.orders = mergeOrders(firebaseOrders);
+
+      refreshOrderScreens();
+
+      console.log('[Firebase order read] Orders loaded:', S.orders.length);
+    }catch(e){
+      console.error('[Firebase order read] Apply failed:', e);
+    }
+  }
+
+  function fetchOrders(){
+    var url = DB_URL + '/stores/' + STORE_ID + '/orders.json';
+
+    fetch(url, {cache:'no-store'})
+      .then(function(res){
+        if(!res.ok){
+          return res.text().then(function(t){
+            throw new Error('Firebase order read failed ' + res.status + ': ' + t);
+          });
+        }
+        return res.json();
+      })
+      .then(applyFirebaseOrders)
+      .catch(function(err){
+        console.warn('[Firebase order read] Fetch failed:', err);
+      });
+  }
+
+  function boot(){
+    fetchOrders();
+    setInterval(fetchOrders, 4000);
+    console.log('[Firebase order read] Polling started');
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){
+      setTimeout(boot, 1500);
+    });
+  }else{
+    setTimeout(boot, 1500);
+  }
+})();
+</script>
+
 </body>
 </html>
