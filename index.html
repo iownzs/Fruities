@@ -14647,5 +14647,357 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 })();
 </script>
 
+
+<script id="firebase-role-permission-enforcer-v1">
+(function(){
+  var DB_URL = 'https://fruities-pos-default-rtdb.asia-southeast1.firebasedatabase.app';
+  var STORE_ID = 'fruit-story-main';
+  var latestRoles = {};
+
+  var PAGE_ALIASES = {
+    dashboard: ['dashboard', 'home'],
+    pos: ['pos', 'pos terminal', 'terminal'],
+    orders: ['orders', 'order'],
+    kitchen: ['kitchen', 'kitchen board'],
+    delivery: ['delivery'],
+    pickup: ['pickup', 'pick up'],
+    stocks: ['stocks', 'stock'],
+    products: ['products', 'product'],
+    accounts: ['accounts', 'admin panel', 'admin', 'users'],
+    journal: ['journal', 'journal / reports', 'reports'],
+    billing: ['billing', 'pos billing'],
+    chat: ['chat', 'group chat']
+  };
+
+  function normalizeRoleKey(role){
+    role = String(role || '').trim().toLowerCase();
+
+    if(role === 'cashier') return 'sales';
+    if(role === 'administrator') return 'admin';
+
+    return role;
+  }
+
+  function getCurrentUser(){
+    try{
+      return (S && S.cur) || {};
+    }catch(e){
+      return {};
+    }
+  }
+
+  function getCurrentRoleKey(){
+    var cur = getCurrentUser();
+
+    var role =
+      cur.roleKey ||
+      cur.role ||
+      cur.type ||
+      cur.accountRole ||
+      '';
+
+    // Some app states store user object differently
+    if(!role && cur.user && Array.isArray(S.accounts)){
+      var account = S.accounts.find(function(a){
+        return String(a.user || a.username || a.id) === String(cur.user);
+      });
+
+      if(account){
+        role = account.roleKey || account.role;
+      }
+    }
+
+    return normalizeRoleKey(role || 'sales');
+  }
+
+  function getPerms(){
+    var roleKey = getCurrentRoleKey();
+
+    var role =
+      latestRoles[roleKey] ||
+      latestRoles[roleKey.toLowerCase()] ||
+      (S && S.roles && (S.roles[roleKey] || S.roles[roleKey.toLowerCase()])) ||
+      (S && S.rolePerms && (S.rolePerms[roleKey] || S.rolePerms[roleKey.toLowerCase()])) ||
+      {};
+
+    return role || {};
+  }
+
+  function canAccess(pageKey){
+    pageKey = String(pageKey || '').toLowerCase();
+
+    var perms = getPerms();
+
+    if(getCurrentRoleKey() === 'admin') return true;
+
+    if(Object.prototype.hasOwnProperty.call(perms, pageKey)){
+      return !!perms[pageKey];
+    }
+
+    return false;
+  }
+
+  function detectPageFromText(text){
+    text = String(text || '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+
+    var found = '';
+
+    Object.keys(PAGE_ALIASES).forEach(function(pageKey){
+      PAGE_ALIASES[pageKey].forEach(function(alias){
+        if(text === alias || text.indexOf(alias) !== -1){
+          if(!found || alias.length > found.length){
+            found = pageKey;
+          }
+        });
+      });
+    });
+
+    return found;
+  }
+
+  function detectPageFromElement(el){
+    if(!el) return '';
+
+    var attrs = [
+      el.getAttribute && el.getAttribute('data-view'),
+      el.getAttribute && el.getAttribute('data-page'),
+      el.getAttribute && el.getAttribute('onclick'),
+      el.id,
+      el.className,
+      el.textContent
+    ].join(' ');
+
+    return detectPageFromText(attrs);
+  }
+
+  function hideBlockedNav(){
+    try{
+      var selectors = [
+        'nav a',
+        'nav button',
+        '.sidebar a',
+        '.sidebar button',
+        '.side a',
+        '.side button',
+        '#sidebar a',
+        '#sidebar button',
+        '.bottom-nav a',
+        '.bottom-nav button',
+        '.bottom a',
+        '.bottom button',
+        '[data-view]',
+        '[data-page]'
+      ];
+
+      var nodes = Array.from(document.querySelectorAll(selectors.join(',')));
+
+      nodes.forEach(function(el){
+        var pageKey = detectPageFromElement(el);
+
+        if(!pageKey) return;
+
+        var allowed = canAccess(pageKey);
+
+        // Keep logout/login available.
+        var txt = String(el.textContent || '').toLowerCase();
+        if(txt.indexOf('log out') !== -1 || txt.indexOf('logout') !== -1) return;
+
+        el.style.display = allowed ? '' : 'none';
+        el.setAttribute('data-firebase-perm-page', pageKey);
+        el.setAttribute('data-firebase-perm-allowed', allowed ? 'true' : 'false');
+      });
+    }catch(e){
+      console.warn('[Role enforcer] hideBlockedNav failed', e);
+    }
+  }
+
+  function currentViewKey(){
+    try{
+      var active = document.querySelector('.view.on, section.on, main .on, [id^="view-"].on');
+      if(active){
+        var id = String(active.id || '');
+        if(id.indexOf('view-') === 0){
+          return id.replace('view-', '');
+        }
+      }
+    }catch(e){}
+
+    return '';
+  }
+
+  function goToFirstAllowed(){
+    var order = [
+      'dashboard',
+      'pos',
+      'orders',
+      'kitchen',
+      'delivery',
+      'pickup',
+      'stocks',
+      'products',
+      'journal',
+      'billing',
+      'chat',
+      'accounts'
+    ];
+
+    var first = order.find(canAccess);
+
+    if(first && typeof window.go === 'function'){
+      try{ window.go(first); }catch(e){}
+    }
+  }
+
+  function enforceCurrentView(){
+    var view = currentViewKey();
+
+    if(!view) return;
+
+    if(!canAccess(view)){
+      try{
+        if(typeof toast === 'function') toast('Access denied for this role', 'err');
+      }catch(e){}
+
+      goToFirstAllowed();
+    }
+  }
+
+  function wrapGo(){
+    if(window.__firebaseRoleGoWrappedV1) return;
+    if(typeof window.go !== 'function' && typeof go !== 'function') return;
+
+    var originalGo = window.go || go;
+
+    var wrapped = function(page){
+      var pageKey = String(page || '').toLowerCase();
+
+      if(pageKey && !canAccess(pageKey)){
+        try{
+          if(typeof toast === 'function') toast('Access denied for this role', 'err');
+        }catch(e){}
+        return false;
+      }
+
+      var result = originalGo.apply(this, arguments);
+
+      setTimeout(function(){
+        hideBlockedNav();
+        enforceCurrentView();
+      }, 100);
+
+      return result;
+    };
+
+    window.go = wrapped;
+    try{ go = wrapped; }catch(e){}
+
+    window.__firebaseRoleGoWrappedV1 = true;
+
+    console.log('[Role enforcer] go() wrapped');
+  }
+
+  function applyRoles(data){
+    latestRoles = {};
+
+    Object.keys(data || {}).forEach(function(key){
+      var roleKey = normalizeRoleKey(key);
+      latestRoles[roleKey] = Object.assign({}, data[key] || {});
+    });
+
+    if(latestRoles.cashier && !latestRoles.sales){
+      latestRoles.sales = latestRoles.cashier;
+    }
+
+    if(latestRoles.sales && !latestRoles.cashier){
+      latestRoles.cashier = latestRoles.sales;
+    }
+
+    try{
+      S.roles = S.roles || {};
+      S.rolePerms = S.rolePerms || {};
+
+      Object.keys(latestRoles).forEach(function(key){
+        var title = key.charAt(0).toUpperCase() + key.slice(1);
+
+        S.roles[key] = latestRoles[key];
+        S.roles[title] = latestRoles[key];
+
+        S.rolePerms[key] = latestRoles[key];
+        S.rolePerms[title] = latestRoles[key];
+      });
+
+      if(latestRoles.sales){
+        S.roles.Cashier = latestRoles.sales;
+        S.rolePerms.Cashier = latestRoles.sales;
+      }
+    }catch(e){}
+
+    wrapGo();
+    hideBlockedNav();
+    enforceCurrentView();
+
+    console.log('[Role enforcer] Roles applied for role:', getCurrentRoleKey(), getPerms());
+  }
+
+  function fetchRoles(){
+    fetch(DB_URL + '/stores/' + STORE_ID + '/roles.json', { cache: 'no-store' })
+      .then(function(res){
+        if(!res.ok){
+          return res.text().then(function(t){
+            throw new Error('Roles read failed ' + res.status + ': ' + t);
+          });
+        }
+        return res.json();
+      })
+      .then(applyRoles)
+      .catch(function(err){
+        console.warn('[Role enforcer] roles fetch failed', err);
+      });
+  }
+
+  function boot(){
+    fetchRoles();
+    wrapGo();
+
+    setTimeout(function(){
+      hideBlockedNav();
+      enforceCurrentView();
+    }, 800);
+
+    setTimeout(function(){
+      hideBlockedNav();
+      enforceCurrentView();
+    }, 1800);
+
+    setInterval(function(){
+      fetchRoles();
+      hideBlockedNav();
+      enforceCurrentView();
+    }, 5000);
+
+    // Also enforce after clicks/login/navigation changes.
+    document.addEventListener('click', function(){
+      setTimeout(function(){
+        hideBlockedNav();
+        enforceCurrentView();
+      }, 150);
+    }, true);
+
+    console.log('[Role enforcer] Started');
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){
+      setTimeout(boot, 1800);
+    });
+  }else{
+    setTimeout(boot, 1800);
+  }
+})();
+</script>
+
 </body>
 </html>
