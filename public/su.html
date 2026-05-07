@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Superadmin · Fruities POS</title>
+  <style>
+    :root{
+      --green:#1e8a52;
+      --gd:#103d2a;
+      --bg:#f7f4ec;
+      --w:#ffffff;
+      --b:#e5dfd2;
+      --t:#1f2a24;
+      --t2:#66736b;
+      --t3:#9aa39c;
+      --red:#d94343;
+      --orange:#d97706;
+      --r:20px;
+      --shadow:0 14px 40px rgba(16,61,42,.12);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      background:radial-gradient(circle at top left,#e9f8ef,#f7f4ec 42%,#fff7e8);
+      color:var(--t);
+      min-height:100dvh;
+    }
+    .wrap{max-width:1180px;margin:0 auto;padding:18px}
+    .login{
+      min-height:100dvh;
+      display:grid;
+      place-items:center;
+      padding:20px;
+    }
+    .login-card{
+      width:min(420px,100%);
+      background:var(--w);
+      border:1px solid var(--b);
+      border-radius:28px;
+      box-shadow:var(--shadow);
+      padding:24px;
+    }
+    .logo{
+      width:64px;height:64px;
+      display:grid;place-items:center;
+      border-radius:22px;
+      background:linear-gradient(135deg,var(--gd),var(--green));
+      color:#fff;
+      font-size:30px;
+      margin:0 auto 14px;
+    }
+    h1,h2,h3{margin:0}
+    .title{text-align:center;font-size:24px;font-weight:1000;color:var(--gd)}
+    .sub{text-align:center;color:var(--t3);font-size:13px;margin-top:6px;line-height:1.5}
+    label{display:block;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:var(--t2);margin:16px 0 6px}
+    input{
+      width:100%;
+      border:1px solid var(--b);
+      border-radius:14px;
+      padding:13px 14px;
+      font-size:15px;
+      outline:none;
+      background:#fff;
+    }
+    input:focus{border-color:var(--green);box-shadow:0 0 0 4px rgba(30,138,82,.12)}
+    button{
+      border:0;
+      border-radius:14px;
+      padding:12px 14px;
+      font-weight:900;
+      cursor:pointer;
+      font-size:14px;
+    }
+    .btn-main{background:linear-gradient(135deg,var(--gd),var(--green));color:#fff;width:100%;margin-top:18px}
+    .btn{background:#f4f1e9;color:var(--t);border:1px solid var(--b)}
+    .btn-green{background:var(--green);color:#fff}
+    .btn-red{background:var(--red);color:#fff}
+    .btn-orange{background:var(--orange);color:#fff}
+    .hidden{display:none!important}
+    .top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:16px;
+    }
+    .brand{display:flex;align-items:center;gap:12px}
+    .brand-icon{
+      width:48px;height:48px;
+      display:grid;place-items:center;
+      border-radius:17px;
+      background:linear-gradient(135deg,var(--gd),var(--green));
+      color:#fff;
+      font-size:24px;
+    }
+    .brand h1{font-size:24px;color:var(--gd)}
+    .brand p{margin:3px 0 0;color:var(--t3);font-size:13px}
+    .hero{
+      position:relative;
+      overflow:hidden;
+      background:linear-gradient(135deg,#103d2a,#1e8a52);
+      color:#fff;
+      border-radius:28px;
+      padding:24px;
+      margin-bottom:16px;
+      box-shadow:var(--shadow);
+    }
+    .hero:after{
+      content:"🛡️";
+      position:absolute;
+      right:-22px;
+      top:-42px;
+      font-size:150px;
+      opacity:.1;
+    }
+    .hero small{font-weight:1000;text-transform:uppercase;letter-spacing:.12em;opacity:.8}
+    .hero h2{font-size:34px;margin-top:8px;position:relative;z-index:1}
+    .hero p{opacity:.85;font-size:14px;position:relative;z-index:1}
+    .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;position:relative;z-index:1}
+    .chip{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:8px 11px;font-weight:900;font-size:12px}
+    .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:16px}
+    .card,.stat{
+      background:var(--w);
+      border:1px solid var(--b);
+      border-radius:22px;
+      box-shadow:0 8px 24px rgba(16,61,42,.07);
+      padding:16px;
+    }
+    .stat .lbl{font-size:11px;color:var(--t3);text-transform:uppercase;font-weight:900;letter-spacing:.06em}
+    .stat .val{font-size:28px;font-weight:1000;color:var(--gd);margin-top:5px}
+    .stat .hint{font-size:12px;color:var(--t3);margin-top:3px}
+    .cards{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+    .card h3{font-size:17px;color:var(--gd);margin-bottom:4px}
+    .card .desc{font-size:12px;color:var(--t3);line-height:1.5;margin-bottom:12px}
+    .row{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid var(--b);padding:9px 0;font-size:13px}
+    .row:last-child{border-bottom:0}
+    .row span:first-child{color:var(--t3);font-weight:800}
+    .row span:last-child{font-weight:900;text-align:right}
+    .actions{display:grid;gap:9px;margin-top:13px}
+    .two{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:13px}
+    .toast{
+      position:fixed;
+      left:50%;
+      bottom:18px;
+      transform:translateX(-50%);
+      background:#12251a;
+      color:#fff;
+      border-radius:999px;
+      padding:11px 15px;
+      font-weight:900;
+      font-size:13px;
+      box-shadow:0 10px 30px rgba(0,0,0,.2);
+      display:none;
+      z-index:99;
+    }
+    @media(max-width:800px){
+      .wrap{padding:13px}
+      .top{align-items:flex-start}
+      .grid{grid-template-columns:repeat(2,1fr)}
+      .cards{grid-template-columns:1fr}
+      .hero h2{font-size:28px}
+    }
+  </style>
+</head>
+<body>
+  <div id="login" class="login">
+    <div class="login-card">
+      <div class="logo">🛡️</div>
+      <div class="title">Superadmin Access</div>
+      <div class="sub">Platform controls for Fruities POS. Use the dedicated superadmin account.</div>
+
+      <label>Username</label>
+      <input id="user" value="superadmin" autocomplete="username">
+
+      <label>Password</label>
+      <input id="pass" type="password" autocomplete="current-password" placeholder="Leave blank if not set">
+
+      <button class="btn-main" onclick="login()">Login Superadmin</button>
+      <div id="loginMsg" class="sub" style="color:var(--red);display:none"></div>
+    </div>
+  </div>
+
+  <main id="app" class="wrap hidden">
+    <div class="top">
+      <div class="brand">
+        <div class="brand-icon">🛡️</div>
+        <div>
+          <h1>Superadmin Panel</h1>
+          <p>Store management, billing, backups, and emergency access</p>
+        </div>
+      </div>
+      <button class="btn" onclick="logout()">Logout</button>
+    </div>
+
+    <section class="hero">
+      <small>Fruities POS Platform</small>
+      <h2 id="storeName">Fruit Story</h2>
+      <p id="heroSub">Loading platform snapshot...</p>
+      <div class="chips">
+        <div class="chip" id="accessChip">POS Access —</div>
+        <div class="chip" id="billingChip">Subscription —</div>
+        <div class="chip">Store ID: fruit-story-main</div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="stat"><div class="lbl">Orders</div><div class="val" id="ordersCount">—</div><div class="hint">Total records</div></div>
+      <div class="stat"><div class="lbl">Products</div><div class="val" id="productsCount">—</div><div class="hint">Catalog count</div></div>
+      <div class="stat"><div class="lbl">Users</div><div class="val" id="usersCount">—</div><div class="hint">Staff accounts</div></div>
+      <div class="stat"><div class="lbl">Inventory Logs</div><div class="val" id="logsCount">—</div><div class="hint">Stock movements</div></div>
+    </section>
+
+    <section class="cards">
+      <div class="card">
+        <h3>🏪 Store Management</h3>
+        <div class="desc">Store identity and operational snapshot.</div>
+        <div class="row"><span>Store name</span><span id="storeRow">—</span></div>
+        <div class="row"><span>Currency</span><span id="currencyRow">—</span></div>
+        <div class="row"><span>Timezone</span><span>Asia/Manila</span></div>
+        <div class="actions">
+          <button class="btn" onclick="openPOS()">Open POS App</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>💳 Billing Management</h3>
+        <div class="desc">Subscription and access status.</div>
+        <div class="row"><span>Status</span><span id="billingStatus">—</span></div>
+        <div class="row"><span>Monthly fee</span><span id="monthlyFee">—</span></div>
+        <div class="row"><span>Next due</span><span id="nextDue">—</span></div>
+      </div>
+
+      <div class="card">
+        <h3>🔒 POS Lock / Unlock</h3>
+        <div class="desc" id="lockNote">Loading POS access status...</div>
+        <div class="two">
+          <button class="btn-green" onclick="setPOSAccess(true)">✅ Unlock</button>
+          <button class="btn-red" onclick="setPOSAccess(false)">⛔ Lock</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>🧰 Database Tools</h3>
+        <div class="desc">Safe shortcuts and maintenance tools.</div>
+        <div class="actions">
+          <button class="btn" onclick="refresh()">🔄 Refresh Snapshot</button>
+          <button class="btn" onclick="exportStore()">📤 Export Store JSON</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>🚨 Emergency Access</h3>
+        <div class="desc">Restore full Admin permissions if access breaks.</div>
+        <button class="btn-orange" style="width:100%" onclick="restoreAdmin()">👑 Restore Admin Full Access</button>
+      </div>
+
+      <div class="card">
+        <h3>📋 Backup / Export</h3>
+        <div class="desc">Downloads products, orders, users, roles, billing, and inventory logs.</div>
+        <button class="btn-green" style="width:100%" onclick="exportStore()">📤 Download Backup</button>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    const DB_URL = 'https://fruities-pos-default-rtdb.asia-southeast1.firebasedatabase.app';
+    const STORE_ID = 'fruit-story-main';
+    let currentUser = null;
+    let currentStore = null;
+
+    function $(id){ return document.getElementById(id); }
+
+    function toast(msg){
+      const el = $('toast');
+      el.textContent = msg;
+      el.style.display = 'block';
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(() => el.style.display = 'none', 2200);
+    }
+
+    function countObj(obj){
+      return obj ? Object.keys(obj).filter(k => obj[k]).length : 0;
+    }
+
+    function peso(n){
+      return '₱' + Number(n || 0).toFixed(2);
+    }
+
+    function dateText(v){
+      if(!v) return '—';
+      try{ return new Date(v).toLocaleDateString(); }catch(e){ return String(v); }
+    }
+
+    async function getJson(path){
+      const res = await fetch(DB_URL + path + '.json', {cache:'no-store'});
+      if(!res.ok) throw new Error(await res.text());
+      return await res.json();
+    }
+
+    async function patchJson(path, data){
+      const res = await fetch(DB_URL + path + '.json', {
+        method:'PATCH',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(data)
+      });
+      if(!res.ok) throw new Error(await res.text());
+      return await res.json();
+    }
+
+    async function login(){
+      const username = $('user').value.trim().toLowerCase();
+      const password = $('pass').value;
+
+      $('loginMsg').style.display = 'none';
+
+      try{
+        const user = await getJson('/stores/' + STORE_ID + '/users/' + username);
+
+        if(!user || user.active === false || user.status === 'inactive'){
+          throw new Error('Superadmin account not active');
+        }
+
+        if(String(user.roleKey || '').toLowerCase() !== 'superadmin'){
+          throw new Error('This account is not Superadmin');
+        }
+
+        if((user.pass || '') !== password){
+          throw new Error('Invalid password');
+        }
+
+        currentUser = user;
+        sessionStorage.setItem('fruities_superadmin_session', JSON.stringify({username, time:Date.now()}));
+
+        $('login').classList.add('hidden');
+        $('app').classList.remove('hidden');
+
+        await refresh();
+      }catch(err){
+        $('loginMsg').textContent = err.message || 'Login failed';
+        $('loginMsg').style.display = 'block';
+      }
+    }
+
+    function logout(){
+      sessionStorage.removeItem('fruities_superadmin_session');
+      currentUser = null;
+      currentStore = null;
+      $('app').classList.add('hidden');
+      $('login').classList.remove('hidden');
+    }
+
+    async function refresh(){
+      currentStore = await getJson('/stores/' + STORE_ID);
+      const store = currentStore || {};
+      const settings = store.settings || {};
+      const billing = store.billing || {};
+
+      const accessOn = billing.posAccessEnabled !== false &&
+        billing.status !== 'locked' &&
+        billing.status !== 'disabled';
+
+      $('storeName').textContent = settings.storeName || 'Fruit Story';
+      $('storeRow').textContent = settings.storeName || 'Fruit Story';
+      $('heroSub').textContent = 'Platform control for ' + STORE_ID + ' · ' + countObj(store.users) + ' users · ' + countObj(store.products) + ' products';
+
+      $('ordersCount').textContent = countObj(store.orders);
+      $('productsCount').textContent = countObj(store.products);
+      $('usersCount').textContent = countObj(store.users);
+      $('logsCount').textContent = countObj(store.inventoryLogs);
+
+      $('currencyRow').textContent = settings.currency || '₱';
+      $('billingStatus').textContent = billing.status || 'active';
+      $('monthlyFee').textContent = peso(billing.monthlyFee || 0);
+      $('nextDue').textContent = billing.nextDue || billing.nextDueDate || '—';
+
+      $('accessChip').textContent = accessOn ? 'POS Access: Enabled' : 'POS Access: Locked';
+      $('billingChip').textContent = 'Subscription: ' + (billing.status || 'active');
+      $('lockNote').textContent = accessOn ? 'POS is currently unlocked and usable.' : 'POS is currently locked.';
+
+      toast('Snapshot refreshed');
+    }
+
+    async function setPOSAccess(enabled){
+      await patchJson('/stores/' + STORE_ID + '/billing', {
+        posAccessEnabled: !!enabled,
+        status: enabled ? 'active' : 'locked',
+        updatedAt: Date.now(),
+        updatedBy: 'superadmin'
+      });
+
+      toast(enabled ? 'POS unlocked ✅' : 'POS locked ⛔');
+      await refresh();
+    }
+
+    async function restoreAdmin(){
+      await patchJson('/stores/' + STORE_ID + '/roles/admin', {
+        dashboard:true,
+        pos:true,
+        orders:true,
+        kitchen:true,
+        delivery:true,
+        pickup:true,
+        stocks:true,
+        products:true,
+        accounts:true,
+        journal:true,
+        billing:true,
+        system:true,
+        chat:true,
+        updatedAt:Date.now(),
+        updatedBy:'superadmin'
+      });
+
+      toast('Admin access restored ✅');
+    }
+
+    async function exportStore(){
+      if(!currentStore) currentStore = await getJson('/stores/' + STORE_ID);
+      const blob = new Blob([JSON.stringify(currentStore || {}, null, 2)], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = STORE_ID + '-backup-' + Date.now() + '.json';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function openPOS(){
+      location.href = '/';
+    }
+
+    async function boot(){
+      const saved = sessionStorage.getItem('fruities_superadmin_session');
+      if(!saved) return;
+
+      try{
+        const session = JSON.parse(saved);
+        if(Date.now() - Number(session.time || 0) > 8 * 3600000){
+          sessionStorage.removeItem('fruities_superadmin_session');
+          return;
+        }
+
+        const user = await getJson('/stores/' + STORE_ID + '/users/' + session.username);
+        if(user && String(user.roleKey || '').toLowerCase() === 'superadmin'){
+          currentUser = user;
+          $('login').classList.add('hidden');
+          $('app').classList.remove('hidden');
+          await refresh();
+        }
+      }catch(e){}
+    }
+
+    boot();
+  </script>
+</body>
+</html>
