@@ -12742,5 +12742,303 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 })();
 </script>
 
+
+<script id="hard-delivery-status-sync-v1">
+(function(){
+  var DB_URL = 'https://fruities-pos-default-rtdb.asia-southeast1.firebasedatabase.app';
+  var STORE_ID = 'fruit-story-main';
+  var SNAPSHOT_KEY = 'fruities_delivery_status_snapshot_v1';
+  var lastSnapshot = loadSnapshot();
+
+  function loadSnapshot(){
+    try{return JSON.parse(localStorage.getItem(SNAPSHOT_KEY) || '{}') || {};}catch(e){return {};}
+  }
+
+  function saveSnapshot(snapshot){
+    try{localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(snapshot || {}));}catch(e){}
+  }
+
+  function cleanKey(raw){
+    return String(raw || ('order_' + Date.now()))
+      .replace(/[.#$\[\]\/]/g, '_')
+      .replace(/\s+/g, '_');
+  }
+
+  function orderKey(order){
+    return cleanKey(order && (order.id || order.orderNumber || order.no || order.num));
+  }
+
+  function getOrders(){
+    try{
+      if(typeof S === 'undefined' || !S)return [];
+      if(!Array.isArray(S.orders))S.orders = [];
+      return S.orders;
+    }catch(e){
+      return [];
+    }
+  }
+
+  function isDeliveryOrder(order){
+    if(!order)return false;
+
+    return (
+      order.fulfillmentType === 'delivery' ||
+      order.orderType === 'delivery' ||
+      order.type === 'delivery' ||
+      order.deliveryStatus ||
+      order.rider ||
+      order.riderName ||
+      order.outForDeliveryAt ||
+      order.deliveredAt
+    );
+  }
+
+  function inferDeliveryStatus(order){
+    if(order.deliveryStatus === 'delivered' || order.deliveredAt){
+      return 'delivered';
+    }
+
+    if(
+      order.deliveryStatus === 'out_for_delivery' ||
+      order.deliveryStatus === 'out' ||
+      order.outForDeliveryAt ||
+      order.deliveryOutAt
+    ){
+      return 'out_for_delivery';
+    }
+
+    if(order.deliveryStatus === 'assigned' || order.rider || order.riderName){
+      return 'assigned';
+    }
+
+    return order.deliveryStatus || 'waiting';
+  }
+
+  function digest(order){
+    return JSON.stringify({
+      deliveryStatus: inferDeliveryStatus(order),
+      rider: order.rider || '',
+      riderName: order.riderName || '',
+      deliveredAt: order.deliveredAt || null,
+      outForDeliveryAt: order.outForDeliveryAt || order.deliveryOutAt || null,
+      deliveryDate: order.deliveryDate || order.delivery_date || '',
+      deliveryTime: order.deliveryTime || order.delivery_time || '',
+      deliveryAddress: order.deliveryAddress || order.addr || order.address || '',
+      recipient: order.recipient || '',
+      recipientPhone: order.recipientPhone || ''
+    });
+  }
+
+  function buildPatch(order){
+    var now = Date.now();
+    var status = inferDeliveryStatus(order);
+
+    return {
+      deliveryStatus: status,
+      rider: order.rider || '',
+      riderName: order.riderName || '',
+      deliveryDate: order.deliveryDate || order.delivery_date || '',
+      deliveryTime: order.deliveryTime || order.delivery_time || '',
+      deliveryAddress: order.deliveryAddress || order.addr || order.address || '',
+      recipient: order.recipient || '',
+      recipientPhone: order.recipientPhone || '',
+      outForDeliveryAt: order.outForDeliveryAt || order.deliveryOutAt || null,
+      deliveredAt: order.deliveredAt || null,
+      deliverySyncedAt: now,
+      updatedAt: now
+    };
+  }
+
+  function patchFirebase(order){
+    if(!order || !isDeliveryOrder(order))return Promise.resolve();
+
+    var key = orderKey(order);
+    var patch = buildPatch(order);
+    var url = DB_URL + '/stores/' + STORE_ID + '/orders/' + encodeURIComponent(key) + '.json';
+
+    return fetch(url, {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(patch)
+    }).then(function(res){
+      if(!res.ok){
+        return res.text().then(function(t){
+          throw new Error('Delivery sync failed ' + res.status + ': ' + t);
+        });
+      }
+      return res.json();
+    }).then(function(){
+      order.deliveryStatus = patch.deliveryStatus;
+      order.deliverySyncedAt = patch.deliverySyncedAt;
+      order.updatedAt = patch.updatedAt;
+
+      try{ if(typeof sv === 'function')sv(); }catch(e){}
+
+      console.log('[Hard delivery sync] Synced', key, patch);
+    }).catch(function(err){
+      console.warn('[Hard delivery sync] Failed', key, err);
+      try{ if(typeof toast === 'function')toast('Delivery Firebase sync failed', 'err'); }catch(e){}
+    });
+  }
+
+  function scanDeliveryChanges(force){
+    var orders = getOrders();
+    var nextSnapshot = Object.assign({}, lastSnapshot);
+    var writes = [];
+
+    orders.forEach(function(order){
+      if(!isDeliveryOrder(order))return;
+
+      var key = orderKey(order);
+      if(!key)return;
+
+      var current = digest(order);
+
+      if(force || !lastSnapshot[key]){
+        nextSnapshot[key] = current;
+        if(force)writes.push(patchFirebase(order));
+        return;
+      }
+
+      if(lastSnapshot[key] !== current){
+        nextSnapshot[key] = current;
+        writes.push(patchFirebase(order));
+      }
+    });
+
+    lastSnapshot = nextSnapshot;
+    saveSnapshot(lastSnapshot);
+
+    return Promise.allSettled(writes);
+  }
+
+  function refreshDeliveryScreens(){
+    setTimeout(function(){
+      try{ if(typeof sv === 'function')sv(); }catch(e){}
+      try{ if(typeof rDel === 'function')rDel(); }catch(e){}
+      try{ if(typeof rOrds === 'function')rOrds(); }catch(e){}
+      try{ if(typeof rDash === 'function')rDash(); }catch(e){}
+    }, 100);
+
+    setTimeout(function(){
+      try{ if(typeof rDel === 'function')rDel(); }catch(e){}
+    }, 700);
+  }
+
+  function wrap(name){
+    var old = window[name] || (typeof globalThis[name] === 'function' ? globalThis[name] : null);
+    if(typeof old !== 'function')return false;
+    if(old.__hardDeliveryStatusSyncV1)return true;
+
+    var wrapped = function(){
+      var result = old.apply(this, arguments);
+
+      setTimeout(function(){
+        scanDeliveryChanges(true);
+        refreshDeliveryScreens();
+      }, 200);
+
+      return result;
+    };
+
+    wrapped.__hardDeliveryStatusSyncV1 = true;
+    window[name] = wrapped;
+    try{ globalThis[name] = wrapped; }catch(e){}
+    try{ eval(name + ' = window["' + name + '"]'); }catch(e){}
+
+    console.log('[Hard delivery sync] Wrapped', name);
+    return true;
+  }
+
+  function install(){
+    if(window.__hardDeliveryStatusSyncV1Installed)return;
+    window.__hardDeliveryStatusSyncV1Installed = true;
+
+    wrap('assignRider');
+    wrap('delAssign');
+    wrap('startDelivery');
+    wrap('outForDelivery');
+    wrap('markOutForDelivery');
+    wrap('markDelivered');
+    wrap('completeDelivery');
+    wrap('delivered');
+    wrap('deliveryAction');
+    wrap('setDeliveryStatus');
+    wrap('updateDeliveryStatus');
+
+    document.addEventListener('change', function(event){
+      var target = event.target;
+      if(!target)return;
+
+      var delivery = document.getElementById('view-delivery');
+      if(!delivery || !delivery.contains(target))return;
+
+      setTimeout(function(){
+        scanDeliveryChanges(true);
+        refreshDeliveryScreens();
+      }, 250);
+    }, true);
+
+    document.addEventListener('click', function(event){
+      var target = event.target;
+      if(!target || !target.closest)return;
+
+      var delivery = document.getElementById('view-delivery');
+      if(!delivery || !delivery.contains(target))return;
+
+      var text = String(target.textContent || '').toLowerCase();
+
+      if(
+        text.indexOf('assign') !== -1 ||
+        text.indexOf('out') !== -1 ||
+        text.indexOf('deliver') !== -1 ||
+        text.indexOf('waiting') !== -1
+      ){
+        setTimeout(function(){
+          scanDeliveryChanges(true);
+          refreshDeliveryScreens();
+        }, 350);
+      }
+    }, true);
+
+    setInterval(function(){
+      scanDeliveryChanges(false);
+    }, 2000);
+
+    console.log('[Hard delivery sync] Installed');
+  }
+
+  function boot(){
+    install();
+
+    var tries = 0;
+    var timer = setInterval(function(){
+      tries++;
+      wrap('assignRider');
+      wrap('delAssign');
+      wrap('startDelivery');
+      wrap('outForDelivery');
+      wrap('markOutForDelivery');
+      wrap('markDelivered');
+      wrap('completeDelivery');
+      wrap('delivered');
+      wrap('deliveryAction');
+      wrap('setDeliveryStatus');
+      wrap('updateDeliveryStatus');
+
+      if(tries > 20){
+        clearInterval(timer);
+      }
+    }, 500);
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 1800); });
+  }else{
+    setTimeout(boot, 1800);
+  }
+})();
+</script>
+
 </body>
 </html>
