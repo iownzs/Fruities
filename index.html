@@ -14999,5 +14999,259 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 })();
 </script>
 
+
+<script id="firebase-hard-role-menu-filter-v1">
+(function(){
+  var DB_URL = 'https://fruities-pos-default-rtdb.asia-southeast1.firebasedatabase.app';
+  var STORE_ID = 'fruit-story-main';
+  var roles = {};
+
+  var MENU_MAP = {
+    'dashboard': 'dashboard',
+    'home': 'dashboard',
+    'pos terminal': 'pos',
+    'pos': 'pos',
+    'orders': 'orders',
+    'kitchen': 'kitchen',
+    'delivery': 'delivery',
+    'pick up': 'pickup',
+    'pickup': 'pickup',
+    'stocks': 'stocks',
+    'products': 'products',
+    'accounts': 'accounts',
+    'admin panel': 'accounts',
+    'journal': 'journal',
+    'pos billing': 'billing',
+    'billing': 'billing',
+    'group chat': 'chat',
+    'chat': 'chat'
+  };
+
+  function roleKey(){
+    try{
+      var cur = S && S.cur ? S.cur : {};
+      var role = cur.roleKey || cur.role || '';
+
+      if(!role && cur.user && Array.isArray(S.accounts)){
+        var acc = S.accounts.find(function(a){
+          return String(a.user || a.username || a.id).toLowerCase() === String(cur.user).toLowerCase();
+        });
+        if(acc) role = acc.roleKey || acc.role;
+      }
+
+      role = String(role || '').toLowerCase();
+      if(role === 'cashier') role = 'sales';
+      if(role === 'administrator') role = 'admin';
+
+      return role || 'sales';
+    }catch(e){
+      return 'sales';
+    }
+  }
+
+  function perms(){
+    var key = roleKey();
+
+    return roles[key] ||
+           (window.S && S.roles && (S.roles[key] || S.roles[key.charAt(0).toUpperCase() + key.slice(1)])) ||
+           (window.S && S.rolePerms && (S.rolePerms[key] || S.rolePerms[key.charAt(0).toUpperCase() + key.slice(1)])) ||
+           {};
+  }
+
+  function allowed(page){
+    if(roleKey() === 'admin') return true;
+
+    var p = perms();
+
+    if(Object.prototype.hasOwnProperty.call(p, page)){
+      return !!p[page];
+    }
+
+    return false;
+  }
+
+  function textPage(text){
+    text = String(text || '').replace(/\s+/g, ' ').trim().toLowerCase();
+
+    if(!text) return '';
+
+    var keys = Object.keys(MENU_MAP);
+
+    for(var i = 0; i < keys.length; i++){
+      var label = keys[i];
+
+      if(text === label || text.indexOf(label) !== -1){
+        return MENU_MAP[label];
+      }
+    }
+
+    return '';
+  }
+
+  function findMenuRow(el){
+    var node = el;
+
+    for(var i = 0; i < 5 && node && node !== document.body; i++){
+      var txt = String(node.textContent || '').replace(/\s+/g, ' ').trim();
+
+      if(txt.length > 0 && txt.length < 80){
+        return node;
+      }
+
+      node = node.parentElement;
+    }
+
+    return el;
+  }
+
+  function filterMenus(){
+    try{
+      var candidates = Array.from(document.querySelectorAll(
+        'aside *, nav *, .sidebar *, #sidebar *, .bottom-nav *, .bottom *, [class*="side"] *, [class*="nav"] *'
+      ));
+
+      candidates.forEach(function(el){
+        var raw = String(el.textContent || '').replace(/\s+/g, ' ').trim();
+
+        if(!raw || raw.length > 40) return;
+        if(raw.toLowerCase().indexOf('log out') !== -1) return;
+        if(raw.toLowerCase().indexOf('logout') !== -1) return;
+
+        var page = textPage(raw);
+        if(!page) return;
+
+        var row = findMenuRow(el);
+        var can = allowed(page);
+
+        row.style.display = can ? '' : 'none';
+        row.setAttribute('data-role-filter-page', page);
+        row.setAttribute('data-role-filter-allowed', can ? 'true' : 'false');
+      });
+    }catch(e){
+      console.warn('[Hard role menu filter] filter failed', e);
+    }
+  }
+
+  function currentView(){
+    var active = document.querySelector('[id^="view-"].on, .view.on, section.on');
+    if(!active || !active.id) return '';
+    return active.id.replace(/^view-/, '');
+  }
+
+  function firstAllowed(){
+    var pages = ['dashboard','pos','orders','kitchen','delivery','pickup','stocks','products','journal','billing','chat','accounts'];
+
+    for(var i = 0; i < pages.length; i++){
+      if(allowed(pages[i])) return pages[i];
+    }
+
+    return 'dashboard';
+  }
+
+  function blockCurrentView(){
+    var view = currentView();
+
+    if(view && !allowed(view)){
+      var next = firstAllowed();
+
+      try{
+        if(typeof go === 'function') go(next);
+      }catch(e){}
+
+      try{
+        if(typeof toast === 'function') toast('Access denied for this role', 'err');
+      }catch(e){}
+    }
+  }
+
+  function wrapGo(){
+    if(window.__hardRoleMenuFilterGoWrapped) return;
+
+    var oldGo = window.go || (typeof go === 'function' ? go : null);
+    if(typeof oldGo !== 'function') return;
+
+    var wrapped = function(page){
+      var key = String(page || '').toLowerCase();
+
+      if(key && !allowed(key)){
+        try{
+          if(typeof toast === 'function') toast('Access denied for this role', 'err');
+        }catch(e){}
+        return false;
+      }
+
+      var result = oldGo.apply(this, arguments);
+
+      setTimeout(function(){
+        filterMenus();
+        blockCurrentView();
+      }, 150);
+
+      return result;
+    };
+
+    window.go = wrapped;
+    try{ go = wrapped; }catch(e){}
+
+    window.__hardRoleMenuFilterGoWrapped = true;
+  }
+
+  function fetchRoles(){
+    fetch(DB_URL + '/stores/' + STORE_ID + '/roles.json', {cache:'no-store'})
+      .then(function(res){ return res.json(); })
+      .then(function(data){
+        roles = {};
+
+        Object.keys(data || {}).forEach(function(key){
+          var k = String(key).toLowerCase();
+          if(k === 'cashier') k = 'sales';
+          roles[k] = data[key] || {};
+        });
+
+        if(roles.sales) roles.cashier = roles.sales;
+
+        filterMenus();
+        blockCurrentView();
+        wrapGo();
+
+        console.log('[Hard role menu filter] role:', roleKey(), roles[roleKey()]);
+      })
+      .catch(function(err){
+        console.warn('[Hard role menu filter] roles fetch failed', err);
+      });
+  }
+
+  function boot(){
+    fetchRoles();
+    wrapGo();
+
+    setTimeout(filterMenus, 500);
+    setTimeout(filterMenus, 1500);
+    setTimeout(blockCurrentView, 1800);
+
+    setInterval(function(){
+      fetchRoles();
+      filterMenus();
+      blockCurrentView();
+    }, 3000);
+
+    document.addEventListener('click', function(){
+      setTimeout(function(){
+        filterMenus();
+        blockCurrentView();
+      }, 150);
+    }, true);
+
+    console.log('[Hard role menu filter] started');
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 1500); });
+  }else{
+    setTimeout(boot, 1500);
+  }
+})();
+</script>
+
 </body>
 </html>
