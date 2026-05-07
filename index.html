@@ -2092,6 +2092,7 @@ body.dark #chat-minimize-channels-btn.is-collapsed{background:#14281e!important;
     <div class="ni" data-v="products"><span class="ni-ico">🏷️</span>Products</div>
     <div class="nsl">Management</div>
     <div class="ni" data-v="accounts"><span class="ni-ico">👤</span>Accounts</div>
+    <div class="ni" data-v="superadmin" id="superadmin-nav-item"><span class="ni-ico">🛡️</span>Superadmin</div>
     <div class="ni" data-v="journal"><span class="ni-ico">📅</span>Journal</div>
     <div class="ni" data-v="system"><span class="ni-ico">💳</span>POS Billing</div>
     <div class="ni" data-v="chat"><span class="ni-ico">💬</span>Group Chat <span class="ni-badge" id="chatbadge">0</span></div>
@@ -2532,6 +2533,88 @@ body.dark #chat-minimize-channels-btn.is-collapsed{background:#14281e!important;
         </div>
       </div>
     </div>
+
+
+    <!-- SUPERADMIN -->
+    <div class="view" id="view-superadmin">
+      <div class="sh">
+        <div>
+          <h2>🛡️ Superadmin Panel</h2>
+          <div style="font-size:12px;color:var(--t3);margin-top:2px">Store management, billing control, backups, and emergency tools</div>
+        </div>
+        <button class="btn bw bsm" onclick="rSuperadmin()">↻ Refresh</button>
+      </div>
+
+      <div class="card" style="margin-bottom:16px;overflow:hidden;position:relative;background:linear-gradient(135deg,#103d2a,#1e8a52);color:#fff;border:0">
+        <div style="position:absolute;right:-28px;top:-38px;font-size:135px;opacity:.10">🛡️</div>
+        <div style="position:relative;z-index:2">
+          <div style="font-size:12px;font-weight:1000;text-transform:uppercase;letter-spacing:.12em;opacity:.82">Fruities POS Platform</div>
+          <div id="sa-store-name" style="font-size:30px;font-weight:1000;line-height:1.1;margin-top:7px">Fruit Story</div>
+          <div id="sa-store-sub" style="font-size:13px;opacity:.84;margin-top:8px">Loading platform snapshot...</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px">
+            <span id="sa-access-chip" style="padding:8px 11px;border-radius:999px;background:rgba(255,255,255,.16);font-weight:900;font-size:12px">POS Access —</span>
+            <span id="sa-billing-chip" style="padding:8px 11px;border-radius:999px;background:rgba(255,255,255,.16);font-weight:900;font-size:12px">Subscription —</span>
+            <span style="padding:8px 11px;border-radius:999px;background:rgba(255,255,255,.16);font-weight:900;font-size:12px">Store ID: fruit-story-main</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sg" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-bottom:16px">
+        <div class="sc"><div class="sl">Orders</div><div class="sv" id="sa-orders" style="font-size:24px">—</div><div class="ss">Total records</div><div class="si">🧾</div></div>
+        <div class="sc"><div class="sl">Products</div><div class="sv" id="sa-products" style="font-size:24px">—</div><div class="ss">Catalog count</div><div class="si">🏷️</div></div>
+        <div class="sc"><div class="sl">Users</div><div class="sv" id="sa-users" style="font-size:24px">—</div><div class="ss">Staff accounts</div><div class="si">👥</div></div>
+        <div class="sc"><div class="sl">Inventory Logs</div><div class="sv" id="sa-logs" style="font-size:24px">—</div><div class="ss">Stock movements</div><div class="si">📦</div></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px">
+        <div class="card">
+          <div class="ct2">🏪 Store Management</div>
+          <div class="sys-stat-row"><span class="lbl">Store name</span><span class="val" id="sa-store-row">—</span></div>
+          <div class="sys-stat-row"><span class="lbl">Currency</span><span class="val" id="sa-currency">—</span></div>
+          <div class="sys-stat-row"><span class="lbl">Timezone</span><span class="val">Asia/Manila</span></div>
+          <button class="btn bw" style="width:100%;justify-content:center;margin-top:12px" onclick="go('accounts')">👥 Open Accounts</button>
+        </div>
+
+        <div class="card">
+          <div class="ct2">💳 Billing Management</div>
+          <div class="sys-stat-row"><span class="lbl">Status</span><span class="val" id="sa-billing-status">—</span></div>
+          <div class="sys-stat-row"><span class="lbl">Monthly fee</span><span class="val" id="sa-monthly-fee">—</span></div>
+          <div class="sys-stat-row"><span class="lbl">Next due</span><span class="val" id="sa-next-due">—</span></div>
+          <button class="btn bw" style="width:100%;justify-content:center;margin-top:12px" onclick="go('system')">💳 Open POS Billing</button>
+        </div>
+
+        <div class="card">
+          <div class="ct2">🔒 POS Lock / Unlock</div>
+          <div id="sa-lock-note" style="font-size:13px;color:var(--t2);line-height:1.6;margin-top:8px">Loading POS access status...</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px">
+            <button class="btn bg" style="justify-content:center" onclick="superadminSetPOSAccess(true)">✅ Unlock</button>
+            <button class="btn br" style="justify-content:center" onclick="superadminSetPOSAccess(false)">⛔ Lock</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="ct2">🧰 Database Tools</div>
+          <div style="display:grid;gap:10px;margin-top:14px">
+            <button class="btn bw" onclick="go('products')">🏷️ Open Products</button>
+            <button class="btn bw" onclick="go('orders')">🧾 Open Orders</button>
+            <button class="btn bw" onclick="go('stocks')">📦 Open Stocks</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="ct2">📤 Backup / Export</div>
+          <div style="font-size:12px;color:var(--t3);margin-top:4px">Download current store data as JSON.</div>
+          <button class="btn bg" style="width:100%;justify-content:center;margin-top:14px" onclick="superadminExportStore()">📤 Export Store JSON</button>
+        </div>
+
+        <div class="card">
+          <div class="ct2">🚨 Emergency Access</div>
+          <div style="font-size:12px;color:var(--t3);margin-top:4px">Restore full Admin permissions if store access breaks.</div>
+          <button class="btn br" style="width:100%;justify-content:center;margin-top:14px" onclick="superadminRestoreAdmin()">👑 Restore Admin Full Access</button>
+        </div>
+      </div>
+    </div>
+
 
     <!-- GROUP CHAT -->
     <div class="view" id="view-chat">
@@ -3684,6 +3767,7 @@ function rSystem(){
 
 // ─────── NAVIGATION ───────
 const TITLES={
+  superadmin:['Superadmin Panel','Platform management'],
   dashboard:['Dashboard','— Good morning! 🌿'],pos:['POS Terminal','— Start selling'],
   orders:['Orders','— Transaction history'],kitchen:['Kitchen Board','— Prep & track orders'],
   delivery:['Delivery','— Track deliveries'],
@@ -3714,7 +3798,7 @@ function go(v){
   if(v!=='kitchen' && kitTimerInterval){ clearInterval(kitTimerInterval); kitTimerInterval=null; }
   if(v!=='system' && systemTimerInterval){ clearInterval(systemTimerInterval); systemTimerInterval=null; }
   if(window.innerWidth<=768)closeSb();
-  ({dashboard:rDash,pos:rPOS,orders:rOrds,kitchen:rKitchen,delivery:rDel,pickup:rPickup,stocks:rStk,products:rProds,accounts:rAccs,journal:rJnl,system:rSystem,chat:rChat})[v]?.();
+  ({dashboard:rDash,pos:rPOS,orders:rOrds,kitchen:rKitchen,delivery:rDel,pickup:rPickup,stocks:rStk,products:rProds,accounts:rAccs,journal:rJnl,system:rSystem,chat:rChat,superadmin:rSuperadmin})[v]?.();
 }
 document.querySelectorAll('.ni').forEach(n=>n.addEventListener('click',()=>go(n.dataset.v)));
 
@@ -6455,7 +6539,7 @@ function savePerms(p){
 var PERMS = loadPerms();
 
 function perm(key){return !!(PERMS[S.cur&&S.cur.role]||PERMS.Sales)[key];}
-function canView(v){return (PERMS[S.cur&&S.cur.role]||PERMS.Sales).views.includes(v);}
+function canView(v){if(S.cur&&(S.cur.role==='Superadmin'||S.cur.roleKey==='superadmin'))return true;return (PERMS[S.cur&&S.cur.role]||PERMS.Sales).views.includes(v);}
 
 // ── Permission editor definitions ──
 // Each row: [label, type, roleKey_or_viewName, lockForAdmin]
@@ -6777,7 +6861,9 @@ function printCode(){
     +codeHtml
     +'<div style="font-size:11px;color:#888;margin-top:12px">'+(o?'₱'+o.total.toFixed(2)+' · '+new Date(o.time).toLocaleDateString():'')+'</div>'
     +'<scr'+'ipt>window.onload=function(){window.print();window.close();}<\/scr'+'ipt>'
-    +'</body></html>');
+    +'
+
+</body></html>');
   win.document.close();
 }
 
@@ -8740,7 +8826,9 @@ window.addEventListener('load',function(){
       + codeHtml
       + '<div style="font-size:11px;color:#555;margin-top:12px">₱' + money(order.total) + ' · ' + new Date(order.time).toLocaleDateString() + '</div>'
       + '<scr'+'ipt>window.onload=function(){window.print();window.close();}<\/scr'+'ipt>'
-      + '</body></html>');
+      + '
+
+</body></html>');
     win.document.close();
   };
 })();
@@ -15015,184 +15103,160 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 
 
 
-<script id="superadmin-full-access-fix-v1">
+
+
+
+
+
+
+
+
+
+
+<script id="clean-superadmin-page-v3">
 (function(){
-  function normalizeRole(role){
-    role = String(role || '').trim().toLowerCase();
-    if(role === 'administrator') role = 'admin';
-    if(role === 'cashier') role = 'sales';
-    return role;
-  }
+  var DB_URL = 'https://fruities-pos-default-rtdb.asia-southeast1.firebasedatabase.app';
+  var STORE_ID = 'fruit-story-main';
 
-  function getCurrentRole(){
+  function roleKey(){
     try{
-      var cur = window.S && S.cur ? S.cur : {};
-      var role = cur.roleKey || cur.role || '';
-
-      if(!role && cur.user && Array.isArray(S.accounts)){
-        var account = S.accounts.find(function(a){
-          return String(a.user || a.username || a.id).toLowerCase() === String(cur.user).toLowerCase();
-        });
-
-        if(account){
-          role = account.roleKey || account.role;
-        }
-      }
-
-      return normalizeRole(role);
+      var role = (S.cur && (S.cur.roleKey || S.cur.role)) || '';
+      role = String(role).trim().toLowerCase();
+      if(role === 'administrator') role = 'admin';
+      if(role === 'cashier') role = 'sales';
+      return role;
     }catch(e){
       return '';
     }
   }
 
   function isSuperadmin(){
-    return getCurrentRole() === 'superadmin';
+    return roleKey() === 'superadmin';
   }
 
-  function grantSuperadminLocalAccess(){
+  function countObj(obj){
+    return obj ? Object.keys(obj).filter(function(k){ return obj[k]; }).length : 0;
+  }
+
+  function peso(n){
+    return '₱' + Number(n || 0).toFixed(2);
+  }
+
+  function setText(id, value){
+    var el = document.getElementById(id);
+    if(el) el.textContent = value;
+  }
+
+  function fetchStore(){
+    return fetch(DB_URL + '/stores/' + STORE_ID + '.json', {cache:'no-store'})
+      .then(function(r){ return r.json(); });
+  }
+
+  window.rSuperadmin = function(){
     if(!isSuperadmin()) return;
 
-    var full = {
-      superadmin: true,
-      dashboard: true,
-      pos: true,
-      orders: true,
-      kitchen: true,
-      delivery: true,
-      pickup: true,
-      stocks: true,
-      products: true,
-      accounts: true,
-      journal: true,
-      billing: true,
-      system: true,
-      chat: true,
-      storeManagement: true,
-      billingManagement: true,
-      posLock: true,
-      databaseTools: true,
-      backupExport: true,
-      emergencyAccess: true
-    };
+    fetchStore().then(function(store){
+      store = store || {};
+      var settings = store.settings || {};
+      var billing = store.billing || {};
+      var accessOn = billing.posAccessEnabled !== false && billing.status !== 'locked' && billing.status !== 'disabled';
 
-    try{
-      S.roles = S.roles || {};
-      S.rolePerms = S.rolePerms || {};
+      setText('sa-store-name', settings.storeName || 'Fruit Story');
+      setText('sa-store-row', settings.storeName || 'Fruit Story');
+      setText('sa-store-sub', 'Platform control for ' + STORE_ID + ' · ' + countObj(store.users) + ' users · ' + countObj(store.products) + ' products');
 
-      S.roles.superadmin = full;
-      S.roles.Superadmin = full;
-      S.roles['Super Admin'] = full;
+      setText('sa-orders', countObj(store.orders));
+      setText('sa-products', countObj(store.products));
+      setText('sa-users', countObj(store.users));
+      setText('sa-logs', countObj(store.inventoryLogs));
 
-      S.rolePerms.superadmin = full;
-      S.rolePerms.Superadmin = full;
-      S.rolePerms['Super Admin'] = full;
+      setText('sa-currency', settings.currency || '₱');
+      setText('sa-billing-status', billing.status || 'active');
+      setText('sa-monthly-fee', peso(billing.monthlyFee || 0));
+      setText('sa-next-due', billing.nextDue || billing.nextDueDate || '—');
 
-      if(S.cur){
-        S.cur.roleKey = 'superadmin';
-        S.cur.role = 'Superadmin';
-      }
-    }catch(e){}
-  }
+      setText('sa-access-chip', accessOn ? 'POS Access: Enabled' : 'POS Access: Locked');
+      setText('sa-billing-chip', 'Subscription: ' + (billing.status || 'active'));
+      setText('sa-lock-note', accessOn ? 'POS is currently unlocked and usable.' : 'POS is currently locked.');
+    }).catch(function(err){
+      console.warn('[Clean Superadmin] render failed', err);
+      try{ toast('Superadmin data load failed', 'err'); }catch(e){}
+    });
+  };
 
-  function showAllMenusForSuperadmin(){
+  window.superadminSetPOSAccess = function(enabled){
     if(!isSuperadmin()) return;
 
-    document.querySelectorAll('.ni[data-v], .mni[data-v]').forEach(function(item){
-      item.style.display = '';
-      item.style.visibility = 'visible';
-      item.style.pointerEvents = '';
-      item.setAttribute('data-firebase-role-allowed', 'true');
-      item.setAttribute('data-role-direct-allowed', 'true');
+    fetch(DB_URL + '/stores/' + STORE_ID + '/billing.json', {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        posAccessEnabled: !!enabled,
+        status: enabled ? 'active' : 'locked',
+        updatedAt: Date.now(),
+        updatedBy: 'superadmin'
+      })
+    }).then(function(){
+      try{ toast(enabled ? 'POS unlocked ✅' : 'POS locked ⛔'); }catch(e){}
+      rSuperadmin();
     });
-  }
+  };
 
-  function patchPermissionFunctions(){
-    [
-      'canAccess',
-      'hasAccess',
-      'canView',
-      'hasPerm',
-      'allowed',
-      'can'
-    ].forEach(function(name){
-      var old = window[name] || (typeof globalThis[name] === 'function' ? globalThis[name] : null);
+  window.superadminExportStore = function(){
+    if(!isSuperadmin()) return;
 
-      if(typeof old === 'function' && !old.__superadminFullAccessFixV1){
-        var wrapped = function(){
-          if(isSuperadmin()) return true;
-          return old.apply(this, arguments);
-        };
-
-        wrapped.__superadminFullAccessFixV1 = true;
-
-        window[name] = wrapped;
-        try{ globalThis[name] = wrapped; }catch(e){}
-        try{ eval(name + ' = window["' + name + '"]'); }catch(e){}
-      }
+    fetchStore().then(function(store){
+      var blob = new Blob([JSON.stringify(store || {}, null, 2)], {type:'application/json'});
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = STORE_ID + '-backup-' + Date.now() + '.json';
+      a.click();
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
     });
-  }
+  };
 
-  function patchGo(){
-    if(window.__superadminGoFullAccessFixV1) return;
+  window.superadminRestoreAdmin = function(){
+    if(!isSuperadmin()) return;
 
-    var oldGo = window.go || (typeof go === 'function' ? go : null);
-    if(typeof oldGo !== 'function') return;
-
-    var wrapped = function(v){
-      grantSuperadminLocalAccess();
-
-      if(isSuperadmin()){
-        return oldGo.apply(this, arguments);
-      }
-
-      return oldGo.apply(this, arguments);
-    };
-
-    window.go = wrapped;
-    try{ go = wrapped; }catch(e){}
-
-    window.__superadminGoFullAccessFixV1 = true;
-  }
+    fetch(DB_URL + '/stores/' + STORE_ID + '/roles/admin.json', {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        dashboard:true,pos:true,orders:true,kitchen:true,delivery:true,pickup:true,
+        stocks:true,products:true,accounts:true,journal:true,billing:true,system:true,chat:true,
+        updatedAt:Date.now(),
+        updatedBy:'superadmin'
+      })
+    }).then(function(){
+      try{ toast('Admin access restored ✅'); }catch(e){}
+    });
+  };
 
   function boot(){
-    grantSuperadminLocalAccess();
-    patchPermissionFunctions();
-    patchGo();
-    showAllMenusForSuperadmin();
+    var item = document.getElementById('superadmin-nav-item');
+    if(item) item.style.display = isSuperadmin() ? '' : 'none';
 
-    setTimeout(function(){
-      grantSuperadminLocalAccess();
-      patchPermissionFunctions();
-      patchGo();
-      showAllMenusForSuperadmin();
-    }, 500);
-
-    setTimeout(function(){
-      grantSuperadminLocalAccess();
-      showAllMenusForSuperadmin();
-    }, 1500);
-
-    setInterval(function(){
-      grantSuperadminLocalAccess();
-      showAllMenusForSuperadmin();
-    }, 3000);
-
-    console.log('[Superadmin full access fix] started');
+    if((location.pathname === '/su' || location.pathname === '/su/') && isSuperadmin()){
+      setTimeout(function(){
+        if(typeof go === 'function') go('superadmin');
+        try{ history.replaceState(null, '', '/'); }catch(e){}
+      }, 500);
+    }
   }
 
   if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 300); });
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 500); });
   }else{
-    setTimeout(boot, 300);
+    setTimeout(boot, 500);
   }
+
+  setInterval(function(){
+    var item = document.getElementById('superadmin-nav-item');
+    if(item) item.style.display = isSuperadmin() ? '' : 'none';
+  }, 2000);
 })();
 </script>
-
-
-
-
-
-
 
 </body>
 </html>
