@@ -11463,7 +11463,8 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
       var order = data[key] || {};
       if(!order.id)order.id = key;
       if(!order.orderNumber)order.orderNumber = order.no || key;
-      if(!order.kitStatus && order.kitchenStatus)order.kitStatus = order.kitchenStatus;
+      if(order.kitStatus)order.kitchenStatus = order.kitStatus;
+      else if(order.kitchenStatus)order.kitStatus = order.kitchenStatus;
       return order;
     });
   }

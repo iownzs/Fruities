@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getDatabase, ref, onValue, set, update } from 'firebase/database';
+import { getDatabase, ref, onValue } from 'firebase/database';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -46,7 +46,6 @@ function applySettings(settings = {}) {
   window.FruitiesFirebase = window.FruitiesFirebase || {};
   window.FruitiesFirebase.settings = settings;
 
-  // Keep original app state compatible, but do not override app functions.
   window.S = window.S || {};
   window.S.settings = {
     ...(window.S.settings || {}),
@@ -78,7 +77,6 @@ function applySettings(settings = {}) {
 
   console.log('[Fruities Firebase] Settings applied', settings);
 }
-
 
 function normalizeProducts(productsObject = {}) {
   return Object.entries(productsObject || {})
@@ -124,117 +122,7 @@ function applyProducts(productsObject = {}) {
   console.log('[Fruities Firebase] Products applied', products.length);
 }
 
-
-function normalizeOrders(ordersObject = {}) {
-  return Object.entries(ordersObject || {})
-    .filter(([id, order]) => order && typeof order === 'object')
-    .map(([id, order]) => ({
-      ...order,
-      id: order.id || id
-    }))
-    .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
-}
-
-function applyOrders(ordersObject = {}) {
-  const orders = normalizeOrders(ordersObject);
-
-  window.S = window.S || {};
-  window.S.orders = orders;
-
-  try {
-    localStorage.setItem('fs', JSON.stringify(window.S));
-  } catch (error) {
-    console.warn('[Fruities Firebase] Failed to cache orders locally', error);
-  }
-
-  try { if (typeof window.rOrds === 'function') window.rOrds(); } catch (e) {}
-  try { if (typeof window.rDash === 'function') window.rDash(); } catch (e) {}
-  try { if (typeof window.rKitchen === 'function') window.rKitchen(); } catch (e) {}
-  try { if (typeof window.rDel === 'function') window.rDel(); } catch (e) {}
-  try { if (typeof window.rPickup === 'function') window.rPickup(); } catch (e) {}
-
-  console.log('[Fruities Firebase] Orders applied', orders.length);
-}
-
-function makeFirebaseOrderId(order = {}) {
-  const raw = order.id || order.orderNumber || order.no || order.num || `order_${Date.now()}`;
-  return String(raw)
-    .replace(/[.#$\[\]\/]/g, '_')
-    .replace(/\s+/g, '_');
-}
-
-function normalizeOrderForFirebase(order = {}) {
-  const now = Date.now();
-
-  return {
-    ...order,
-    id: order.id || order.orderNumber || order.no || `order_${now}`,
-    orderNumber: order.orderNumber || order.no || order.num || order.id || `ORD-${now}`,
-    createdAt: order.createdAt || order.created || now,
-    updatedAt: now,
-    syncedAt: now
-  };
-}
-
-async function saveOrderToFirebase(order = {}) {
-  if (!window.FruitiesFirebase || !window.FruitiesFirebase.db) {
-    console.warn('[Fruities Firebase] Database not ready; order saved locally only');
-    return;
-  }
-
-  const db = window.FruitiesFirebase.db;
-  const normalized = normalizeOrderForFirebase(order);
-  const orderId = makeFirebaseOrderId(normalized);
-
-  await set(
-    ref(db, `stores/${STORE_ID}/orders/${orderId}`),
-    normalized
-  );
-
-  console.log('[Fruities Firebase] Order synced', orderId);
-}
-
-function hookOrderCreation() {
-  if (window.__fruitiesOrderHookInstalled) return;
-  window.__fruitiesOrderHookInstalled = true;
-
-  function getLatestOrderBefore(countBefore) {
-    window.S = window.S || {};
-    const orders = Array.isArray(window.S.orders) ? window.S.orders : [];
-
-    if (orders.length <= countBefore) return null;
-
-    return orders[orders.length - 1] || null;
-  }
-
-  const originalConfirmPay = window.confirmPay;
-
-  if (typeof originalConfirmPay === 'function') {
-    window.confirmPay = function confirmPayFirebaseBridge(...args) {
-      window.S = window.S || {};
-      const countBefore = Array.isArray(window.S.orders) ? window.S.orders.length : 0;
-
-      const result = originalConfirmPay.apply(this, args);
-
-      setTimeout(() => {
-        const latest = getLatestOrderBefore(countBefore);
-        if (latest) {
-          saveOrderToFirebase(latest).catch((error) => {
-            console.error('[Fruities Firebase] Failed to sync order', error);
-          });
-        }
-      }, 250);
-
-      return result;
-    };
-
-    console.log('[Fruities Firebase] confirmPay hook installed');
-  } else {
-    console.warn('[Fruities Firebase] confirmPay not found; order write hook not installed');
-  }
-}
-
-function bootFirebaseSettingsSync() {
+function bootFirebaseSettingsProductsSync() {
   if (!hasFirebaseConfig(firebaseConfig)) {
     console.warn('[Fruities Firebase] Missing Firebase env config');
     return;
@@ -252,7 +140,6 @@ function bootFirebaseSettingsSync() {
 
     const settingsRef = ref(db, `stores/${STORE_ID}/settings`);
     const productsRef = ref(db, `stores/${STORE_ID}/products`);
-    const ordersRef = ref(db, `stores/${STORE_ID}/orders`);
 
     onValue(settingsRef, (snapshot) => {
       if (!snapshot.exists()) {
@@ -272,145 +159,14 @@ function bootFirebaseSettingsSync() {
       applyProducts(snapshot.val());
     });
 
-    onValue(ordersRef, (snapshot) => {
-      if (!snapshot.exists()) {
-        console.warn('[Fruities Firebase] No Firebase orders found; keeping local orders');
-        if (typeof window.syncLocalOrdersToFirebase === 'function') {
-          window.syncLocalOrdersToFirebase();
-        }
-        return;
-      }
-
-      applyOrders(snapshot.val());
-    });
-
-    setTimeout(hookOrderCreation, 1200);
-
-    console.log('[Fruities Firebase] Settings/products/orders listeners connected');
+    console.log('[Fruities Firebase] Settings/products listeners connected');
   } catch (error) {
     console.error('[Fruities Firebase] Boot failed', error);
   }
 }
 
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', bootFirebaseSettingsSync);
+  document.addEventListener('DOMContentLoaded', bootFirebaseSettingsProductsSync);
 } else {
-  bootFirebaseSettingsSync();
+  bootFirebaseSettingsProductsSync();
 }
-
-/* Robust order watcher: syncs any new local S.orders item to Firebase */
-function installOrderWatcher() {
-  if (window.__fruitiesOrderWatcherInstalled) return;
-  window.__fruitiesOrderWatcherInstalled = true;
-
-  const synced = new Set();
-
-  function safeOrderKey(order) {
-    const raw = order?.id || order?.orderNumber || order?.no || `order_${Date.now()}`;
-    return String(raw)
-      .replace(/[.#$\[\]\/]/g, '_')
-      .replace(/\s+/g, '_');
-  }
-
-  function firebaseReady() {
-    return Boolean(window.FruitiesFirebase && window.FruitiesFirebase.db);
-  }
-
-  async function syncOneOrder(order) {
-    if (!order || !firebaseReady()) return;
-
-    const key = safeOrderKey(order);
-    if (synced.has(key) || order.firebaseSynced === true) return;
-
-    const now = Date.now();
-
-    const payload = {
-      ...order,
-      id: order.id || key,
-      orderNumber: order.orderNumber || order.id || key,
-      createdAt: order.createdAt || order.time || order.createdByAt || now,
-      updatedAt: now,
-      syncedAt: now
-    };
-
-    try {
-      const { ref, set } = await import('firebase/database');
-      await set(
-        ref(window.FruitiesFirebase.db, `stores/fruit-story-main/orders/${key}`),
-        payload
-      );
-
-      synced.add(key);
-      order.firebaseSynced = true;
-
-      try {
-        localStorage.setItem('fs', JSON.stringify(window.S || {}));
-      } catch (e) {}
-
-      console.log('[Fruities Firebase] Order watcher synced', key);
-    } catch (error) {
-      console.error('[Fruities Firebase] Order watcher failed', key, error);
-    }
-  }
-
-  function scanOrders() {
-    const orders = Array.isArray(window.S?.orders) ? window.S.orders : [];
-    orders.forEach(syncOneOrder);
-  }
-
-  setInterval(scanOrders, 1500);
-  setTimeout(scanOrders, 500);
-  setTimeout(scanOrders, 2500);
-
-  console.log('[Fruities Firebase] Order watcher installed');
-}
-
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(installOrderWatcher, 1500);
-  });
-} else {
-  setTimeout(installOrderWatcher, 1500);
-}
-
-/* Explicit local orders uploader */
-window.syncLocalOrdersToFirebase = async function syncLocalOrdersToFirebase() {
-  if (!window.FruitiesFirebase || !window.FruitiesFirebase.db) {
-    console.warn('[Fruities Firebase] Cannot sync local orders yet: DB not ready');
-    return;
-  }
-
-  const orders = Array.isArray(window.S?.orders) ? window.S.orders : [];
-
-  if (!orders.length) {
-    console.warn('[Fruities Firebase] No local orders to sync');
-    return;
-  }
-
-  const { ref, set } = await import('firebase/database');
-
-  for (const order of orders) {
-    const rawKey = order?.id || order?.orderNumber || order?.no || `order_${Date.now()}`;
-    const key = String(rawKey)
-      .replace(/[.#$\[\]\/]/g, '_')
-      .replace(/\s+/g, '_');
-
-    const now = Date.now();
-
-    const payload = {
-      ...order,
-      id: order.id || key,
-      orderNumber: order.orderNumber || order.no || order.id || key,
-      createdAt: order.createdAt || order.time || now,
-      updatedAt: now,
-      syncedAt: now
-    };
-
-    await set(
-      ref(window.FruitiesFirebase.db, `stores/fruit-story-main/orders/${key}`),
-      payload
-    );
-
-    console.log('[Fruities Firebase] Uploaded local order', key);
-  }
-};
