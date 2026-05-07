@@ -13220,5 +13220,339 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 })();
 </script>
 
+
+<script id="firebase-delivery-action-writeback-v2">
+(function(){
+  var DB_URL = 'https://fruities-pos-default-rtdb.asia-southeast1.firebasedatabase.app';
+  var STORE_ID = 'fruit-story-main';
+
+  function cleanKey(raw){
+    return String(raw || ('order_' + Date.now()))
+      .replace(/[.#$\[\]\/]/g, '_')
+      .replace(/\s+/g, '_');
+  }
+
+  function getOrderIdFromDelivery(delivery){
+    return String(delivery && (delivery.oid || delivery.orderId || delivery.id || '')).replace(/^DEL-?/i, 'ORD-');
+  }
+
+  function orderKey(orderOrId){
+    if(typeof orderOrId === 'object' && orderOrId){
+      return cleanKey(orderOrId.id || orderOrId.orderNumber || orderOrId.no || orderOrId.num);
+    }
+    return cleanKey(orderOrId);
+  }
+
+  function findOrder(id){
+    try{
+      var raw = String(id || '');
+      var ord = raw.replace(/^DEL-?/i, 'ORD-');
+
+      return (S.orders || []).find(function(o){
+        return String(o.id) === raw ||
+               String(o.id) === ord ||
+               String(o.orderNumber || '') === raw ||
+               String(o.orderNumber || '') === ord ||
+               String(o.no || '') === raw ||
+               String(o.no || '') === ord;
+      });
+    }catch(e){
+      return null;
+    }
+  }
+
+  function findDelivery(id){
+    try{
+      var raw = String(id || '');
+      var del = raw.indexOf('DEL-') === 0 ? raw : 'DEL-' + raw.replace(/^ORD-?/i, '');
+
+      return (S.deliveries || []).find(function(d){
+        return String(d.id) === raw ||
+               String(d.id) === del ||
+               String(d.oid || '') === raw ||
+               String(d.oid || '') === raw.replace(/^DEL-?/i, 'ORD-');
+      });
+    }catch(e){
+      return null;
+    }
+  }
+
+  function normalizeDeliveryStatus(status){
+    status = String(status || '').toLowerCase();
+
+    if(status === 'delivered')return 'delivered';
+    if(status === 'out' || status === 'out_for_delivery')return 'out_for_delivery';
+    if(status === 'assigned')return 'assigned';
+    if(status === 'waiting')return 'waiting';
+
+    return status || 'waiting';
+  }
+
+  function copyDeliveryToOrder(delivery, order){
+    if(!delivery || !order)return order;
+
+    var normalizedStatus = normalizeDeliveryStatus(delivery.status || order.deliveryStatus);
+    var now = Date.now();
+
+    order.deliveryStatus = normalizedStatus;
+    order.rider = delivery.rider || order.rider || '';
+    order.riderName = delivery.riderName || delivery.rider || order.riderName || '';
+
+    if(normalizedStatus === 'out_for_delivery'){
+      order.outForDeliveryAt = order.outForDeliveryAt || delivery.outAt || delivery.timerStart || now;
+      order.deliveryOutAt = order.deliveryOutAt || order.outForDeliveryAt;
+    }
+
+    if(normalizedStatus === 'delivered'){
+      order.deliveredAt = order.deliveredAt || delivery.deliveredAt || delivery.timerEnd || now;
+      order.outForDeliveryAt = order.outForDeliveryAt || delivery.outAt || delivery.timerStart || now;
+      order.deliveryOutAt = order.deliveryOutAt || order.outForDeliveryAt;
+    }
+
+    order.updatedAt = now;
+    return order;
+  }
+
+  function buildPatch(order, delivery){
+    var now = Date.now();
+
+    if(delivery && order){
+      copyDeliveryToOrder(delivery, order);
+    }
+
+    var status = normalizeDeliveryStatus(
+      (order && order.deliveryStatus) ||
+      (delivery && delivery.status) ||
+      'waiting'
+    );
+
+    var outAt = (order && (order.outForDeliveryAt || order.deliveryOutAt)) ||
+                (delivery && (delivery.outAt || delivery.timerStart)) ||
+                null;
+
+    var deliveredAt = (order && order.deliveredAt) ||
+                      (delivery && (delivery.deliveredAt || delivery.timerEnd)) ||
+                      null;
+
+    return {
+      deliveryStatus: status,
+      rider: (order && order.rider) || (delivery && delivery.rider) || '',
+      riderName: (order && order.riderName) || (delivery && (delivery.riderName || delivery.rider)) || '',
+      outForDeliveryAt: outAt,
+      deliveryOutAt: outAt,
+      deliveredAt: deliveredAt,
+      deliveryDate: (order && (order.deliveryDate || order.delivery_date)) || (delivery && delivery.deliveryDate) || '',
+      deliveryTime: (order && (order.deliveryTime || order.delivery_time)) || (delivery && delivery.deliveryTime) || '',
+      deliveryAddress: (order && (order.deliveryAddress || order.addr || order.address)) || (delivery && delivery.addr) || '',
+      recipient: (order && order.recipient) || (delivery && delivery.recipient) || '',
+      recipientPhone: (order && order.recipientPhone) || (delivery && delivery.recipientPhone) || '',
+      updatedAt: now,
+      deliverySyncedAt: now
+    };
+  }
+
+  function patchFirebase(order, delivery){
+    var orderId = order
+      ? orderKey(order)
+      : orderKey(getOrderIdFromDelivery(delivery));
+
+    if(!orderId)return Promise.resolve();
+
+    var patch = buildPatch(order, delivery);
+
+    var url = DB_URL + '/stores/' + STORE_ID + '/orders/' + encodeURIComponent(orderId) + '.json';
+
+    return fetch(url, {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(patch)
+    }).then(function(res){
+      if(!res.ok){
+        return res.text().then(function(t){
+          throw new Error('Delivery write-back failed ' + res.status + ': ' + t);
+        });
+      }
+      return res.json();
+    }).then(function(){
+      if(order){
+        order.deliveryStatus = patch.deliveryStatus;
+        order.rider = patch.rider;
+        order.riderName = patch.riderName;
+        order.outForDeliveryAt = patch.outForDeliveryAt;
+        order.deliveryOutAt = patch.deliveryOutAt;
+        order.deliveredAt = patch.deliveredAt;
+        order.updatedAt = patch.updatedAt;
+        order.deliverySyncedAt = patch.deliverySyncedAt;
+      }
+
+      if(delivery){
+        delivery.status = patch.deliveryStatus === 'out_for_delivery' ? 'out' : patch.deliveryStatus;
+        delivery.rider = patch.rider;
+        delivery.riderName = patch.riderName;
+        delivery.outAt = patch.outForDeliveryAt;
+        delivery.timerStart = patch.outForDeliveryAt;
+        delivery.deliveredAt = patch.deliveredAt;
+        delivery.timerEnd = patch.deliveredAt;
+      }
+
+      try{ if(typeof sv === 'function')sv(); }catch(e){}
+      try{ if(typeof rDel === 'function')rDel(); }catch(e){}
+      try{ if(typeof rOrds === 'function')rOrds(); }catch(e){}
+      try{ if(typeof rDash === 'function')rDash(); }catch(e){}
+
+      console.log('[Delivery write-back] Synced', orderId, patch);
+    }).catch(function(err){
+      console.warn('[Delivery write-back] Failed', orderId, err);
+      try{ if(typeof toast === 'function')toast('Delivery Firebase sync failed', 'err'); }catch(e){}
+    });
+  }
+
+  function syncById(id){
+    var order = findOrder(id);
+    var delivery = findDelivery(id);
+
+    if(delivery && order){
+      copyDeliveryToOrder(delivery, order);
+    }
+
+    return patchFirebase(order, delivery);
+  }
+
+  function scanDeliveries(force){
+    try{
+      if(typeof S === 'undefined' || !S)return;
+      if(!Array.isArray(S.deliveries))return;
+
+      S.deliveries.forEach(function(delivery){
+        if(!delivery)return;
+
+        var order = findOrder(delivery.oid || delivery.id);
+        if(order){
+          copyDeliveryToOrder(delivery, order);
+          patchFirebase(order, delivery);
+        }
+      });
+    }catch(e){
+      console.warn('[Delivery write-back] scan failed', e);
+    }
+  }
+
+  function wrap(name){
+    var old = window[name] || (typeof globalThis[name] === 'function' ? globalThis[name] : null);
+    if(typeof old !== 'function')return false;
+    if(old.__deliveryWritebackV2)return true;
+
+    var wrapped = function(){
+      var args = arguments;
+      var result = old.apply(this, args);
+
+      setTimeout(function(){
+        try{
+          syncById(args[0]);
+          scanDeliveries(true);
+        }catch(e){
+          console.warn('[Delivery write-back] after hook failed', name, e);
+        }
+      }, 250);
+
+      return result;
+    };
+
+    wrapped.__deliveryWritebackV2 = true;
+    window[name] = wrapped;
+    try{ globalThis[name] = wrapped; }catch(e){}
+    try{ eval(name + ' = window["' + name + '"]'); }catch(e){}
+
+    console.log('[Delivery write-back] Wrapped', name);
+    return true;
+  }
+
+  function install(){
+    if(window.__deliveryWritebackV2Installed)return;
+    window.__deliveryWritebackV2Installed = true;
+
+    wrap('assignRider');
+    wrap('delAssign');
+    wrap('startDelivery');
+    wrap('outForDelivery');
+    wrap('markOutForDelivery');
+    wrap('markDelivered');
+    wrap('completeDelivery');
+    wrap('delivered');
+    wrap('deliveryAction');
+    wrap('setDeliveryStatus');
+    wrap('updateDeliveryStatus');
+
+    document.addEventListener('change', function(event){
+      var target = event.target;
+      var view = document.getElementById('view-delivery');
+
+      if(!target || !view || !view.contains(target))return;
+
+      setTimeout(function(){
+        scanDeliveries(true);
+      }, 300);
+    }, true);
+
+    document.addEventListener('click', function(event){
+      var target = event.target;
+      var view = document.getElementById('view-delivery');
+
+      if(!target || !target.closest || !view || !view.contains(target))return;
+
+      var text = String(target.textContent || '').toLowerCase();
+
+      if(
+        text.indexOf('assign') !== -1 ||
+        text.indexOf('waiting') !== -1 ||
+        text.indexOf('out') !== -1 ||
+        text.indexOf('deliver') !== -1
+      ){
+        setTimeout(function(){
+          scanDeliveries(true);
+        }, 400);
+      }
+    }, true);
+
+    setInterval(function(){
+      scanDeliveries(false);
+    }, 2500);
+
+    console.log('[Delivery write-back] Installed');
+  }
+
+  function boot(){
+    install();
+
+    var tries = 0;
+    var timer = setInterval(function(){
+      tries++;
+
+      wrap('assignRider');
+      wrap('delAssign');
+      wrap('startDelivery');
+      wrap('outForDelivery');
+      wrap('markOutForDelivery');
+      wrap('markDelivered');
+      wrap('completeDelivery');
+      wrap('delivered');
+      wrap('deliveryAction');
+      wrap('setDeliveryStatus');
+      wrap('updateDeliveryStatus');
+
+      if(tries > 20){
+        clearInterval(timer);
+      }
+    }, 500);
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 2000); });
+  }else{
+    setTimeout(boot, 2000);
+  }
+})();
+</script>
+
 </body>
 </html>
