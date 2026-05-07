@@ -11463,6 +11463,7 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
       var order = data[key] || {};
       if(!order.id)order.id = key;
       if(!order.orderNumber)order.orderNumber = order.no || key;
+      if(!order.kitStatus && order.kitchenStatus)order.kitStatus = order.kitchenStatus;
       return order;
     });
   }
@@ -11632,36 +11633,12 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 </script>
 
 
-<script id="firebase-order-status-writeback-v1">
+
+
+<script id="firebase-kitchen-status-direct-sync-v1">
 (function(){
   var DB_URL = 'https://fruities-pos-default-rtdb.asia-southeast1.firebasedatabase.app';
   var STORE_ID = 'fruit-story-main';
-  var SNAPSHOT_KEY = 'fruities_order_status_snapshot_v1';
-  var lastSnapshot = loadSnapshot();
-
-  function loadSnapshot(){
-    try{
-      return JSON.parse(localStorage.getItem(SNAPSHOT_KEY) || '{}') || {};
-    }catch(e){
-      return {};
-    }
-  }
-
-  function saveSnapshot(snapshot){
-    try{
-      localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(snapshot || {}));
-    }catch(e){}
-  }
-
-  function getOrders(){
-    try{
-      if(typeof S === 'undefined' || !S)return [];
-      if(!Array.isArray(S.orders))S.orders = [];
-      return S.orders;
-    }catch(e){
-      return [];
-    }
-  }
 
   function cleanKey(raw){
     return String(raw || ('order_' + Date.now()))
@@ -11669,56 +11646,51 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
       .replace(/\s+/g, '_');
   }
 
-  function getOrderKey(order){
-    return cleanKey(order && (order.id || order.orderNumber || order.no || order.num));
+  function orderKey(orderOrId){
+    if(typeof orderOrId === 'object' && orderOrId){
+      return cleanKey(orderOrId.id || orderOrId.orderNumber || orderOrId.no || orderOrId.num);
+    }
+    return cleanKey(orderOrId);
   }
 
-  function statusDigest(order){
-    return JSON.stringify({
-      status: order.status || '',
-      payStatus: order.payStatus || '',
-      kitchenStatus: order.kitchenStatus || '',
-      deliveryStatus: order.deliveryStatus || '',
-      pickupStatus: order.pickupStatus || '',
-      type: order.type || '',
-      orderType: order.orderType || '',
-      rider: order.rider || '',
-      riderName: order.riderName || '',
-      priority: order.priority || '',
-      updatedAt: order.updatedAt || '',
-      deliveredAt: order.deliveredAt || '',
-      pickedUpAt: order.pickedUpAt || '',
-      readyAt: order.readyAt || '',
-      sentOutAt: order.sentOutAt || ''
-    });
+  function findOrder(id){
+    try{
+      return (S.orders || []).find(function(o){
+        return String(o.id) === String(id) ||
+               String(o.orderNumber || '') === String(id) ||
+               String(o.no || '') === String(id);
+      });
+    }catch(e){
+      return null;
+    }
   }
 
-  function buildPatch(order){
+  function patchFirebaseOrder(order){
+    if(!order)return Promise.resolve();
+
+    var key = orderKey(order);
     var now = Date.now();
 
-    return {
-      status: order.status || order.payStatus || 'paid',
-      payStatus: order.payStatus || order.status || 'paid',
-      kitchenStatus: order.kitchenStatus || 'new',
-      deliveryStatus: order.deliveryStatus || 'waiting',
-      pickupStatus: order.pickupStatus || 'waiting',
-      orderType: order.orderType || order.type || 'walkin',
-      type: order.type || order.orderType || 'walkin',
-      rider: order.rider || '',
-      riderName: order.riderName || '',
-      priority: order.priority || 'normal',
-      updatedAt: now,
-      statusSyncedAt: now,
-      deliveredAt: order.deliveredAt || null,
-      pickedUpAt: order.pickedUpAt || null,
-      readyAt: order.readyAt || null,
-      sentOutAt: order.sentOutAt || null
-    };
-  }
+    var patch = {
+      // Original POS kitchen fields
+      kitStatus: order.kitStatus || 'new',
+      kitStart: order.kitStart || null,
+      kitReadyAt: order.kitReadyAt || null,
+      kitOutAt: order.kitOutAt || null,
+      kitForPickup: !!order.kitForPickup,
+      kitForPickupRequested: !!order.kitForPickupRequested,
+      kitPickup: !!order.kitPickup,
+      kitPickedAt: order.kitPickedAt || null,
 
-  function patchOrderToFirebase(order){
-    var key = getOrderKey(order);
-    var patch = buildPatch(order);
+      // Mirror fields for future normalized structure
+      kitchenStatus: order.kitStatus || 'new',
+      pickupStatus: order.kitPickup ? 'picked_up' : order.kitForPickup ? 'waiting' : 'none',
+
+      status: order.status || 'completed',
+      updatedAt: now,
+      statusSyncedAt: now
+    };
+
     var url = DB_URL + '/stores/' + STORE_ID + '/orders/' + encodeURIComponent(key) + '.json';
 
     return fetch(url, {
@@ -11728,66 +11700,88 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
     }).then(function(res){
       if(!res.ok){
         return res.text().then(function(t){
-          throw new Error('Status sync failed ' + res.status + ': ' + t);
+          throw new Error('Kitchen sync failed ' + res.status + ': ' + t);
         });
       }
       return res.json();
     }).then(function(){
-      order.updatedAt = patch.updatedAt;
-      order.statusSyncedAt = patch.statusSyncedAt;
-
-      try{ if(typeof sv === 'function')sv(); }catch(e){}
-
-      console.log('[Firebase status sync] Updated:', key, patch);
+      order.updatedAt = now;
+      order.statusSyncedAt = now;
+      try{ if(typeof sv === 'function') sv(); }catch(e){}
+      console.log('[Firebase kitchen sync] Synced', key, patch);
     }).catch(function(err){
-      console.warn('[Firebase status sync] Failed:', key, err);
+      console.warn('[Firebase kitchen sync] Failed', key, err);
+      try{ if(typeof toast === 'function') toast('Kitchen Firebase sync failed', 'err'); }catch(e){}
     });
   }
 
-  function scanStatusChanges(){
-    var orders = getOrders();
-    var nextSnapshot = Object.assign({}, lastSnapshot);
-    var writes = [];
+  function install(){
+    if(window.__firebaseKitchenStatusDirectSyncV1)return;
+    window.__firebaseKitchenStatusDirectSyncV1 = true;
 
-    orders.forEach(function(order){
-      var key = getOrderKey(order);
-      if(!key)return;
+    function wrap(name, after){
+      var old = window[name] || (typeof globalThis[name] === 'function' ? globalThis[name] : null);
+      if(typeof old !== 'function')return false;
+      if(old.__firebaseKitchenStatusDirectSyncV1)return true;
 
-      var digest = statusDigest(order);
+      var wrapped = function(){
+        var args = arguments;
+        var result = old.apply(this, args);
 
-      if(!lastSnapshot[key]){
-        nextSnapshot[key] = digest;
-        return;
-      }
+        setTimeout(function(){
+          try{ after.apply(null, args); }catch(e){ console.warn('[Firebase kitchen sync] after hook failed', name, e); }
+        }, 120);
 
-      if(lastSnapshot[key] !== digest){
-        nextSnapshot[key] = digest;
-        writes.push(patchOrderToFirebase(order));
-      }
+        return result;
+      };
+
+      wrapped.__firebaseKitchenStatusDirectSyncV1 = true;
+      window[name] = wrapped;
+      try{ globalThis[name] = wrapped; }catch(e){}
+      try{ eval(name + ' = window["' + name + '"]'); }catch(e){}
+
+      console.log('[Firebase kitchen sync] Wrapped', name);
+      return true;
+    }
+
+    wrap('kitAction', function(id){
+      patchFirebaseOrder(findOrder(id));
     });
 
-    lastSnapshot = nextSnapshot;
-    saveSnapshot(lastSnapshot);
+    wrap('kitSendToPickup', function(id){
+      patchFirebaseOrder(findOrder(id));
+    });
 
-    return Promise.allSettled(writes);
+    wrap('kitPickup', function(id){
+      patchFirebaseOrder(findOrder(id));
+    });
+
+    wrap('markPaid', function(id){
+      patchFirebaseOrder(findOrder(id));
+    });
+
+    wrap('refund', function(id){
+      patchFirebaseOrder(findOrder(id));
+    });
   }
 
   function boot(){
-    scanStatusChanges();
+    install();
 
-    setInterval(function(){
-      scanStatusChanges();
-    }, 2000);
-
-    console.log('[Firebase status sync] Watcher started');
+    var tries = 0;
+    var timer = setInterval(function(){
+      tries++;
+      install();
+      if(window.__firebaseKitchenStatusDirectSyncV1 || tries > 20){
+        clearInterval(timer);
+      }
+    }, 500);
   }
 
   if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', function(){
-      setTimeout(boot, 2000);
-    });
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 1500); });
   }else{
-    setTimeout(boot, 2000);
+    setTimeout(boot, 1500);
   }
 })();
 </script>
