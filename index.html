@@ -11951,5 +11951,186 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 })();
 </script>
 
+
+<script id="firebase-delivery-status-direct-sync-v1">
+(function(){
+  var DB_URL = 'https://fruities-pos-default-rtdb.asia-southeast1.firebasedatabase.app';
+  var STORE_ID = 'fruit-story-main';
+
+  function cleanKey(raw){
+    return String(raw || ('order_' + Date.now()))
+      .replace(/[.#$\[\]\/]/g, '_')
+      .replace(/\s+/g, '_');
+  }
+
+  function orderKey(orderOrId){
+    if(typeof orderOrId === 'object' && orderOrId){
+      return cleanKey(orderOrId.id || orderOrId.orderNumber || orderOrId.no || orderOrId.num);
+    }
+    return cleanKey(orderOrId);
+  }
+
+  function findOrder(id){
+    try{
+      return (S.orders || []).find(function(o){
+        return String(o.id) === String(id) ||
+               String(o.orderNumber || '') === String(id) ||
+               String(o.no || '') === String(id);
+      });
+    }catch(e){
+      return null;
+    }
+  }
+
+  function inferDeliveryStatus(order){
+    if(order.deliveryStatus === 'delivered') return 'delivered';
+    if(order.deliveredAt) return 'delivered';
+
+    if(order.deliveryStatus === 'out_for_delivery') return 'out_for_delivery';
+    if(order.deliveryStatus === 'out') return 'out_for_delivery';
+    if(order.outForDeliveryAt || order.deliveryOutAt) return 'out_for_delivery';
+
+    if(order.deliveryStatus === 'assigned') return 'assigned';
+    if(order.rider || order.riderName) return 'assigned';
+
+    return order.deliveryStatus || 'waiting';
+  }
+
+  function patchFirebaseDelivery(order){
+    if(!order)return Promise.resolve();
+
+    var key = orderKey(order);
+    var now = Date.now();
+    var deliveryStatus = inferDeliveryStatus(order);
+
+    var patch = {
+      deliveryStatus: deliveryStatus,
+      rider: order.rider || '',
+      riderName: order.riderName || '',
+      deliveryDate: order.deliveryDate || order.delivery_date || '',
+      deliveryTime: order.deliveryTime || order.delivery_time || '',
+      deliveryAddress: order.deliveryAddress || order.addr || order.address || '',
+      recipient: order.recipient || '',
+      recipientPhone: order.recipientPhone || '',
+      deliveredAt: order.deliveredAt || null,
+      outForDeliveryAt: order.outForDeliveryAt || order.deliveryOutAt || null,
+      deliverySyncedAt: now,
+      updatedAt: now
+    };
+
+    var url = DB_URL + '/stores/' + STORE_ID + '/orders/' + encodeURIComponent(key) + '.json';
+
+    return fetch(url, {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(patch)
+    }).then(function(res){
+      if(!res.ok){
+        return res.text().then(function(t){
+          throw new Error('Delivery sync failed ' + res.status + ': ' + t);
+        });
+      }
+      return res.json();
+    }).then(function(){
+      order.deliveryStatus = deliveryStatus;
+      order.deliverySyncedAt = now;
+      order.updatedAt = now;
+
+      try{ if(typeof sv === 'function') sv(); }catch(e){}
+      console.log('[Firebase delivery sync] Synced', key, patch);
+    }).catch(function(err){
+      console.warn('[Firebase delivery sync] Failed', key, err);
+      try{ if(typeof toast === 'function') toast('Delivery Firebase sync failed', 'err'); }catch(e){}
+    });
+  }
+
+  function install(){
+    if(window.__firebaseDeliveryStatusDirectSyncV1)return;
+    window.__firebaseDeliveryStatusDirectSyncV1 = true;
+
+    function wrap(name, after){
+      var old = window[name] || (typeof globalThis[name] === 'function' ? globalThis[name] : null);
+      if(typeof old !== 'function')return false;
+      if(old.__firebaseDeliveryStatusDirectSyncV1)return true;
+
+      var wrapped = function(){
+        var args = arguments;
+        var result = old.apply(this, args);
+
+        setTimeout(function(){
+          try{ after.apply(null, args); }catch(e){ console.warn('[Firebase delivery sync] after hook failed', name, e); }
+        }, 150);
+
+        return result;
+      };
+
+      wrapped.__firebaseDeliveryStatusDirectSyncV1 = true;
+      window[name] = wrapped;
+      try{ globalThis[name] = wrapped; }catch(e){}
+      try{ eval(name + ' = window["' + name + '"]'); }catch(e){}
+
+      console.log('[Firebase delivery sync] Wrapped', name);
+      return true;
+    }
+
+    // Common delivery action names. Missing ones are harmless.
+    wrap('assignRider', function(id){
+      patchFirebaseDelivery(findOrder(id));
+    });
+
+    wrap('delAssign', function(id){
+      patchFirebaseDelivery(findOrder(id));
+    });
+
+    wrap('startDelivery', function(id){
+      patchFirebaseDelivery(findOrder(id));
+    });
+
+    wrap('outForDelivery', function(id){
+      patchFirebaseDelivery(findOrder(id));
+    });
+
+    wrap('markOutForDelivery', function(id){
+      patchFirebaseDelivery(findOrder(id));
+    });
+
+    wrap('markDelivered', function(id){
+      patchFirebaseDelivery(findOrder(id));
+    });
+
+    wrap('completeDelivery', function(id){
+      patchFirebaseDelivery(findOrder(id));
+    });
+
+    wrap('delivered', function(id){
+      patchFirebaseDelivery(findOrder(id));
+    });
+
+    wrap('deliveryAction', function(id){
+      patchFirebaseDelivery(findOrder(id));
+    });
+  }
+
+  function boot(){
+    install();
+
+    var tries = 0;
+    var timer = setInterval(function(){
+      tries++;
+      install();
+      if(window.__firebaseDeliveryStatusDirectSyncV1 || tries > 20){
+        clearInterval(timer);
+      }
+    }, 500);
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 1700); });
+  }else{
+    setTimeout(boot, 1700);
+  }
+})();
+</script>
+
 </body>
 </html>
