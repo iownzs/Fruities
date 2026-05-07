@@ -14227,122 +14227,416 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 
 
 
-<script id="firebase-admin-roles-safe-reload-v2">
+
+
+<script id="firebase-role-editor-v1">
 (function(){
   var DB_URL = 'https://fruities-pos-default-rtdb.asia-southeast1.firebasedatabase.app';
   var STORE_ID = 'fruit-story-main';
-  var lastHash = '';
 
-  function titleRole(key){
-    key = String(key || '').toLowerCase();
+  var ROLE_OPTIONS = [
+    { key: 'admin', label: '👑 Admin' },
+    { key: 'sales', label: '💼 Sales' },
+    { key: 'kitchen', label: '👨‍🍳 Kitchen' },
+    { key: 'dispatcher', label: '🚚 Dispatcher' },
+    { key: 'rider', label: '🏍️ Rider' }
+  ];
 
-    if(key === 'sales')return 'Sales';
-    if(key === 'cashier')return 'Sales';
-    if(key === 'dispatcher')return 'Dispatcher';
+  var GROUPS = [
+    {
+      title: 'Pages / Navigation',
+      items: [
+        ['dashboard', '📊 Dashboard'],
+        ['pos', '🖥️ POS Terminal'],
+        ['orders', '🧾 Orders'],
+        ['kitchen', '👨‍🍳 Kitchen Board'],
+        ['delivery', '🚚 Delivery'],
+        ['pickup', '🛍️ Pick Up'],
+        ['stocks', '📦 Stocks'],
+        ['products', '🏷️ Products'],
+        ['journal', '📅 Journal / Reports'],
+        ['billing', '💳 POS Billing'],
+        ['chat', '💬 Group Chat'],
+        ['accounts', '👤 Admin Panel']
+      ]
+    },
+    {
+      title: 'Actions',
+      items: [
+        ['refundOrders', '↩️ Refund Orders'],
+        ['markPaid', '✅ Mark Paid'],
+        ['adjustStock', '📦 Adjust Stock'],
+        ['manageProducts', '🏷️ Manage Products'],
+        ['applyDiscount', '🏷️ Apply Discount'],
+        ['exportData', '📤 Export Data'],
+        ['adminFunctions', '⚙️ Admin Functions']
+      ]
+    },
+    {
+      title: 'POS UI Elements',
+      items: [
+        ['categoryTabs', '🏷️ Category Tabs'],
+        ['productSearch', '🔍 Product Search'],
+        ['customerDetails', '📋 Customer Details'],
+        ['orderNotes', '📝 Order Notes'],
+        ['discountBox', '🏷️ Discount Box'],
+        ['clearCartButton', '🧹 Clear Cart Button'],
+        ['paymentChannels', '💳 Payment Channels'],
+        ['orderStatusPicker', '✅ Order Status Picker'],
+        ['receiptPrint', '🧾 Receipt Print']
+      ]
+    },
+    {
+      title: 'Global UI Elements',
+      items: [
+        ['dashboardStats', '📊 Dashboard Stats'],
+        ['topbarNewSale', '➕ Topbar New Sale']
+      ]
+    }
+  ];
 
-    return key.charAt(0).toUpperCase() + key.slice(1);
+  var state = {
+    roles: {},
+    selectedRole: 'sales'
+  };
+
+  function getEditor(){
+    return document.getElementById('firebase-role-editor');
   }
 
-  function normalizeKey(key){
-    key = String(key || '').toLowerCase();
-    if(key === 'cashier')return 'sales';
-    return key;
-  }
-
-  function applyRoles(data){
-    if(typeof S === 'undefined' || !S || !data)return;
-
-    var normalized = {};
-
-    Object.keys(data).forEach(function(key){
-      var roleKey = normalizeKey(key);
-      normalized[roleKey] = Object.assign({}, data[key] || {});
-    });
-
-    // Keep both names compatible.
-    if(normalized.sales && !normalized.cashier){
-      normalized.cashier = Object.assign({}, normalized.sales);
-    }
-
-    if(normalized.cashier && !normalized.sales){
-      normalized.sales = Object.assign({}, normalized.cashier);
-    }
-
-    S.roles = S.roles || {};
-    S.rolePerms = S.rolePerms || {};
-
-    Object.keys(normalized).forEach(function(key){
-      var role = normalized[key];
-      var title = titleRole(key);
-
-      S.roles[key] = role;
-      S.roles[title] = role;
-
-      S.rolePerms[key] = role;
-      S.rolePerms[title] = role;
-    });
-
-    try{ if(typeof sv === 'function')sv(); }catch(e){}
-
-    // Let the original app rebuild clickable role cells.
-    var view = document.getElementById('view-accounts');
-    if(view && view.classList.contains('on')){
-      setTimeout(function(){
-        try{ if(typeof rPermEditor === 'function')rPermEditor(); }catch(e){}
-      }, 250);
-    }
-
-    console.log('[Firebase roles safe reload] Applied roles', normalized);
-  }
-
-  function fetchRoles(force){
-    fetch(DB_URL + '/stores/' + STORE_ID + '/roles.json', {cache:'no-store'})
+  function fetchJson(path){
+    return fetch(DB_URL + path + '.json', { cache: 'no-store' })
       .then(function(res){
         if(!res.ok){
           return res.text().then(function(t){
-            throw new Error('Roles read failed ' + res.status + ': ' + t);
+            throw new Error('Firebase read failed ' + res.status + ': ' + t);
           });
         }
         return res.json();
-      })
-      .then(function(data){
-        var hash = JSON.stringify(data || {});
-
-        if(!force && hash === lastHash)return;
-        lastHash = hash;
-
-        applyRoles(data);
-      })
-      .catch(function(err){
-        console.warn('[Firebase roles safe reload] failed', err);
       });
   }
 
-  function boot(){
-    fetchRoles(true);
-
-    // Reload roles when opening Accounts/Admin.
-    document.addEventListener('click', function(event){
-      var target = event.target;
-      if(!target)return;
-
-      var text = String(target.textContent || '').toLowerCase();
-
-      if(text.indexOf('accounts') !== -1 || text.indexOf('admin') !== -1){
-        setTimeout(function(){ fetchRoles(true); }, 600);
+  function patchJson(path, data){
+    return fetch(DB_URL + path + '.json', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    }).then(function(res){
+      if(!res.ok){
+        return res.text().then(function(t){
+          throw new Error('Firebase save failed ' + res.status + ': ' + t);
+        });
       }
-    }, true);
+      return res.json();
+    });
+  }
 
-    // Periodic reload only while admin panel is open.
+  function normalizeRoles(data){
+    data = data || {};
+
+    var roles = {};
+
+    ROLE_OPTIONS.forEach(function(role){
+      roles[role.key] = Object.assign({}, data[role.key] || {});
+    });
+
+    // Compatibility: if old cashier exists, use it as sales fallback.
+    if(data.cashier && !data.sales){
+      roles.sales = Object.assign({}, data.cashier);
+    }
+
+    return roles;
+  }
+
+  function applyRolesToApp(){
+    try{
+      if(typeof S === 'undefined' || !S)return;
+
+      S.roles = S.roles || {};
+      S.rolePerms = S.rolePerms || {};
+
+      Object.keys(state.roles).forEach(function(key){
+        var role = state.roles[key] || {};
+        var title = key.charAt(0).toUpperCase() + key.slice(1);
+        if(key === 'sales') title = 'Sales';
+        if(key === 'dispatcher') title = 'Dispatcher';
+
+        S.roles[key] = role;
+        S.roles[title] = role;
+        S.rolePerms[key] = role;
+        S.rolePerms[title] = role;
+      });
+
+      // Cashier alias points to Sales.
+      if(state.roles.sales){
+        S.roles.cashier = state.roles.sales;
+        S.roles.Cashier = state.roles.sales;
+        S.rolePerms.cashier = state.roles.sales;
+        S.rolePerms.Cashier = state.roles.sales;
+      }
+
+      try{ if(typeof sv === 'function')sv(); }catch(e){}
+      try{ if(typeof applyPerms === 'function')applyPerms(); }catch(e){}
+    }catch(e){
+      console.warn('[Firebase Role Editor] applyRolesToApp failed', e);
+    }
+  }
+
+  function makeToggle(roleKey, permKey, label){
+    var role = state.roles[roleKey] || {};
+    var value = !!role[permKey];
+
+    var row = document.createElement('label');
+    row.className = 'fre-toggle-row';
+    row.style.cssText = [
+      'display:flex',
+      'align-items:center',
+      'justify-content:space-between',
+      'gap:12px',
+      'padding:12px',
+      'border:1px solid rgba(0,0,0,.08)',
+      'border-radius:14px',
+      'background:#fff',
+      'margin:8px 0',
+      'font-weight:700'
+    ].join(';');
+
+    var name = document.createElement('span');
+    name.textContent = label;
+    name.style.cssText = 'font-size:14px;color:#222;';
+
+    var pill = document.createElement('button');
+    pill.type = 'button';
+    pill.dataset.roleKey = roleKey;
+    pill.dataset.permKey = permKey;
+    pill.textContent = value ? '✅ On' : '❌ Off';
+    pill.style.cssText = [
+      'min-width:86px',
+      'padding:8px 12px',
+      'border-radius:999px',
+      'border:1px solid ' + (value ? '#a7e3bd' : '#f4b6c0'),
+      'background:' + (value ? '#e8f8ef' : '#fdecef'),
+      'color:' + (value ? '#18854c' : '#c94040'),
+      'font-weight:800'
+    ].join(';');
+
+    pill.onclick = function(){
+      state.roles[roleKey] = state.roles[roleKey] || {};
+      state.roles[roleKey][permKey] = !state.roles[roleKey][permKey];
+      renderEditorBody();
+    };
+
+    row.appendChild(name);
+    row.appendChild(pill);
+
+    return row;
+  }
+
+  function renderEditorBody(){
+    var body = document.getElementById('firebase-role-editor-body');
+    if(!body)return;
+
+    body.innerHTML = '';
+
+    var roleKey = state.selectedRole;
+    state.roles[roleKey] = state.roles[roleKey] || {};
+
+    GROUPS.forEach(function(group){
+      var section = document.createElement('div');
+      section.style.cssText = [
+        'margin:14px 0',
+        'padding:12px',
+        'border:1px solid rgba(0,0,0,.06)',
+        'border-radius:16px',
+        'background:#faf9f4'
+      ].join(';');
+
+      var title = document.createElement('h4');
+      title.textContent = group.title;
+      title.style.cssText = 'margin:0 0 8px;font-size:15px;color:#333;';
+
+      section.appendChild(title);
+
+      group.items.forEach(function(item){
+        section.appendChild(makeToggle(roleKey, item[0], item[1]));
+      });
+
+      body.appendChild(section);
+    });
+  }
+
+  function renderEditor(){
+    var editor = getEditor();
+    if(!editor)return;
+
+    editor.innerHTML = '';
+
+    var title = document.createElement('h3');
+    title.textContent = '🔥 Firebase Role Editor';
+    title.style.cssText = 'margin:0 0 6px;font-size:22px;';
+
+    var note = document.createElement('p');
+    note.textContent = 'Mobile-friendly role editor. Use this instead of the old role matrix.';
+    note.style.cssText = 'margin:0 0 12px;color:#777;font-size:13px;';
+
+    var select = document.createElement('select');
+    select.id = 'firebase-role-select';
+    select.style.cssText = [
+      'width:100%',
+      'padding:12px',
+      'border:1px solid #ddd',
+      'border-radius:14px',
+      'font-size:15px',
+      'font-weight:800',
+      'margin:8px 0 12px'
+    ].join(';');
+
+    ROLE_OPTIONS.forEach(function(role){
+      var opt = document.createElement('option');
+      opt.value = role.key;
+      opt.textContent = role.label;
+      if(role.key === state.selectedRole) opt.selected = true;
+      select.appendChild(opt);
+    });
+
+    select.onchange = function(){
+      state.selectedRole = select.value;
+      renderEditorBody();
+    };
+
+    var actions = document.createElement('div');
+    actions.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0 12px;';
+
+    var refreshBtn = document.createElement('button');
+    refreshBtn.type = 'button';
+    refreshBtn.textContent = '🔄 Reload';
+    refreshBtn.style.cssText = 'padding:12px;border:0;border-radius:14px;background:#0f766e;color:white;font-weight:800;';
+    refreshBtn.onclick = loadRoles;
+
+    var saveBtn = document.createElement('button');
+    saveBtn.type = 'button';
+    saveBtn.textContent = '💾 Save Role';
+    saveBtn.style.cssText = 'padding:12px;border:0;border-radius:14px;background:#1e8a52;color:white;font-weight:800;';
+    saveBtn.onclick = saveSelectedRole;
+
+    actions.appendChild(refreshBtn);
+    actions.appendChild(saveBtn);
+
+    var body = document.createElement('div');
+    body.id = 'firebase-role-editor-body';
+
+    editor.appendChild(title);
+    editor.appendChild(note);
+    editor.appendChild(select);
+    editor.appendChild(actions);
+    editor.appendChild(body);
+
+    renderEditorBody();
+  }
+
+  function saveSelectedRole(){
+    var roleKey = state.selectedRole;
+    var payload = Object.assign({}, state.roles[roleKey] || {}, {
+      updatedAt: Date.now(),
+      updatedBy: (window.S && S.cur && (S.cur.user || S.cur.name)) || 'admin'
+    });
+
+    var saveBtn = getEditor() && Array.from(getEditor().querySelectorAll('button')).find(function(btn){
+      return btn.textContent.indexOf('Save Role') !== -1;
+    });
+
+    if(saveBtn) saveBtn.textContent = 'Saving...';
+
+    patchJson('/stores/' + STORE_ID + '/roles/' + roleKey, payload)
+      .then(function(){
+        state.roles[roleKey] = payload;
+
+        // Also write cashier alias if Sales is saved.
+        if(roleKey === 'sales'){
+          return patchJson('/stores/' + STORE_ID + '/roles/cashier', payload);
+        }
+      })
+      .then(function(){
+        applyRolesToApp();
+
+        if(saveBtn){
+          saveBtn.textContent = '✅ Saved';
+          setTimeout(function(){ saveBtn.textContent = '💾 Save Role'; }, 1200);
+        }
+
+        try{ if(typeof toast === 'function')toast('Role saved ✅'); }catch(e){}
+        console.log('[Firebase Role Editor] Saved role', roleKey, payload);
+      })
+      .catch(function(err){
+        console.warn('[Firebase Role Editor] Save failed', err);
+        if(saveBtn) saveBtn.textContent = '💾 Save Role';
+        try{ if(typeof toast === 'function')toast('Role save failed', 'err'); }catch(e){}
+      });
+  }
+
+  function loadRoles(){
+    var editor = getEditor();
+    if(editor){
+      editor.innerHTML = '<div style="padding:16px;font-weight:800;">Loading Firebase roles...</div>';
+    }
+
+    fetchJson('/stores/' + STORE_ID + '/roles')
+      .then(function(data){
+        state.roles = normalizeRoles(data);
+        applyRolesToApp();
+        renderEditor();
+        console.log('[Firebase Role Editor] Loaded roles', state.roles);
+      })
+      .catch(function(err){
+        console.warn('[Firebase Role Editor] Load failed', err);
+        if(editor){
+          editor.innerHTML = '<div style="padding:16px;color:#c94040;font-weight:800;">Could not load Firebase roles.</div>';
+        }
+      });
+  }
+
+  function installEditor(){
+    var view = document.getElementById('view-accounts');
+    if(!view)return;
+
+    if(document.getElementById('firebase-role-editor'))return;
+
+    var box = document.createElement('section');
+    box.id = 'firebase-role-editor';
+    box.style.cssText = [
+      'margin:16px 0',
+      'padding:16px',
+      'border:1px solid rgba(0,0,0,.08)',
+      'border-radius:20px',
+      'background:#fff',
+      'box-shadow:0 10px 30px rgba(0,0,0,.06)'
+    ].join(';');
+
+    // Put editor before the old role table.
+    var roleTitle = Array.from(view.querySelectorAll('h1,h2,h3,h4,div,p')).find(function(el){
+      return String(el.textContent || '').toLowerCase().indexOf('role permissions') !== -1;
+    });
+
+    if(roleTitle && roleTitle.parentNode){
+      roleTitle.parentNode.insertBefore(box, roleTitle);
+    }else{
+      view.appendChild(box);
+    }
+
+    loadRoles();
+  }
+
+  function boot(){
+    installEditor();
+
     setInterval(function(){
       var view = document.getElementById('view-accounts');
-
       if(view && view.classList.contains('on')){
-        fetchRoles(false);
+        installEditor();
       }
-    }, 6000);
+    }, 2000);
 
-    console.log('[Firebase roles safe reload] Started');
+    console.log('[Firebase Role Editor] Started');
   }
 
   if(document.readyState === 'loading'){
