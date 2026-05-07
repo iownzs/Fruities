@@ -274,8 +274,10 @@ function bootFirebaseSettingsSync() {
 
     onValue(ordersRef, (snapshot) => {
       if (!snapshot.exists()) {
-        console.warn('[Fruities Firebase] No Firebase orders found');
-        applyOrders({});
+        console.warn('[Fruities Firebase] No Firebase orders found; keeping local orders');
+        if (typeof window.syncLocalOrdersToFirebase === 'function') {
+          window.syncLocalOrdersToFirebase();
+        }
         return;
       }
 
@@ -370,3 +372,45 @@ if (document.readyState === 'loading') {
 } else {
   setTimeout(installOrderWatcher, 1500);
 }
+
+/* Explicit local orders uploader */
+window.syncLocalOrdersToFirebase = async function syncLocalOrdersToFirebase() {
+  if (!window.FruitiesFirebase || !window.FruitiesFirebase.db) {
+    console.warn('[Fruities Firebase] Cannot sync local orders yet: DB not ready');
+    return;
+  }
+
+  const orders = Array.isArray(window.S?.orders) ? window.S.orders : [];
+
+  if (!orders.length) {
+    console.warn('[Fruities Firebase] No local orders to sync');
+    return;
+  }
+
+  const { ref, set } = await import('firebase/database');
+
+  for (const order of orders) {
+    const rawKey = order?.id || order?.orderNumber || order?.no || `order_${Date.now()}`;
+    const key = String(rawKey)
+      .replace(/[.#$\[\]\/]/g, '_')
+      .replace(/\s+/g, '_');
+
+    const now = Date.now();
+
+    const payload = {
+      ...order,
+      id: order.id || key,
+      orderNumber: order.orderNumber || order.no || order.id || key,
+      createdAt: order.createdAt || order.time || now,
+      updatedAt: now,
+      syncedAt: now
+    };
+
+    await set(
+      ref(window.FruitiesFirebase.db, `stores/fruit-story-main/orders/${key}`),
+      payload
+    );
+
+    console.log('[Fruities Firebase] Uploaded local order', key);
+  }
+};
