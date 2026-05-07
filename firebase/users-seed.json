@@ -1,0 +1,58 @@
+{
+  "admin": {
+    "id": "admin",
+    "name": "Admin",
+    "user": "admin",
+    "username": "admin",
+    "pass": "",
+    "role": "Admin",
+    "roleKey": "admin",
+    "status": "active",
+    "active": true,
+    "email": "admin@fruities.local",
+    "createdAt": 1777996800000,
+    "updatedAt": 1777996800000
+  },
+  "cashier": {
+    "id": "cashier",
+    "name": "Cashier",
+    "user": "cashier",
+    "username": "cashier",
+    "pass": "",
+    "role": "Cashier",
+    "roleKey": "cashier",
+    "status": "active",
+    "active": true,
+    "email": "cashier@fruities.local",
+    "createdAt": 1777996800000,
+    "updatedAt": 1777996800000
+  },
+  "kitchen": {
+    "id": "kitchen",
+    "name": "Kitchen",
+    "user": "kitchen",
+    "username": "kitchen",
+    "pass": "",
+    "role": "Kitchen",
+    "roleKey": "kitchen",
+    "status": "active",
+    "active": true,
+    "email": "kitchen@fruities.local",
+    "createdAt": 1777996800000,
+    "updatedAt": 1777996800000
+  },
+  "rider": {
+    "id": "rider",
+    "name": "Rider",
+    "user": "rider",
+    "username": "rider",
+    "pass": "",
+    "role": "Rider",
+    "roleKey": "rider",
+    "status": "active",
+    "active": true,
+    "email": "rider@fruities.local",
+    "createdAt": 1777996800000,
+    "updatedAt": 1777996800000
+  }
+}

@@ -13783,5 +13783,130 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 })();
 </script>
 
+
+<script id="firebase-users-roles-safe-sync-v1">
+(function(){
+  var DB_URL = 'https://fruities-pos-default-rtdb.asia-southeast1.firebasedatabase.app';
+  var STORE_ID = 'fruit-story-main';
+
+  function normalizeUser(key, user){
+    user = user || {};
+
+    return {
+      id: user.id || key,
+      name: user.name || user.username || user.user || key,
+      user: user.user || user.username || key,
+      username: user.username || user.user || key,
+      pass: user.pass || '',
+      role: user.role || 'Cashier',
+      roleKey: user.roleKey || String(user.role || 'cashier').toLowerCase(),
+      status: user.status || (user.active === false ? 'inactive' : 'active'),
+      active: user.active !== false,
+      email: user.email || '',
+      createdAt: user.createdAt || Date.now(),
+      updatedAt: user.updatedAt || Date.now()
+    };
+  }
+
+  function normalizeUsers(data){
+    if(!data)return [];
+
+    return Object.keys(data).map(function(key){
+      return normalizeUser(key, data[key]);
+    });
+  }
+
+  function roleNameFromKey(key){
+    if(!key)return key;
+    return key.charAt(0).toUpperCase() + key.slice(1);
+  }
+
+  function applyUsers(data){
+    try{
+      if(typeof S === 'undefined' || !S)return;
+
+      var users = normalizeUsers(data);
+
+      if(!users.length){
+        console.warn('[Firebase users] No users found');
+        return;
+      }
+
+      S.accounts = users;
+
+      try{ if(typeof sv === 'function')sv(); }catch(e){}
+      try{ if(typeof rLoginUsers === 'function')rLoginUsers(); }catch(e){}
+      try{ if(typeof rAccounts === 'function')rAccounts(); }catch(e){}
+      try{ if(typeof rAdmUsers === 'function')rAdmUsers(); }catch(e){}
+
+      console.log('[Firebase users] Loaded accounts:', users.length);
+    }catch(e){
+      console.warn('[Firebase users] apply failed:', e);
+    }
+  }
+
+  function applyRoles(data){
+    try{
+      if(typeof S === 'undefined' || !S)return;
+      if(!data)return;
+
+      S.roles = data;
+      S.rolePerms = S.rolePerms || {};
+
+      Object.keys(data).forEach(function(key){
+        var role = data[key] || {};
+        S.rolePerms[key] = role;
+        S.rolePerms[key.toLowerCase()] = role;
+        S.rolePerms[roleNameFromKey(key)] = role;
+      });
+
+      try{ if(typeof sv === 'function')sv(); }catch(e){}
+      try{ if(typeof applyPerms === 'function')applyPerms(); }catch(e){}
+      try{ if(typeof rPermEditor === 'function')rPermEditor(); }catch(e){}
+
+      console.log('[Firebase roles] Loaded roles');
+    }catch(e){
+      console.warn('[Firebase roles] apply failed:', e);
+    }
+  }
+
+  function fetchJson(path){
+    return fetch(DB_URL + path + '.json', {cache:'no-store'})
+      .then(function(res){
+        if(!res.ok){
+          return res.text().then(function(t){
+            throw new Error('Firebase read failed ' + res.status + ': ' + t);
+          });
+        }
+        return res.json();
+      });
+  }
+
+  function loadUsersRoles(){
+    fetchJson('/stores/' + STORE_ID + '/users')
+      .then(applyUsers)
+      .catch(function(err){ console.warn('[Firebase users] fetch failed:', err); });
+
+    fetchJson('/stores/' + STORE_ID + '/roles')
+      .then(applyRoles)
+      .catch(function(err){ console.warn('[Firebase roles] fetch failed:', err); });
+  }
+
+  function boot(){
+    loadUsersRoles();
+    setInterval(loadUsersRoles, 10000);
+    console.log('[Firebase users/roles] Sync started');
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){
+      setTimeout(boot, 1800);
+    });
+  }else{
+    setTimeout(boot, 1800);
+  }
+})();
+</script>
+
 </body>
 </html>
