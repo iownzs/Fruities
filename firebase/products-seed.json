@@ -1,0 +1,62 @@
+{
+  "1": {
+    "id": 1,
+    "e": "🍎",
+    "n": "Red Apple",
+    "cat": "Stone Fruits",
+    "p": 25,
+    "s": 50,
+    "min": 10,
+    "d": "Sweet and crunchy red apple",
+    "img": "",
+    "active": true
+  },
+  "2": {
+    "id": 2,
+    "e": "🍊",
+    "n": "Orange",
+    "cat": "Citrus",
+    "p": 20,
+    "s": 80,
+    "min": 15,
+    "d": "Fresh juicy oranges",
+    "img": "",
+    "active": true
+  },
+  "3": {
+    "id": 3,
+    "e": "🍇",
+    "n": "Grapes",
+    "cat": "Berries",
+    "p": 60,
+    "s": 30,
+    "min": 10,
+    "d": "Seedless grapes",
+    "img": "",
+    "active": true
+  },
+  "4": {
+    "id": 4,
+    "e": "🍓",
+    "n": "Strawberry",
+    "cat": "Berries",
+    "p": 80,
+    "s": 25,
+    "min": 8,
+    "d": "Fresh strawberries per pack",
+    "img": "",
+    "active": true
+  },
+  "5": {
+    "id": 5,
+    "e": "🥭",
+    "n": "Mango",
+    "cat": "Tropical",
+    "p": 35,
+    "s": 45,
+    "min": 12,
+    "d": "Philippine carabao mango",
+    "img": "",
+    "active": true
+  }
+}
