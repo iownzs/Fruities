@@ -14990,5 +14990,560 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 })();
 </script>
 
+
+<script id="modern-superadmin-route-page-v1">
+(function(){
+  var DB_URL = 'https://fruities-pos-default-rtdb.asia-southeast1.firebasedatabase.app';
+  var STORE_ID = 'fruit-story-main';
+
+  function isSuPath(){
+    return location.pathname === '/su' || location.pathname === '/su/';
+  }
+
+  function normalizeRole(role){
+    role = String(role || '').trim().toLowerCase();
+    if(role === 'cashier') role = 'sales';
+    if(role === 'administrator') role = 'admin';
+    return role || 'sales';
+  }
+
+  function currentRole(){
+    try{
+      var cur = S && S.cur ? S.cur : {};
+      var role = cur.roleKey || cur.role || '';
+
+      if(!role && cur.user && Array.isArray(S.accounts)){
+        var acc = S.accounts.find(function(a){
+          return String(a.user || a.username || a.id).toLowerCase() === String(cur.user).toLowerCase();
+        });
+        if(acc) role = acc.roleKey || acc.role;
+      }
+
+      return normalizeRole(role);
+    }catch(e){
+      return 'sales';
+    }
+  }
+
+  function isSuperadmin(){
+    return currentRole() === 'superadmin';
+  }
+
+  function fetchJson(path){
+    return fetch(DB_URL + path + '.json', { cache: 'no-store' })
+      .then(function(res){
+        if(!res.ok){
+          return res.text().then(function(t){
+            throw new Error('Firebase read failed ' + res.status + ': ' + t);
+          });
+        }
+        return res.json();
+      });
+  }
+
+  function patchJson(path, data){
+    return fetch(DB_URL + path + '.json', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    }).then(function(res){
+      if(!res.ok){
+        return res.text().then(function(t){
+          throw new Error('Firebase patch failed ' + res.status + ': ' + t);
+        });
+      }
+      return res.json();
+    });
+  }
+
+  function money(value){
+    var n = Number(value || 0);
+    return '₱' + n.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  }
+
+  function dateText(value){
+    if(!value) return '—';
+    try{ return new Date(value).toLocaleDateString(); }
+    catch(e){ return String(value); }
+  }
+
+  function countObject(obj){
+    if(!obj) return 0;
+    return Object.keys(obj).filter(function(k){ return obj[k]; }).length;
+  }
+
+  function setText(id, value){
+    var el = document.getElementById(id);
+    if(el) el.textContent = value;
+  }
+
+  function setChip(id, text, good){
+    var el = document.getElementById(id);
+    if(!el) return;
+    el.textContent = text;
+    el.style.background = good ? '#e8f8ef' : '#fdecef';
+    el.style.color = good ? '#18854c' : '#c94040';
+  }
+
+  function prefillSuperadminLogin(){
+    if(!isSuPath()) return;
+
+    try{
+      var userInput =
+        document.getElementById('login-user') ||
+        document.getElementById('username') ||
+        document.querySelector('input[name="username"]') ||
+        document.querySelector('input[type="text"]');
+
+      var passInput =
+        document.getElementById('login-pass') ||
+        document.getElementById('password') ||
+        document.querySelector('input[name="password"]') ||
+        document.querySelector('input[type="password"]');
+
+      if(userInput){
+        userInput.value = 'superadmin';
+        userInput.dispatchEvent(new Event('input', { bubbles: true }));
+        userInput.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+
+      if(passInput){
+        passInput.value = '';
+        passInput.dispatchEvent(new Event('input', { bubbles: true }));
+        passInput.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+
+      var loginTitle = document.querySelector('#login-screen h1,#login-screen h2,.login-title');
+      if(loginTitle){
+        loginTitle.textContent = '🛡️ Superadmin Access';
+      }
+    }catch(e){
+      console.warn('[Superadmin] login prefill failed', e);
+    }
+  }
+
+  function ensureSidebarItem(){
+    var nav = document.querySelector('.sb-nav');
+    if(!nav) return;
+
+    var item = document.getElementById('superadmin-nav-item');
+
+    if(!item){
+      item = document.createElement('div');
+      item.id = 'superadmin-nav-item';
+      item.className = 'ni';
+      item.setAttribute('data-v', 'superadmin');
+      item.innerHTML = '<span class="ni-ico">🛡️</span>Superadmin';
+
+      item.onclick = function(event){
+        event.preventDefault();
+        event.stopPropagation();
+
+        if(!isSuperadmin()){
+          try{ if(typeof toast === 'function') toast('Superadmin only', 'err'); }catch(e){}
+          return false;
+        }
+
+        openSuperadmin();
+        return false;
+      };
+
+      var accounts = nav.querySelector('.ni[data-v="accounts"]');
+      if(accounts && accounts.parentNode){
+        accounts.parentNode.insertBefore(item, accounts);
+      }else{
+        nav.appendChild(item);
+      }
+    }
+
+    item.style.display = isSuperadmin() ? '' : 'none';
+  }
+
+  function ensureView(){
+    if(document.getElementById('view-superadmin')) return;
+
+    var main =
+      document.querySelector('#content') ||
+      document.querySelector('#main') ||
+      document.querySelector('main') ||
+      document.body;
+
+    var view = document.createElement('div');
+    view.className = 'view';
+    view.id = 'view-superadmin';
+    view.style.display = 'none';
+
+    view.innerHTML = ''
+      + '<div class="sh">'
+      + '  <div>'
+      + '    <h2>🛡️ Superadmin Panel</h2>'
+      + '    <div style="font-size:12px;color:var(--t3);margin-top:2px">Store management, billing control, backups, and emergency tools</div>'
+      + '  </div>'
+      + '  <button class="btn bw bsm" id="sa-refresh-btn" type="button">↻ Refresh</button>'
+      + '</div>'
+
+      + '<div class="card" style="margin-bottom:16px;overflow:hidden;position:relative;background:linear-gradient(135deg,#103d2a,#1e8a52);color:#fff;border:0">'
+      + '  <div style="position:absolute;right:-28px;top:-38px;font-size:135px;opacity:.10">🛡️</div>'
+      + '  <div style="position:relative;z-index:2">'
+      + '    <div style="font-size:12px;font-weight:1000;text-transform:uppercase;letter-spacing:.12em;opacity:.82">Fruities POS Platform</div>'
+      + '    <div id="sa-hero-store" style="font-size:30px;font-weight:1000;line-height:1.1;margin-top:7px">Fruit Story</div>'
+      + '    <div id="sa-hero-sub" style="font-size:13px;opacity:.84;margin-top:8px">Loading platform snapshot...</div>'
+      + '    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px">'
+      + '      <span id="sa-chip-access" style="padding:8px 11px;border-radius:999px;background:rgba(255,255,255,.16);font-weight:900;font-size:12px">POS Access —</span>'
+      + '      <span id="sa-chip-subscription" style="padding:8px 11px;border-radius:999px;background:rgba(255,255,255,.16);font-weight:900;font-size:12px">Subscription —</span>'
+      + '      <span style="padding:8px 11px;border-radius:999px;background:rgba(255,255,255,.16);font-weight:900;font-size:12px">Store ID: ' + STORE_ID + '</span>'
+      + '    </div>'
+      + '  </div>'
+      + '</div>'
+
+      + '<div class="sg" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-bottom:16px">'
+      + '  <div class="sc"><div class="sl">Orders</div><div class="sv" id="sa-orders-count" style="font-size:24px">—</div><div class="ss">Total records</div><div class="si">🧾</div></div>'
+      + '  <div class="sc"><div class="sl">Products</div><div class="sv" id="sa-products-count" style="font-size:24px">—</div><div class="ss">Catalog count</div><div class="si">🏷️</div></div>'
+      + '  <div class="sc"><div class="sl">Users</div><div class="sv" id="sa-users-count" style="font-size:24px">—</div><div class="ss">Staff accounts</div><div class="si">👥</div></div>'
+      + '  <div class="sc"><div class="sl">Inventory Logs</div><div class="sv" id="sa-logs-count" style="font-size:24px">—</div><div class="ss">Stock movements</div><div class="si">📦</div></div>'
+      + '</div>'
+
+      + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px">'
+      + '  <div class="card">'
+      + '    <div class="ct2">🏪 Store Management</div>'
+      + '    <div style="font-size:12px;color:var(--t3);margin-top:4px">Store identity and operating snapshot.</div>'
+      + '    <div style="margin-top:14px">'
+      + '      <div class="sys-stat-row"><span class="lbl">Store name</span><span class="val" id="sa-store-name">—</span></div>'
+      + '      <div class="sys-stat-row"><span class="lbl">Currency</span><span class="val" id="sa-currency">—</span></div>'
+      + '      <div class="sys-stat-row"><span class="lbl">Timezone</span><span class="val" id="sa-timezone">—</span></div>'
+      + '      <div class="sys-stat-row"><span class="lbl">Theme</span><span class="val" id="sa-theme">—</span></div>'
+      + '    </div>'
+      + '    <button class="btn bw" id="sa-open-settings" type="button" style="width:100%;justify-content:center;margin-top:12px">⚙️ Open Admin Settings</button>'
+      + '  </div>'
+
+      + '  <div class="card">'
+      + '    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">'
+      + '      <div>'
+      + '        <div class="ct2">💳 Billing Management</div>'
+      + '        <div style="font-size:12px;color:var(--t3);margin-top:4px">Subscription status and payment cycle.</div>'
+      + '      </div>'
+      + '      <div id="sa-billing-pill" style="padding:8px 10px;border-radius:999px;font-size:12px;font-weight:900;background:#eef7ef;color:#18854c">—</div>'
+      + '    </div>'
+      + '    <div style="margin-top:14px">'
+      + '      <div class="sys-stat-row"><span class="lbl">Status</span><span class="val" id="sa-billing-status">—</span></div>'
+      + '      <div class="sys-stat-row"><span class="lbl">Monthly fee</span><span class="val" id="sa-monthly-fee">—</span></div>'
+      + '      <div class="sys-stat-row"><span class="lbl">Next due</span><span class="val" id="sa-next-due">—</span></div>'
+      + '      <div class="sys-stat-row"><span class="lbl">Paid months</span><span class="val" id="sa-paid-months">—</span></div>'
+      + '    </div>'
+      + '  </div>'
+
+      + '  <div class="card">'
+      + '    <div class="ct2">🔒 POS Lock / Unlock</div>'
+      + '    <div style="font-size:12px;color:var(--t3);margin-top:4px">Emergency access switch for the live POS.</div>'
+      + '    <div id="sa-access-pill" style="margin-top:12px;display:inline-flex;padding:8px 12px;border-radius:999px;font-weight:900;font-size:12px;background:#eef7ef;color:#18854c">—</div>'
+      + '    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px">'
+      + '      <button class="btn bg" id="sa-enable-pos" type="button" style="justify-content:center">✅ Unlock POS</button>'
+      + '      <button class="btn br" id="sa-disable-pos" type="button" style="justify-content:center">⛔ Lock POS</button>'
+      + '    </div>'
+      + '  </div>'
+
+      + '  <div class="card">'
+      + '    <div class="ct2">📊 Subscription Status</div>'
+      + '    <div id="sa-subscription-box" style="font-size:13px;color:var(--t2);line-height:1.75;margin-top:12px">Loading...</div>'
+      + '  </div>'
+
+      + '  <div class="card">'
+      + '    <div class="ct2">🧰 Database Tools</div>'
+      + '    <div style="display:grid;gap:10px;margin-top:14px">'
+      + '      <button class="btn bw" id="sa-open-products" type="button">🏷️ Open Products</button>'
+      + '      <button class="btn bw" id="sa-open-accounts" type="button">👥 Open Accounts</button>'
+      + '      <button class="btn bw" id="sa-open-orders" type="button">🧾 Open Orders</button>'
+      + '      <button class="btn bw" id="sa-open-billing" type="button">💳 Open POS Billing</button>'
+      + '    </div>'
+      + '  </div>'
+
+      + '  <div class="card">'
+      + '    <div class="ct2">📤 Backup / Export</div>'
+      + '    <div style="font-size:12px;color:var(--t3);margin-top:4px">Download current store data as JSON.</div>'
+      + '    <button class="btn bg" id="sa-export-store" type="button" style="width:100%;justify-content:center;margin-top:14px">📤 Export Store JSON</button>'
+      + '    <div id="sa-backup-note" style="font-size:12px;color:var(--t3);margin-top:10px">Includes products, orders, roles, users, billing, and inventory logs.</div>'
+      + '  </div>'
+
+      + '  <div class="card">'
+      + '    <div class="ct2">🚨 Emergency Access</div>'
+      + '    <div style="font-size:12px;color:var(--t3);margin-top:4px">Use only when store access must be restored immediately.</div>'
+      + '    <div style="display:grid;gap:10px;margin-top:14px">'
+      + '      <button class="btn br" id="sa-force-admin-role" type="button">👑 Restore Admin Full Access</button>'
+      + '      <button class="btn bw" id="sa-refresh-users-roles" type="button">🔄 Refresh Users/Roles</button>'
+      + '    </div>'
+      + '  </div>'
+
+      + '  <div class="card">'
+      + '    <div class="ct2">🕒 Recent Activity</div>'
+      + '    <div id="sa-recent" style="display:grid;gap:9px;margin-top:12px;font-size:13px;color:var(--t2)">Loading...</div>'
+      + '  </div>'
+      + '</div>';
+
+    main.appendChild(view);
+
+    document.getElementById('sa-refresh-btn').onclick = renderSuperadmin;
+    document.getElementById('sa-enable-pos').onclick = function(){ setPOSAccess(true); };
+    document.getElementById('sa-disable-pos').onclick = function(){ setPOSAccess(false); };
+    document.getElementById('sa-export-store').onclick = exportStoreJson;
+    document.getElementById('sa-force-admin-role').onclick = restoreAdminFullAccess;
+    document.getElementById('sa-refresh-users-roles').onclick = refreshUsersRoles;
+
+    document.getElementById('sa-open-products').onclick = function(){ try{ if(typeof go === 'function') go('products'); }catch(e){} };
+    document.getElementById('sa-open-accounts').onclick = function(){ try{ if(typeof go === 'function') go('accounts'); }catch(e){} };
+    document.getElementById('sa-open-orders').onclick = function(){ try{ if(typeof go === 'function') go('orders'); }catch(e){} };
+    document.getElementById('sa-open-billing').onclick = function(){ try{ if(typeof go === 'function') go('system'); }catch(e){} };
+    document.getElementById('sa-open-settings').onclick = function(){ try{ if(typeof go === 'function') go('accounts'); }catch(e){} };
+  }
+
+  function renderRecent(store){
+    var box = document.getElementById('sa-recent');
+    if(!box) return;
+
+    var orders = Object.keys(store.orders || {}).map(function(key){
+      var o = store.orders[key] || {};
+      return {
+        title: 'Order ' + (o.orderNumber || o.id || key),
+        sub: (o.status || 'order') + ' · ' + money(o.total || 0),
+        time: Number(o.updatedAt || o.createdAt || o.time || 0)
+      };
+    });
+
+    var logs = Object.keys(store.inventoryLogs || {}).map(function(key){
+      var l = store.inventoryLogs[key] || {};
+      return {
+        title: 'Stock ' + (l.change || 0),
+        sub: (l.productName || 'Product') + ' · ' + (l.orderId || ''),
+        time: Number(l.createdAt || 0)
+      };
+    });
+
+    var items = orders.concat(logs).sort(function(a,b){ return b.time - a.time; }).slice(0, 6);
+
+    if(!items.length){
+      box.innerHTML = '<div style="color:var(--t3)">No recent activity yet.</div>';
+      return;
+    }
+
+    box.innerHTML = items.map(function(item){
+      return ''
+        + '<div style="padding:10px;border-radius:14px;background:#faf9f4;border:1px solid rgba(0,0,0,.05)">'
+        + '  <div style="font-weight:900;color:var(--t1)">' + item.title + '</div>'
+        + '  <div style="font-size:12px;color:var(--t3);margin-top:3px">' + item.sub + '</div>'
+        + '</div>';
+    }).join('');
+  }
+
+  function renderSuperadmin(){
+    if(!isSuperadmin()) return;
+
+    fetchJson('/stores/' + STORE_ID)
+      .then(function(store){
+        store = store || {};
+
+        var settings = store.settings || {};
+        var billing = store.billing || {};
+        var products = store.products || {};
+        var orders = store.orders || {};
+        var users = store.users || {};
+        var logs = store.inventoryLogs || {};
+
+        var accessEnabled = billing.posAccessEnabled !== false &&
+          billing.status !== 'locked' &&
+          billing.status !== 'disabled';
+
+        setText('sa-hero-store', settings.storeName || 'Fruit Story');
+        setText('sa-hero-sub', 'Platform control for ' + STORE_ID + ' · ' + countObject(users) + ' users · ' + countObject(products) + ' products');
+
+        setText('sa-orders-count', countObject(orders));
+        setText('sa-products-count', countObject(products));
+        setText('sa-users-count', countObject(users));
+        setText('sa-logs-count', countObject(logs));
+
+        setText('sa-store-name', settings.storeName || 'Fruit Story');
+        setText('sa-currency', settings.currency || '₱');
+        setText('sa-timezone', settings.timezone || 'Asia/Manila');
+        setText('sa-theme', settings.theme || 'light');
+
+        setText('sa-billing-status', billing.status || 'active');
+        setText('sa-monthly-fee', money(billing.monthlyFee || 0));
+        setText('sa-next-due', billing.nextDueDate || dateText(billing.nextDue));
+        setText('sa-paid-months', billing.paidMonths || '—');
+
+        setChip('sa-chip-access', accessEnabled ? 'POS Access: Enabled' : 'POS Access: Locked', accessEnabled);
+        setChip('sa-chip-subscription', 'Subscription: ' + (billing.status || 'active'), accessEnabled);
+        setChip('sa-billing-pill', billing.status || 'active', accessEnabled);
+        setChip('sa-access-pill', accessEnabled ? 'POS Unlocked' : 'POS Locked', accessEnabled);
+
+        var sub = document.getElementById('sa-subscription-box');
+        if(sub){
+          sub.innerHTML = ''
+            + '<div><b>Status:</b> ' + (billing.status || 'active') + '</div>'
+            + '<div><b>POS Access:</b> ' + (accessEnabled ? 'Enabled' : 'Locked') + '</div>'
+            + '<div><b>Monthly Fee:</b> ' + money(billing.monthlyFee || 0) + '</div>'
+            + '<div><b>Next Due:</b> ' + (billing.nextDueDate || dateText(billing.nextDue)) + '</div>'
+            + '<div><b>Last Payment:</b> ' + (billing.lastPaymentAt ? new Date(billing.lastPaymentAt).toLocaleString() : '—') + '</div>'
+            + '<div><b>Updated By:</b> ' + (billing.updatedBy || '—') + '</div>';
+        }
+
+        renderRecent(store);
+      })
+      .catch(function(err){
+        console.warn('[Superadmin] render failed', err);
+        try{ if(typeof toast === 'function') toast('Superadmin data load failed', 'err'); }catch(e){}
+      });
+  }
+
+  function setPOSAccess(enabled){
+    if(!isSuperadmin()) return;
+
+    patchJson('/stores/' + STORE_ID + '/billing', {
+      posAccessEnabled: !!enabled,
+      status: enabled ? 'active' : 'locked',
+      lockedAt: enabled ? null : Date.now(),
+      updatedAt: Date.now(),
+      updatedBy: 'superadmin'
+    }).then(function(){
+      try{ if(typeof toast === 'function') toast(enabled ? 'POS access unlocked ✅' : 'POS access locked ⛔'); }catch(e){}
+      renderSuperadmin();
+    }).catch(function(err){
+      console.warn('[Superadmin] POS lock update failed', err);
+      try{ if(typeof toast === 'function') toast('POS lock update failed', 'err'); }catch(e){}
+    });
+  }
+
+  function exportStoreJson(){
+    if(!isSuperadmin()) return;
+
+    fetchJson('/stores/' + STORE_ID)
+      .then(function(store){
+        var blob = new Blob([JSON.stringify(store || {}, null, 2)], { type: 'application/json' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = STORE_ID + '-backup-' + Date.now() + '.json';
+        a.click();
+        setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+      })
+      .catch(function(err){
+        console.warn('[Superadmin] export failed', err);
+        try{ if(typeof toast === 'function') toast('Export failed', 'err'); }catch(e){}
+      });
+  }
+
+  function restoreAdminFullAccess(){
+    if(!isSuperadmin()) return;
+
+    var payload = {
+      dashboard: true,
+      pos: true,
+      orders: true,
+      kitchen: true,
+      delivery: true,
+      pickup: true,
+      stocks: true,
+      products: true,
+      accounts: true,
+      journal: true,
+      billing: true,
+      system: true,
+      chat: true,
+      updatedAt: Date.now(),
+      updatedBy: 'superadmin'
+    };
+
+    patchJson('/stores/' + STORE_ID + '/roles/admin', payload)
+      .then(function(){
+        try{ if(typeof toast === 'function') toast('Admin full access restored ✅'); }catch(e){}
+      })
+      .catch(function(err){
+        console.warn('[Superadmin] restore admin failed', err);
+        try{ if(typeof toast === 'function') toast('Restore admin failed', 'err'); }catch(e){}
+      });
+  }
+
+  function refreshUsersRoles(){
+    if(!isSuperadmin()) return;
+
+    try{ if(typeof toast === 'function') toast('Users/Roles refresh requested ✅'); }catch(e){}
+    try{ if(typeof sv === 'function') sv(); }catch(e){}
+  }
+
+  function openSuperadmin(){
+    if(!isSuperadmin()){
+      try{ if(typeof toast === 'function') toast('Superadmin only', 'err'); }catch(e){}
+      return;
+    }
+
+    ensureView();
+
+    document.querySelectorAll('[id^="view-"], .view').forEach(function(v){
+      v.classList.remove('on');
+      v.style.display = 'none';
+    });
+
+    var view = document.getElementById('view-superadmin');
+    if(view){
+      view.classList.add('on');
+      view.style.display = '';
+    }
+
+    document.querySelectorAll('.ni,.mni').forEach(function(n){
+      n.classList.remove('on');
+    });
+
+    var item = document.getElementById('superadmin-nav-item');
+    if(item) item.classList.add('on');
+
+    renderSuperadmin();
+  }
+
+  function maybeOpenSuRoute(){
+    if(!isSuPath()) return;
+
+    prefillSuperadminLogin();
+
+    if(isSuperadmin()){
+      setTimeout(openSuperadmin, 300);
+    }
+  }
+
+  function boot(){
+    ensureView();
+    ensureSidebarItem();
+    prefillSuperadminLogin();
+
+    setTimeout(function(){
+      ensureSidebarItem();
+      maybeOpenSuRoute();
+    }, 800);
+
+    setTimeout(function(){
+      ensureSidebarItem();
+      maybeOpenSuRoute();
+    }, 1800);
+
+    setInterval(function(){
+      ensureSidebarItem();
+      if(isSuperadmin() && document.getElementById('view-superadmin') && document.getElementById('view-superadmin').classList.contains('on')){
+        renderSuperadmin();
+      }
+    }, 8000);
+
+    console.log('[Modern Superadmin] Started');
+  }
+
+  window.openSuperadmin = openSuperadmin;
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 800); });
+  }else{
+    setTimeout(boot, 800);
+  }
+})();
+</script>
+
 </body>
 </html>
