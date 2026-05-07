@@ -1991,6 +1991,46 @@ body.dark #chat-minimize-channels-btn.is-collapsed{background:#14281e!important;
 
 
 
+
+<style id="superadmin-safe-navigation-fix-style-v5">
+  #view-superadmin {
+    padding-bottom: 170px !important;
+  }
+
+  body.superadmin-page-open #ct {
+    bottom: 0 !important;
+    padding-bottom: 150px !important;
+    scroll-padding-bottom: 150px !important;
+  }
+
+  body.superadmin-page-open #view-superadmin {
+    display: block !important;
+    min-height: calc(100dvh - 58px) !important;
+    padding-bottom: 190px !important;
+  }
+
+  body.superadmin-page-open #mnav {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
+  #superadmin-nav-item {
+    display: flex;
+  }
+
+  @media(max-width:768px){
+    body.superadmin-page-open #ct {
+      bottom: 0 !important;
+      padding-bottom: 180px !important;
+    }
+
+    body.superadmin-page-open #view-superadmin {
+      padding-bottom: 220px !important;
+    }
+  }
+</style>
+
 </head>
 <body>
 
@@ -15573,6 +15613,285 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 
 
 
+
+
+<script id="superadmin-safe-navigation-fix-v5">
+(function(){
+  function roleKey(){
+    try{
+      var cur = S && S.cur ? S.cur : {};
+      var role = cur.roleKey || cur.role || '';
+
+      if(!role && cur.user && Array.isArray(S.accounts)){
+        var acc = S.accounts.find(function(a){
+          return String(a.user || a.username || a.id).toLowerCase() === String(cur.user).toLowerCase();
+        });
+        if(acc) role = acc.roleKey || acc.role;
+      }
+
+      role = String(role || '').trim().toLowerCase();
+
+      if(role === 'administrator') role = 'admin';
+      if(role === 'cashier') role = 'sales';
+
+      return role;
+    }catch(e){
+      return '';
+    }
+  }
+
+  function isSuperadmin(){
+    return roleKey() === 'superadmin';
+  }
+
+  function isSuPath(){
+    return location.pathname === '/su' || location.pathname === '/su/';
+  }
+
+  function getView(){
+    return document.getElementById('view-superadmin');
+  }
+
+  function getScrollContainer(){
+    return document.getElementById('ct') ||
+      document.querySelector('#main #ct') ||
+      document.querySelector('#main') ||
+      document.body;
+  }
+
+  function moveViewIntoScrollContainer(){
+    var view = getView();
+    var ct = getScrollContainer();
+
+    if(view && ct && view.parentElement !== ct){
+      ct.appendChild(view);
+    }
+  }
+
+  function ensureSuperadminNav(){
+    var nav = document.querySelector('.sb-nav');
+    if(!nav) return null;
+
+    var item = document.getElementById('superadmin-nav-item');
+
+    if(!item){
+      item = document.createElement('div');
+      item.id = 'superadmin-nav-item';
+      item.className = 'ni';
+      item.innerHTML = '<span class="ni-ico">🛡️</span>Superadmin';
+
+      var accounts = nav.querySelector('.ni[data-v="accounts"]');
+      if(accounts && accounts.parentNode){
+        accounts.parentNode.insertBefore(item, accounts);
+      }else{
+        nav.appendChild(item);
+      }
+    }
+
+    // Critical: do NOT let normal role/go filters treat this as a normal app page.
+    item.removeAttribute('data-v');
+    item.removeAttribute('data-firebase-role-page');
+    item.setAttribute('data-superadmin-nav', 'true');
+    item.setAttribute('data-firebase-role-allowed', isSuperadmin() ? 'true' : 'false');
+    item.setAttribute('data-role-direct-allowed', isSuperadmin() ? 'true' : 'false');
+
+    item.style.display = isSuperadmin() ? '' : 'none';
+    item.style.visibility = isSuperadmin() ? 'visible' : 'hidden';
+    item.style.pointerEvents = isSuperadmin() ? '' : 'none';
+
+    if(!item.__superadminSafeNavV5){
+      item.__superadminSafeNavV5 = true;
+
+      item.addEventListener('click', function(event){
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+
+        if(!isSuperadmin()){
+          try{ if(typeof toast === 'function') toast('Superadmin only', 'err'); }catch(e){}
+          return false;
+        }
+
+        openSuperadminSafe();
+        return false;
+      }, true);
+    }
+
+    return item;
+  }
+
+  function setTopbarTitle(title){
+    var topbar = document.getElementById('topbar');
+    if(!topbar) return;
+
+    var candidates = Array.from(topbar.querySelectorAll('h1,h2,h3,.ttl,.title,.page-title,[id*="title"]'));
+
+    if(candidates.length){
+      candidates[0].textContent = title;
+      return;
+    }
+
+    Array.from(topbar.querySelectorAll('*')).forEach(function(el){
+      var t = String(el.textContent || '').trim();
+      if(
+        t === 'Dashboard' ||
+        t === 'Admin Panel' ||
+        t === 'Orders' ||
+        t === 'Products' ||
+        t === 'Kitchen Board' ||
+        t === 'Delivery' ||
+        t === 'Pick up' ||
+        t === 'POS Terminal'
+      ){
+        el.textContent = title;
+      }
+    });
+  }
+
+  function markActiveNav(){
+    document.querySelectorAll('.ni,.mni').forEach(function(n){
+      n.classList.remove('on');
+    });
+
+    var item = document.getElementById('superadmin-nav-item');
+    if(item) item.classList.add('on');
+  }
+
+  function openSuperadminSafe(){
+    if(!isSuperadmin()){
+      try{ if(typeof toast === 'function') toast('Superadmin only', 'err'); }catch(e){}
+      return false;
+    }
+
+    moveViewIntoScrollContainer();
+
+    var view = getView();
+
+    if(!view){
+      try{ if(typeof toast === 'function') toast('Superadmin page not ready. Refresh once.', 'err'); }catch(e){}
+      return false;
+    }
+
+    document.querySelectorAll('[id^="view-"], .view').forEach(function(v){
+      v.classList.remove('on');
+      v.style.display = 'none';
+    });
+
+    view.classList.add('on');
+    view.style.display = 'block';
+
+    document.body.classList.add('superadmin-page-open');
+
+    var mnav = document.getElementById('mnav');
+    if(mnav){
+      mnav.style.display = 'none';
+      mnav.style.visibility = 'hidden';
+      mnav.style.pointerEvents = 'none';
+    }
+
+    markActiveNav();
+    setTopbarTitle('Superadmin Panel');
+
+    try{
+      if(typeof renderSuperadmin === 'function') renderSuperadmin();
+    }catch(e){}
+
+    setTimeout(function(){
+      var ct = getScrollContainer();
+      try{ ct.scrollTop = 0; }catch(e){}
+      try{ window.scrollTo(0, 0); }catch(e){}
+    }, 50);
+
+    return false;
+  }
+
+  function restoreNormalModeIfNotSuperadminPage(){
+    var view = getView();
+    var isOpen = !!(view && view.classList.contains('on'));
+
+    if(!isOpen){
+      document.body.classList.remove('superadmin-page-open');
+
+      var mnav = document.getElementById('mnav');
+      if(mnav){
+        mnav.style.display = '';
+        mnav.style.visibility = '';
+        mnav.style.pointerEvents = '';
+      }
+    }
+  }
+
+  function patchNormalNav(){
+    if(window.__superadminNormalNavPatchV5) return;
+    window.__superadminNormalNavPatchV5 = true;
+
+    document.addEventListener('click', function(event){
+      var normal = event.target && event.target.closest ? event.target.closest('.ni[data-v], .mni[data-v]') : null;
+      if(!normal) return;
+
+      // Normal nav clicked. Let app handle it, then remove Superadmin mode.
+      setTimeout(restoreNormalModeIfNotSuperadminPage, 120);
+    }, true);
+  }
+
+  function openFromSuOnce(){
+    if(window.__superadminOpenedFromSuV5) return;
+    if(!isSuPath()) return;
+    if(!isSuperadmin()) return;
+
+    var view = getView();
+    if(!view) return;
+
+    window.__superadminOpenedFromSuV5 = true;
+
+    openSuperadminSafe();
+
+    // /su is only an entry URL. After opening, return to root so normal nav does not refire /su.
+    try{ history.replaceState(null, '', '/'); }catch(e){}
+  }
+
+  function patchGlobalOpen(){
+    window.openSuperadmin = openSuperadminSafe;
+  }
+
+  function boot(){
+    patchGlobalOpen();
+    patchNormalNav();
+
+    moveViewIntoScrollContainer();
+    ensureSuperadminNav();
+    openFromSuOnce();
+    restoreNormalModeIfNotSuperadminPage();
+
+    setTimeout(function(){
+      patchGlobalOpen();
+      moveViewIntoScrollContainer();
+      ensureSuperadminNav();
+      openFromSuOnce();
+      restoreNormalModeIfNotSuperadminPage();
+    }, 700);
+
+    setTimeout(function(){
+      moveViewIntoScrollContainer();
+      ensureSuperadminNav();
+      openFromSuOnce();
+    }, 1600);
+
+    setInterval(function(){
+      ensureSuperadminNav();
+      restoreNormalModeIfNotSuperadminPage();
+    }, 2500);
+
+    console.log('[Superadmin safe navigation v5] started');
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 500); });
+  }else{
+    setTimeout(boot, 500);
+  }
+})();
+</script>
 
 </body>
 </html>
