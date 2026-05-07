@@ -12371,5 +12371,179 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 })();
 </script>
 
+
+<script id="instant-remove-kitchen-out-cards-v1">
+(function(){
+  function isOutOfKitchen(order){
+    if(!order)return false;
+
+    return (
+      order.kitStatus === 'out' ||
+      order.kitchenStatus === 'out' ||
+      order.deliveryStatus === 'out_for_delivery' ||
+      order.deliveryStatus === 'delivered' ||
+      order.pickupStatus === 'ready' ||
+      order.pickupStatus === 'picked_up' ||
+      order.kitForPickup === true ||
+      order.kitPickup === true
+    );
+  }
+
+  function getOrderNumber(order){
+    return String(
+      order.orderNumber ||
+      order.id ||
+      order.no ||
+      order.num ||
+      ''
+    );
+  }
+
+  function getOutKitchenOrderNumbers(){
+    try{
+      if(typeof S === 'undefined' || !S || !Array.isArray(S.orders))return [];
+
+      return S.orders
+        .filter(isOutOfKitchen)
+        .map(getOrderNumber)
+        .filter(Boolean);
+    }catch(e){
+      return [];
+    }
+  }
+
+  function isInsideKitchenView(el){
+    var kitchen = document.getElementById('view-kitchen');
+    return kitchen && kitchen.contains(el);
+  }
+
+  function hideKitchenCards(){
+    var outNumbers = getOutKitchenOrderNumbers();
+    if(!outNumbers.length)return;
+
+    var kitchen = document.getElementById('view-kitchen');
+    if(!kitchen)return;
+
+    var candidates = kitchen.querySelectorAll(
+      '.card, .order-card, .k-card, .kitchen-card, .panel, .row, .item, [class*="card"], [class*="order"]'
+    );
+
+    candidates.forEach(function(card){
+      if(!isInsideKitchenView(card))return;
+
+      var text = card.textContent || '';
+
+      var matched = outNumbers.some(function(orderNo){
+        return text.indexOf(orderNo) !== -1;
+      });
+
+      if(matched){
+        card.style.display = 'none';
+        card.setAttribute('data-hidden-by-firebase-kitchen-sync', 'true');
+      }
+    });
+  }
+
+  function refreshAndHide(){
+    setTimeout(function(){
+      try{ if(typeof sv === 'function')sv(); }catch(e){}
+      try{ if(typeof rKitchen === 'function')rKitchen(); }catch(e){}
+      try{ if(typeof rDel === 'function')rDel(); }catch(e){}
+      try{ if(typeof rPickup === 'function')rPickup(); }catch(e){}
+      hideKitchenCards();
+    }, 80);
+
+    setTimeout(hideKitchenCards, 250);
+    setTimeout(hideKitchenCards, 700);
+    setTimeout(hideKitchenCards, 1200);
+  }
+
+  function wrapAction(name){
+    var old = window[name] || (typeof globalThis[name] === 'function' ? globalThis[name] : null);
+    if(typeof old !== 'function')return false;
+    if(old.__instantRemoveKitchenOutCardsV1)return true;
+
+    var wrapped = function(){
+      var result = old.apply(this, arguments);
+      refreshAndHide();
+      return result;
+    };
+
+    wrapped.__instantRemoveKitchenOutCardsV1 = true;
+
+    window[name] = wrapped;
+    try{ globalThis[name] = wrapped; }catch(e){}
+    try{ eval(name + ' = window["' + name + '"]'); }catch(e){}
+
+    console.log('[Kitchen card remover] Wrapped', name);
+    return true;
+  }
+
+  function install(){
+    if(window.__instantRemoveKitchenOutCardsV1Installed)return;
+    window.__instantRemoveKitchenOutCardsV1Installed = true;
+
+    wrapAction('kitAction');
+    wrapAction('kitSendToPickup');
+    wrapAction('kitPickup');
+    wrapAction('kitSendToDelivery');
+    wrapAction('sendToDelivery');
+    wrapAction('sendOutDelivery');
+    wrapAction('outForDelivery');
+    wrapAction('markOutForDelivery');
+
+    var kitchen = document.getElementById('view-kitchen');
+    if(kitchen && typeof MutationObserver !== 'undefined'){
+      var observer = new MutationObserver(function(){
+        hideKitchenCards();
+      });
+
+      observer.observe(kitchen, {
+        childList: true,
+        subtree: true,
+        characterData: true
+      });
+
+      console.log('[Kitchen card remover] Mutation observer started');
+    }
+
+    setInterval(hideKitchenCards, 1000);
+    refreshAndHide();
+
+    console.log('[Kitchen card remover] Installed');
+  }
+
+  function boot(){
+    install();
+
+    var tries = 0;
+    var timer = setInterval(function(){
+      tries++;
+      wrapAction('kitAction');
+      wrapAction('kitSendToPickup');
+      wrapAction('kitPickup');
+      wrapAction('kitSendToDelivery');
+      wrapAction('sendToDelivery');
+      wrapAction('sendOutDelivery');
+      wrapAction('outForDelivery');
+      wrapAction('markOutForDelivery');
+      hideKitchenCards();
+
+      if(tries > 20){
+        clearInterval(timer);
+      }
+    }, 500);
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){
+      setTimeout(boot, 2000);
+    });
+  }else{
+    setTimeout(boot, 2000);
+  }
+})();
+</script>
+
 </body>
 </html>
