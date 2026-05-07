@@ -15358,5 +15358,225 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 })();
 </script>
 
+
+<script id="superadmin-admin-tabs-fix-v1">
+(function(){
+  function norm(role){
+    role = String(role || '').trim().toLowerCase();
+    if(role === 'administrator') role = 'admin';
+    if(role === 'cashier') role = 'sales';
+    return role;
+  }
+
+  function currentRole(){
+    try{
+      var cur = window.S && S.cur ? S.cur : {};
+      var role = cur.roleKey || cur.role || '';
+
+      if(!role && cur.user && Array.isArray(S.accounts)){
+        var acc = S.accounts.find(function(a){
+          return String(a.user || a.username || a.id).toLowerCase() === String(cur.user).toLowerCase();
+        });
+        if(acc) role = acc.roleKey || acc.role;
+      }
+
+      return norm(role);
+    }catch(e){
+      return '';
+    }
+  }
+
+  function isSuperadmin(){
+    return currentRole() === 'superadmin';
+  }
+
+  function isAccountsView(){
+    var view = document.getElementById('view-accounts');
+    return !!(view && (view.classList.contains('on') || view.style.display !== 'none'));
+  }
+
+  function showAdminTabs(){
+    if(!isSuperadmin()) return;
+
+    var view = document.getElementById('view-accounts');
+    if(!view) return;
+
+    // Force common Admin Panel tab buttons visible.
+    Array.from(view.querySelectorAll('button, .tab, .adm-tab, .adm-tabs > *, [data-tab], [onclick]')).forEach(function(el){
+      var text = String(el.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+      var onclick = String(el.getAttribute('onclick') || '').toLowerCase();
+      var dataTab = String(el.getAttribute('data-tab') || el.getAttribute('data-v') || '').toLowerCase();
+
+      if(
+        text === 'users' ||
+        text === 'products' ||
+        text === 'system' ||
+        text.indexOf('users') !== -1 ||
+        text.indexOf('products') !== -1 ||
+        text.indexOf('system') !== -1 ||
+        onclick.indexOf('users') !== -1 ||
+        onclick.indexOf('products') !== -1 ||
+        onclick.indexOf('system') !== -1 ||
+        dataTab.indexOf('users') !== -1 ||
+        dataTab.indexOf('products') !== -1 ||
+        dataTab.indexOf('system') !== -1
+      ){
+        el.style.display = '';
+        el.style.visibility = 'visible';
+        el.style.pointerEvents = '';
+        el.disabled = false;
+      }
+    });
+
+    // Force tab container visible.
+    Array.from(view.querySelectorAll('.adm-tabs, [class*="tab"]')).forEach(function(el){
+      var text = String(el.textContent || '').toLowerCase();
+      if(text.indexOf('users') !== -1 || text.indexOf('products') !== -1 || text.indexOf('system') !== -1){
+        el.style.display = '';
+        el.style.visibility = 'visible';
+      }
+    });
+
+    // Force sections/cards visible if they already exist in DOM.
+    Array.from(view.querySelectorAll('[id], [class]')).forEach(function(el){
+      var id = String(el.id || '').toLowerCase();
+      var cls = String(el.className || '').toLowerCase();
+
+      if(
+        id.indexOf('admin-users') !== -1 ||
+        id.indexOf('admin-products') !== -1 ||
+        id.indexOf('admin-system') !== -1 ||
+        id.indexOf('users') !== -1 && id.indexOf('admin') !== -1 ||
+        id.indexOf('products') !== -1 && id.indexOf('admin') !== -1 ||
+        id.indexOf('system') !== -1 && id.indexOf('admin') !== -1 ||
+        cls.indexOf('admin-users') !== -1 ||
+        cls.indexOf('admin-products') !== -1 ||
+        cls.indexOf('admin-system') !== -1
+      ){
+        el.style.visibility = 'visible';
+        el.style.pointerEvents = '';
+      }
+    });
+  }
+
+  function grantSuperadminAdminPerms(){
+    if(!isSuperadmin()) return;
+
+    try{
+      var full = {
+        superadmin: true,
+        accounts: true,
+        admin: true,
+        adminPanel: true,
+        adminFunctions: true,
+        users: true,
+        manageUsers: true,
+        products: true,
+        manageProducts: true,
+        system: true,
+        settings: true,
+        billing: true
+      };
+
+      S.roles = S.roles || {};
+      S.rolePerms = S.rolePerms || {};
+
+      S.roles.superadmin = Object.assign({}, S.roles.superadmin || {}, full);
+      S.roles.Superadmin = S.roles.superadmin;
+      S.rolePerms.superadmin = Object.assign({}, S.rolePerms.superadmin || {}, full);
+      S.rolePerms.Superadmin = S.rolePerms.superadmin;
+
+      if(S.cur){
+        S.cur.roleKey = 'superadmin';
+        S.cur.role = 'Superadmin';
+      }
+    }catch(e){}
+  }
+
+  function patchAdminTabFunctions(){
+    [
+      'showAdminTab',
+      'adminTab',
+      'setAdminTab',
+      'openAdminTab',
+      'rAccounts',
+      'renderAccounts',
+      'renderAdmin'
+    ].forEach(function(name){
+      var old = window[name] || (typeof globalThis[name] === 'function' ? globalThis[name] : null);
+
+      if(typeof old === 'function' && !old.__superadminAdminTabsFixV1){
+        var wrapped = function(){
+          grantSuperadminAdminPerms();
+          var result = old.apply(this, arguments);
+          setTimeout(showAdminTabs, 60);
+          setTimeout(showAdminTabs, 250);
+          return result;
+        };
+
+        wrapped.__superadminAdminTabsFixV1 = true;
+
+        window[name] = wrapped;
+        try{ globalThis[name] = wrapped; }catch(e){}
+        try{ eval(name + ' = window["' + name + '"]'); }catch(e){}
+      }
+    });
+  }
+
+  function patchGo(){
+    if(window.__superadminAdminTabsGoFixV1) return;
+
+    var oldGo = window.go || (typeof go === 'function' ? go : null);
+    if(typeof oldGo !== 'function') return;
+
+    var wrapped = function(v){
+      grantSuperadminAdminPerms();
+      var result = oldGo.apply(this, arguments);
+
+      if(String(v || '').toLowerCase() === 'accounts'){
+        setTimeout(showAdminTabs, 100);
+        setTimeout(showAdminTabs, 400);
+      }
+
+      return result;
+    };
+
+    window.go = wrapped;
+    try{ go = wrapped; }catch(e){}
+
+    window.__superadminAdminTabsGoFixV1 = true;
+  }
+
+  function boot(){
+    grantSuperadminAdminPerms();
+    patchAdminTabFunctions();
+    patchGo();
+    showAdminTabs();
+
+    setTimeout(function(){
+      grantSuperadminAdminPerms();
+      patchAdminTabFunctions();
+      patchGo();
+      showAdminTabs();
+    }, 700);
+
+    setInterval(function(){
+      if(isAccountsView()){
+        grantSuperadminAdminPerms();
+        showAdminTabs();
+      }
+    }, 1500);
+
+    console.log('[Superadmin Admin tabs fix] started');
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 300); });
+  }else{
+    setTimeout(boot, 300);
+  }
+})();
+</script>
+
 </body>
 </html>
