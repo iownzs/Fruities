@@ -13908,5 +13908,314 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 })();
 </script>
 
+
+<script id="firebase-admin-users-roles-writeback-v1">
+(function(){
+  var DB_URL = 'https://fruities-pos-default-rtdb.asia-southeast1.firebasedatabase.app';
+  var STORE_ID = 'fruit-story-main';
+
+  function cleanKey(raw){
+    return String(raw || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[.#$\[\]\/]/g, '_')
+      .replace(/\s+/g, '_');
+  }
+
+  function patchJson(path, data){
+    return fetch(DB_URL + path + '.json', {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(data)
+    }).then(function(res){
+      if(!res.ok){
+        return res.text().then(function(t){
+          throw new Error('Firebase PATCH failed ' + res.status + ': ' + t);
+        });
+      }
+      return res.json();
+    });
+  }
+
+  function putJson(path, data){
+    return fetch(DB_URL + path + '.json', {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(data)
+    }).then(function(res){
+      if(!res.ok){
+        return res.text().then(function(t){
+          throw new Error('Firebase PUT failed ' + res.status + ': ' + t);
+        });
+      }
+      return res.json();
+    });
+  }
+
+  function normalizeRoleKey(role){
+    role = String(role || '').trim();
+    if(!role)return '';
+    return role.toLowerCase();
+  }
+
+  function getRolePayload(roleKey){
+    try{
+      if(!S)return null;
+
+      var key = normalizeRoleKey(roleKey);
+      var title = key ? key.charAt(0).toUpperCase() + key.slice(1) : roleKey;
+
+      var role =
+        (S.roles && (S.roles[key] || S.roles[title] || S.roles[roleKey])) ||
+        (S.rolePerms && (S.rolePerms[key] || S.rolePerms[title] || S.rolePerms[roleKey]));
+
+      if(!role)return null;
+
+      var payload = {};
+      Object.keys(role).forEach(function(k){
+        if(typeof role[k] === 'boolean'){
+          payload[k] = role[k];
+        }
+      });
+
+      payload.updatedAt = Date.now();
+      payload.updatedBy = (S.cur && (S.cur.user || S.cur.name)) || 'admin';
+
+      return payload;
+    }catch(e){
+      return null;
+    }
+  }
+
+  function saveRoleToFirebase(roleKey){
+    var key = normalizeRoleKey(roleKey);
+    if(!key)return Promise.resolve();
+
+    var payload = getRolePayload(key);
+    if(!payload){
+      console.warn('[Firebase admin sync] No role payload for', key);
+      return Promise.resolve();
+    }
+
+    return patchJson('/stores/' + STORE_ID + '/roles/' + cleanKey(key), payload)
+      .then(function(){
+        console.log('[Firebase admin sync] Role saved:', key, payload);
+        try{ if(typeof toast === 'function')toast('Role saved to Firebase ✅'); }catch(e){}
+      })
+      .catch(function(err){
+        console.warn('[Firebase admin sync] Role save failed:', key, err);
+        try{ if(typeof toast === 'function')toast('Role Firebase save failed', 'err'); }catch(e){}
+      });
+  }
+
+  function saveAllRolesToFirebase(){
+    try{
+      if(!S)return Promise.resolve();
+
+      var source = S.roles || S.rolePerms || {};
+      var keys = Object.keys(source).filter(function(key){
+        return key && key === key.toLowerCase();
+      });
+
+      if(!keys.length){
+        keys = ['admin','cashier','kitchen','rider'];
+      }
+
+      return Promise.allSettled(keys.map(saveRoleToFirebase));
+    }catch(e){
+      console.warn('[Firebase admin sync] saveAllRoles failed', e);
+      return Promise.resolve();
+    }
+  }
+
+  function normalizeUser(account){
+    account = account || {};
+    var username = account.user || account.username || account.id || '';
+
+    return {
+      id: account.id || cleanKey(username),
+      name: account.name || username,
+      user: username,
+      username: account.username || username,
+      pass: account.pass || '',
+      role: account.role || 'Cashier',
+      roleKey: account.roleKey || String(account.role || 'cashier').toLowerCase(),
+      status: account.status || (account.active === false ? 'inactive' : 'active'),
+      active: account.active !== false && account.status !== 'inactive',
+      email: account.email || '',
+      updatedAt: Date.now(),
+      updatedBy: (S.cur && (S.cur.user || S.cur.name)) || 'admin'
+    };
+  }
+
+  function saveUserToFirebase(account){
+    var payload = normalizeUser(account);
+    var key = cleanKey(payload.user || payload.username || payload.id);
+
+    if(!key)return Promise.resolve();
+
+    return patchJson('/stores/' + STORE_ID + '/users/' + key, payload)
+      .then(function(){
+        console.log('[Firebase admin sync] User saved:', key);
+        try{ if(typeof toast === 'function')toast('User saved to Firebase ✅'); }catch(e){}
+      })
+      .catch(function(err){
+        console.warn('[Firebase admin sync] User save failed:', key, err);
+        try{ if(typeof toast === 'function')toast('User Firebase save failed', 'err'); }catch(e){}
+      });
+  }
+
+  function saveAllUsersToFirebase(){
+    try{
+      if(!S || !Array.isArray(S.accounts))return Promise.resolve();
+      return Promise.allSettled(S.accounts.map(saveUserToFirebase));
+    }catch(e){
+      console.warn('[Firebase admin sync] saveAllUsers failed', e);
+      return Promise.resolve();
+    }
+  }
+
+  function afterAdminChange(){
+    setTimeout(function(){
+      saveAllRolesToFirebase();
+      saveAllUsersToFirebase();
+    }, 300);
+
+    setTimeout(function(){
+      saveAllRolesToFirebase();
+      saveAllUsersToFirebase();
+    }, 1200);
+  }
+
+  function wrap(name, after){
+    var old = window[name] || (typeof globalThis[name] === 'function' ? globalThis[name] : null);
+    if(typeof old !== 'function')return false;
+    if(old.__firebaseAdminWritebackV1)return true;
+
+    var wrapped = function(){
+      var result = old.apply(this, arguments);
+
+      setTimeout(function(){
+        try{ after.apply(null, arguments); }catch(e){ console.warn('[Firebase admin sync] after hook failed', name, e); }
+      }, 250);
+
+      return result;
+    };
+
+    wrapped.__firebaseAdminWritebackV1 = true;
+    window[name] = wrapped;
+    try{ globalThis[name] = wrapped; }catch(e){}
+    try{ eval(name + ' = window["' + name + '"]'); }catch(e){}
+
+    console.log('[Firebase admin sync] Wrapped', name);
+    return true;
+  }
+
+  function install(){
+    if(window.__firebaseAdminUsersRolesWritebackV1)return;
+    window.__firebaseAdminUsersRolesWritebackV1 = true;
+
+    // Possible role/user save function names. Missing names are harmless.
+    wrap('saveRoles', afterAdminChange);
+    wrap('saveRole', afterAdminChange);
+    wrap('savePerms', afterAdminChange);
+    wrap('savePermissions', afterAdminChange);
+    wrap('togglePerm', afterAdminChange);
+    wrap('setPerm', afterAdminChange);
+    wrap('updateRolePerm', afterAdminChange);
+    wrap('saveUser', afterAdminChange);
+    wrap('saveAccount', afterAdminChange);
+    wrap('addUser', afterAdminChange);
+    wrap('addAccount', afterAdminChange);
+    wrap('editUser', afterAdminChange);
+    wrap('deleteUser', afterAdminChange);
+    wrap('toggleUser', afterAdminChange);
+
+    document.addEventListener('change', function(event){
+      var target = event.target;
+      var adminView = document.getElementById('view-accounts') || document.getElementById('view-system');
+
+      if(!target)return;
+
+      var isAdminArea = adminView && adminView.contains(target);
+      var looksRoleInput = String(target.name || target.id || target.className || '').toLowerCase().match(/role|perm|user|account/);
+
+      if(isAdminArea || looksRoleInput){
+        afterAdminChange();
+      }
+    }, true);
+
+    document.addEventListener('click', function(event){
+      var target = event.target;
+      if(!target || !target.closest)return;
+
+      var adminView = document.getElementById('view-accounts') || document.getElementById('view-system');
+      var insideAdmin = adminView && adminView.contains(target);
+      var text = String(target.textContent || '').toLowerCase();
+
+      if(
+        insideAdmin &&
+        (
+          text.indexOf('save') !== -1 ||
+          text.indexOf('role') !== -1 ||
+          text.indexOf('permission') !== -1 ||
+          text.indexOf('user') !== -1 ||
+          text.indexOf('account') !== -1 ||
+          text.indexOf('add') !== -1 ||
+          text.indexOf('delete') !== -1
+        )
+      ){
+        afterAdminChange();
+      }
+    }, true);
+
+    // Backup periodic sync while Admin page is open.
+    setInterval(function(){
+      var accountsView = document.getElementById('view-accounts');
+      if(accountsView && accountsView.classList.contains('on')){
+        saveAllRolesToFirebase();
+        saveAllUsersToFirebase();
+      }
+    }, 8000);
+
+    console.log('[Firebase admin sync] Users/roles write-back installed');
+  }
+
+  function boot(){
+    install();
+
+    var tries = 0;
+    var timer = setInterval(function(){
+      tries++;
+
+      wrap('saveRoles', afterAdminChange);
+      wrap('saveRole', afterAdminChange);
+      wrap('savePerms', afterAdminChange);
+      wrap('savePermissions', afterAdminChange);
+      wrap('togglePerm', afterAdminChange);
+      wrap('setPerm', afterAdminChange);
+      wrap('updateRolePerm', afterAdminChange);
+      wrap('saveUser', afterAdminChange);
+      wrap('saveAccount', afterAdminChange);
+      wrap('addUser', afterAdminChange);
+      wrap('addAccount', afterAdminChange);
+      wrap('editUser', afterAdminChange);
+      wrap('deleteUser', afterAdminChange);
+      wrap('toggleUser', afterAdminChange);
+
+      if(tries > 20){
+        clearInterval(timer);
+      }
+    }, 500);
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 2200); });
+  }else{
+    setTimeout(boot, 2200);
+  }
+})();
+</script>
+
 </body>
 </html>
