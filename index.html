@@ -13041,25 +13041,34 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 </script>
 
 
-<script id="firebase-orders-to-deliveries-bridge-v1">
+
+
+<script id="safe-orders-to-deliveries-bridge-v2">
 (function(){
+  var LAST_SIG = '';
+
   function isDeliveryOrder(o){
     if(!o)return false;
 
     var type = String(o.fulfillmentType || o.orderType || o.type || '').toLowerCase();
 
+    if(type === 'pickup')return false;
+    if(o.kitForPickup || o.kitPickup)return false;
+    if(o.pickupStatus === 'ready' || o.pickupStatus === 'picked_up')return false;
+
     return (
       type === 'delivery' ||
+      o.kitStatus === 'out' ||
+      o.kitchenStatus === 'out' ||
       o.deliveryStatus === 'waiting' ||
       o.deliveryStatus === 'assigned' ||
       o.deliveryStatus === 'out_for_delivery' ||
       o.deliveryStatus === 'out' ||
-      o.deliveryStatus === 'delivered' ||
-      o.kitStatus === 'out'
-    ) && !o.kitForPickup && !o.kitPickup && o.pickupStatus !== 'ready' && o.pickupStatus !== 'picked_up';
+      o.deliveryStatus === 'delivered'
+    );
   }
 
-  function shouldBeInDelivery(o){
+  function shouldShowDelivery(o){
     if(!isDeliveryOrder(o))return false;
 
     return (
@@ -13073,117 +13082,132 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
     );
   }
 
-  function deliveryIdForOrder(o){
-    return o.deliveryId || ('DEL-' + String(o.id || o.orderNumber || o.no || Date.now()).replace(/^ORD-?/i, ''));
+  function getOrderId(o){
+    return String(o.id || o.orderNumber || o.no || o.num || '');
   }
 
-  function deliveryStatusFromOrder(o){
+  function deliveryId(o){
+    var id = getOrderId(o);
+    return 'DEL-' + id.replace(/^ORD-?/i, '');
+  }
+
+  function deliveryStatus(o){
     if(o.deliveryStatus === 'delivered' || o.deliveredAt)return 'delivered';
-    if(o.deliveryStatus === 'out_for_delivery')return 'out';
-    if(o.deliveryStatus === 'out')return 'out';
-    if(o.outForDeliveryAt || o.deliveryOutAt)return 'out';
-    return o.deliveryStatus || 'waiting';
+    if(o.deliveryStatus === 'out_for_delivery' || o.deliveryStatus === 'out' || o.outForDeliveryAt || o.deliveryOutAt)return 'out';
+    if(o.deliveryStatus === 'assigned' || o.rider || o.riderName)return 'waiting';
+    return 'waiting';
   }
 
   function itemsText(o){
     try{
       return (o.items || []).map(function(i){
-        return (i.e || '') + ' ' + (i.n || i.name || 'Item') + ' ×' + (i.q || i.qty || 1);
+        var name = i.n || i.name || i.productName || 'Item';
+        var qty = i.q || i.qty || 1;
+        var emoji = i.e || i.emoji || '';
+        return emoji + ' ' + name + ' ×' + qty;
       }).join(', ');
     }catch(e){
       return '';
     }
   }
 
-  function buildDeliveryFromOrder(o){
-    var now = Date.now();
+  function makeDelivery(o){
+    var oid = getOrderId(o);
+    var status = deliveryStatus(o);
 
     return {
-      id: deliveryIdForOrder(o),
-      oid: o.id || o.orderNumber || o.no || '',
+      id: deliveryId(o),
+      oid: oid,
+
       cust: o.cust || o.customerName || (o.customer && o.customer.name) || 'Walk-in',
       phone: o.phone || (o.customer && o.customer.phone) || '',
-      recipient: o.recipient || o.recipientName || o.pickupName || '',
-      recipientPhone: o.recipientPhone || o.pickupPhone || '',
+
+      recipient: o.recipient || o.recipientName || '',
+      recipientPhone: o.recipientPhone || '',
+
       addr: o.addr || o.address || o.deliveryAddress || '',
       items: itemsText(o),
       total: Number(o.total || 0),
-      rider: o.rider || o.riderName || '',
+
+      rider: o.rider || '',
       riderName: o.riderName || o.rider || '',
-      status: deliveryStatusFromOrder(o),
-      time: o.kitOutAt || o.createdAt || o.created || o.time || now,
-      timerStart: o.outForDeliveryAt || o.deliveryOutAt || null,
-      timerEnd: o.deliveredAt || null,
+
+      status: status,
+
+      time: o.kitOutAt || o.createdAt || o.created || o.time || Date.now(),
+      preparedAt: o.kitReadyAt || o.kitStart || o.createdAt || o.time || Date.now(),
+
+      timerStart: status === 'out' || status === 'delivered'
+        ? (o.outForDeliveryAt || o.deliveryOutAt || o.timerStart || Date.now())
+        : null,
+
+      timerEnd: status === 'delivered'
+        ? (o.deliveredAt || o.timerEnd || Date.now())
+        : null,
+
+      outAt: o.outForDeliveryAt || o.deliveryOutAt || null,
+      deliveredAt: o.deliveredAt || null,
+
       deliveryDate: o.deliveryDate || o.delivery_date || o.scheduledDate || '',
       deliveryTime: o.deliveryTime || o.delivery_time || o.scheduledTime || ''
     };
   }
 
-  function upsertDelivery(delivery){
-    if(!delivery || !delivery.id)return;
-
-    if(!Array.isArray(S.deliveries))S.deliveries = [];
-
-    var idx = S.deliveries.findIndex(function(d){
-      return String(d.id) === String(delivery.id) ||
-             String(d.oid || '') === String(delivery.oid || '');
-    });
-
-    if(idx >= 0){
-      S.deliveries[idx] = Object.assign({}, S.deliveries[idx], delivery);
-    }else{
-      S.deliveries.push(delivery);
-    }
-  }
-
-  function rebuildDeliveriesFromOrders(){
+  function rebuildDeliveries(){
     try{
-      if(typeof S === 'undefined' || !S || !Array.isArray(S.orders))return;
-
+      if(typeof S === 'undefined' || !S)return;
+      if(!Array.isArray(S.orders))S.orders = [];
       if(!Array.isArray(S.deliveries))S.deliveries = [];
 
-      S.orders.forEach(function(o){
-        if(shouldBeInDelivery(o)){
-          upsertDelivery(buildDeliveryFromOrder(o));
-        }
+      var deliveryOrders = S.orders.filter(shouldShowDelivery);
+      var built = deliveryOrders.map(makeDelivery);
+
+      var map = {};
+
+      // Keep existing manual delivery fields if any.
+      S.deliveries.forEach(function(d){
+        if(d && d.oid)map[String(d.oid)] = d;
       });
+
+      built.forEach(function(d){
+        map[String(d.oid)] = Object.assign({}, map[String(d.oid)] || {}, d);
+      });
+
+      S.deliveries = Object.keys(map).map(function(k){return map[k];});
+
+      var sig = JSON.stringify(S.deliveries.map(function(d){
+        return {
+          id: d.id,
+          oid: d.oid,
+          status: d.status,
+          rider: d.rider,
+          riderName: d.riderName,
+          timerStart: d.timerStart,
+          timerEnd: d.timerEnd
+        };
+      }));
+
+      if(sig === LAST_SIG)return;
+      LAST_SIG = sig;
 
       try{ if(typeof sv === 'function')sv(); }catch(e){}
       try{ if(typeof rDel === 'function')rDel(); }catch(e){}
 
-      console.log('[Orders→Deliveries bridge] deliveries:', S.deliveries.length);
+      console.log('[Safe delivery bridge] rebuilt deliveries:', S.deliveries.length);
     }catch(e){
-      console.warn('[Orders→Deliveries bridge] failed:', e);
-    }
-  }
-
-  function wrapRenderer(){
-    if(window.__ordersToDeliveriesBridgeWrapped)return;
-    window.__ordersToDeliveriesBridgeWrapped = true;
-
-    var oldRDel = window.rDel || (typeof globalThis.rDel === 'function' ? globalThis.rDel : null);
-
-    if(typeof oldRDel === 'function'){
-      var wrapped = function(){
-        rebuildDeliveriesFromOrders();
-        return oldRDel.apply(this, arguments);
-      };
-
-      window.rDel = wrapped;
-      try{ globalThis.rDel = wrapped; }catch(e){}
-      try{ rDel = wrapped; }catch(e){}
+      console.warn('[Safe delivery bridge] failed:', e);
     }
   }
 
   function boot(){
-    wrapRenderer();
+    rebuildDeliveries();
 
-    rebuildDeliveriesFromOrders();
+    setTimeout(rebuildDeliveries, 1000);
+    setTimeout(rebuildDeliveries, 2500);
 
-    setInterval(function(){
-      wrapRenderer();
-      rebuildDeliveriesFromOrders();
-    }, 3000);
+    setInterval(rebuildDeliveries, 1500);
+
+    console.log('[Safe delivery bridge] started');
   }
 
   if(document.readyState === 'loading'){
