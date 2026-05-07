@@ -1993,6 +1993,30 @@ body.dark #chat-minimize-channels-btn.is-collapsed{background:#14281e!important;
 
 
 
+
+<style id="firebase-billing-lock-no-flicker-v1">
+  body.firebase-billing-checking #app,
+  body.firebase-billing-checking #main,
+  body.firebase-billing-checking #sb,
+  body.firebase-billing-checking #mnav,
+  body.firebase-billing-checking #topbar,
+  body.firebase-billing-checking #ct {
+    visibility: hidden !important;
+  }
+
+  body.firebase-billing-ready #app,
+  body.firebase-billing-ready #main,
+  body.firebase-billing-ready #sb,
+  body.firebase-billing-ready #mnav,
+  body.firebase-billing-ready #topbar,
+  body.firebase-billing-ready #ct {
+    visibility: visible;
+  }
+</style>
+<script>
+  document.body.classList.add('firebase-billing-checking');
+</script>
+
 </head>
 <body>
 
@@ -15301,6 +15325,9 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
     billingCache = billing || {};
     applyBillingToLocal(billingCache);
 
+    document.body.classList.remove('firebase-billing-checking');
+    document.body.classList.add('firebase-billing-ready');
+
     if(isBillingLocked(billingCache)){
       showLockedOverlay(billingCache);
       return false;
@@ -15319,6 +15346,8 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
       })
       .catch(function(err){
         console.warn('[Billing Lock Enforcer] fetch failed', err);
+        document.body.classList.remove('firebase-billing-checking');
+        document.body.classList.add('firebase-billing-ready');
       });
   }
 
