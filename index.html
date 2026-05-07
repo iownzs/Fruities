@@ -11275,5 +11275,157 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 </style>
 
   <script type="module" src="/src/main.js"></script>
+
+<script id="firebase-first-checkout-v1">
+(function(){
+  var DB_URL = 'https://fruities-pos-default-rtdb.asia-southeast1.firebasedatabase.app';
+  var STORE_ID = 'fruit-story-main';
+  var INSTALLED = false;
+
+  function cleanKey(raw){
+    return String(raw || ('ORD-' + Date.now()))
+      .replace(/[.#$\[\]\/]/g, '_')
+      .replace(/\s+/g, '_');
+  }
+
+  function getOrders(){
+    try{
+      return Array.isArray(S.orders) ? S.orders : [];
+    }catch(e){
+      return [];
+    }
+  }
+
+  function getLatestOrder(beforeLen){
+    var orders = getOrders();
+    if(orders.length <= beforeLen)return null;
+    return orders[orders.length - 1] || null;
+  }
+
+  function normalizeOrder(order){
+    var now = Date.now();
+    var copy = Object.assign({}, order || {});
+
+    var number = copy.orderNumber || copy.no || copy.num || copy.id || ('ORD-' + now);
+    var key = cleanKey(number);
+
+    copy.id = copy.id || key;
+    copy.orderNumber = number;
+    copy.status = copy.status || copy.payStatus || 'paid';
+    copy.kitchenStatus = copy.kitchenStatus || 'new';
+    copy.deliveryStatus = copy.deliveryStatus || 'waiting';
+    copy.pickupStatus = copy.pickupStatus || 'waiting';
+    copy.orderType = copy.orderType || copy.type || 'walkin';
+    copy.priority = copy.priority || 'normal';
+    copy.createdAt = copy.createdAt || copy.created || copy.time || now;
+    copy.updatedAt = now;
+    copy.syncedAt = now;
+    copy.source = copy.source || 'pos';
+    copy.createdBy = copy.createdBy || (S && S.cur && (S.cur.user || S.cur.name)) || 'local';
+
+    return { key: key, payload: copy };
+  }
+
+  function writeOrderToFirebase(order){
+    var normalized = normalizeOrder(order);
+    var key = normalized.key;
+    var payload = normalized.payload;
+
+    var url = DB_URL + '/stores/' + STORE_ID + '/orders/' + encodeURIComponent(key) + '.json';
+
+    return fetch(url, {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    }).then(function(res){
+      if(!res.ok){
+        return res.text().then(function(t){
+          throw new Error('Firebase write failed ' + res.status + ': ' + t);
+        });
+      }
+      return res.json();
+    }).then(function(){
+      order.firebaseSynced = true;
+      order.syncedAt = Date.now();
+
+      try{
+        if(typeof sv === 'function') sv();
+      }catch(e){}
+
+      try{
+        if(typeof toast === 'function') toast('Order saved to Firebase ✅');
+      }catch(e){}
+
+      console.log('[Firebase-first checkout] Order saved:', key);
+      return payload;
+    }).catch(function(err){
+      console.error('[Firebase-first checkout] Failed:', err);
+      try{
+        if(typeof toast === 'function') toast('Firebase order save failed', 'err');
+      }catch(e){}
+      throw err;
+    });
+  }
+
+  function install(){
+    if(INSTALLED)return true;
+
+    if(typeof confirmPay !== 'function'){
+      console.warn('[Firebase-first checkout] confirmPay not ready');
+      return false;
+    }
+
+    var originalConfirmPay = confirmPay;
+
+    confirmPay = function(){
+      var beforeLen = getOrders().length;
+
+      var result = originalConfirmPay.apply(this, arguments);
+
+      setTimeout(function(){
+        var latest = getLatestOrder(beforeLen);
+
+        if(!latest){
+          console.warn('[Firebase-first checkout] No new order detected after checkout');
+          return;
+        }
+
+        writeOrderToFirebase(latest);
+      }, 600);
+
+      return result;
+    };
+
+    try{
+      window.confirmPay = confirmPay;
+    }catch(e){}
+
+    INSTALLED = true;
+    console.log('[Firebase-first checkout] confirmPay hook installed');
+    return true;
+  }
+
+  function boot(){
+    install();
+
+    var tries = 0;
+    var timer = setInterval(function(){
+      tries++;
+      if(install() || tries >= 20){
+        clearInterval(timer);
+      }
+    }, 500);
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){
+      setTimeout(boot, 1200);
+    });
+  }else{
+    setTimeout(boot, 1200);
+  }
+})();
+</script>
+
 </body>
 </html>
