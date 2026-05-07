@@ -13554,5 +13554,234 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 })();
 </script>
 
+
+<script id="firebase-inventory-stock-sync-v1">
+(function(){
+  var DB_URL = 'https://fruities-pos-default-rtdb.asia-southeast1.firebasedatabase.app';
+  var STORE_ID = 'fruit-story-main';
+  var DONE_KEY = 'fruities_inventory_synced_orders_v1';
+
+  function loadDone(){
+    try{return JSON.parse(localStorage.getItem(DONE_KEY) || '{}') || {};}catch(e){return {};}
+  }
+
+  function saveDone(done){
+    try{localStorage.setItem(DONE_KEY, JSON.stringify(done || {}));}catch(e){}
+  }
+
+  var done = loadDone();
+
+  function cleanKey(raw){
+    return String(raw || ('key_' + Date.now()))
+      .replace(/[.#$\[\]\/]/g, '_')
+      .replace(/\s+/g, '_');
+  }
+
+  function getOrderId(order){
+    return String(order && (order.id || order.orderNumber || order.no || order.num || ''));
+  }
+
+  function getProductId(item){
+    return String(item.productId || item.pid || item.id || item.product_id || '');
+  }
+
+  function getItemQty(item){
+    return Number(item.qty || item.q || item.quantity || 1);
+  }
+
+  function getItemName(item){
+    return item.name || item.n || item.productName || 'Product';
+  }
+
+  function getCurrentProduct(productId){
+    try{
+      return (S.products || []).find(function(p){
+        return String(p.id) === String(productId);
+      });
+    }catch(e){
+      return null;
+    }
+  }
+
+  function patchJson(path, data){
+    return fetch(DB_URL + path + '.json', {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(data)
+    }).then(function(res){
+      if(!res.ok){
+        return res.text().then(function(t){
+          throw new Error('PATCH failed ' + res.status + ': ' + t);
+        });
+      }
+      return res.json();
+    });
+  }
+
+  function putJson(path, data){
+    return fetch(DB_URL + path + '.json', {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(data)
+    }).then(function(res){
+      if(!res.ok){
+        return res.text().then(function(t){
+          throw new Error('PUT failed ' + res.status + ': ' + t);
+        });
+      }
+      return res.json();
+    });
+  }
+
+  function writeInventoryLog(order, item, product, stockBefore, stockAfter){
+    var now = Date.now();
+    var orderId = getOrderId(order);
+    var productId = getProductId(item);
+    var qty = getItemQty(item);
+
+    var logId = cleanKey(orderId + '_' + productId + '_' + now);
+
+    var log = {
+      id: logId,
+      type: 'sale',
+      orderId: orderId,
+      orderNumber: order.orderNumber || orderId,
+      productId: productId,
+      productName: getItemName(item),
+      change: -qty,
+      qty: qty,
+      stockBefore: stockBefore,
+      stockAfter: stockAfter,
+      createdBy: (S && S.cur && (S.cur.user || S.cur.name)) || 'admin',
+      createdAt: now
+    };
+
+    return putJson('/stores/' + STORE_ID + '/inventoryLogs/' + logId, log);
+  }
+
+  function markOrderInventorySynced(order){
+    var orderId = getOrderId(order);
+    if(!orderId)return Promise.resolve();
+
+    return patchJson('/stores/' + STORE_ID + '/orders/' + cleanKey(orderId), {
+      inventorySynced: true,
+      inventorySyncedAt: Date.now()
+    });
+  }
+
+  function syncOrderInventory(order){
+    if(!order)return Promise.resolve();
+
+    var orderId = getOrderId(order);
+    if(!orderId)return Promise.resolve();
+
+    if(done[orderId] || order.inventorySynced === true){
+      return Promise.resolve();
+    }
+
+    var items = Array.isArray(order.items) ? order.items : [];
+
+    if(!items.length){
+      console.warn('[Inventory sync] Order has no items:', orderId);
+      return Promise.resolve();
+    }
+
+    var chain = Promise.resolve();
+
+    items.forEach(function(item){
+      chain = chain.then(function(){
+        var productId = getProductId(item);
+        var qty = getItemQty(item);
+
+        if(!productId || !qty)return Promise.resolve();
+
+        var product = getCurrentProduct(productId);
+        var stockBefore = Number(product && (product.s !== undefined ? product.s : product.stock || 0));
+        var stockAfter = Math.max(0, stockBefore - qty);
+
+        if(product){
+          product.s = stockAfter;
+          product.stock = stockAfter;
+        }
+
+        return patchJson('/stores/' + STORE_ID + '/products/' + cleanKey(productId), {
+          s: stockAfter,
+          stock: stockAfter,
+          updatedAt: Date.now()
+        }).then(function(){
+          return writeInventoryLog(order, item, product, stockBefore, stockAfter);
+        });
+      });
+    });
+
+    return chain.then(function(){
+      done[orderId] = Date.now();
+      saveDone(done);
+
+      order.inventorySynced = true;
+      order.inventorySyncedAt = Date.now();
+
+      return markOrderInventorySynced(order);
+    }).then(function(){
+      try{ if(typeof sv === 'function')sv(); }catch(e){}
+      try{ if(typeof rGrid === 'function')rGrid(); }catch(e){}
+      try{ if(typeof rProds === 'function')rProds(); }catch(e){}
+      try{ if(typeof rStk === 'function')rStk(); }catch(e){}
+      try{ if(typeof rDash === 'function')rDash(); }catch(e){}
+
+      console.log('[Inventory sync] Synced order inventory:', orderId);
+      try{ if(typeof toast === 'function')toast('Inventory synced ✅'); }catch(e){}
+    }).catch(function(err){
+      console.warn('[Inventory sync] Failed:', orderId, err);
+      try{ if(typeof toast === 'function')toast('Inventory sync failed', 'err'); }catch(e){}
+    });
+  }
+
+  function shouldSyncOrder(order){
+    if(!order)return false;
+    if(order.status === 'refunded' || order.payStatus === 'refunded')return false;
+
+    var status = String(order.status || '').toLowerCase();
+    var payStatus = String(order.payStatus || '').toLowerCase();
+
+    return (
+      status === 'paid' ||
+      status === 'completed' ||
+      payStatus === 'paid' ||
+      payStatus === 'completed' ||
+      order.payOS === 'paid'
+    );
+  }
+
+  function scanOrders(){
+    try{
+      if(typeof S === 'undefined' || !S || !Array.isArray(S.orders))return;
+
+      S.orders.forEach(function(order){
+        if(shouldSyncOrder(order)){
+          syncOrderInventory(order);
+        }
+      });
+    }catch(e){
+      console.warn('[Inventory sync] scan failed:', e);
+    }
+  }
+
+  function boot(){
+    scanOrders();
+    setInterval(scanOrders, 3000);
+    console.log('[Inventory sync] Watcher started');
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){
+      setTimeout(boot, 2500);
+    });
+  }else{
+    setTimeout(boot, 2500);
+  }
+})();
+</script>
+
 </body>
 </html>
