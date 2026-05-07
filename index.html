@@ -1969,6 +1969,22 @@ body.dark #chat-minimize-channels-btn.is-collapsed{background:#14281e!important;
   }
 </style>
 
+
+<script id="firebase-role-cache-fast-unlock">
+(function(){
+  try{
+    var cached = localStorage.getItem('fruities_cached_firebase_roles_v1');
+    if(cached && cached !== '{}' && cached !== 'null'){
+      document.addEventListener('DOMContentLoaded', function(){
+        try{
+          document.body.classList.add('firebase-role-menu-ready');
+        }catch(e){}
+      });
+    }
+  }catch(e){}
+})();
+</script>
+
 </head>
 <body>
 
@@ -15037,10 +15053,10 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 
   if(document.readyState === 'loading'){
     document.addEventListener('DOMContentLoaded', function(){
-      setTimeout(boot, 1800);
+      setTimeout(boot, 50);
     });
   }else{
-    setTimeout(boot, 1800);
+    setTimeout(boot, 50);
   }
 })();
 </script>
@@ -15317,15 +15333,15 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 
     setTimeout(function(){
       try{ document.body.classList.add('firebase-role-menu-ready'); }catch(e){}
-    }, 1200);
+    }, 300);
 
     console.log('[Hard role menu filter] started');
   }
 
   if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 1500); });
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 50); });
   }else{
-    setTimeout(boot, 1500);
+    setTimeout(boot, 50);
   }
 })();
 </script>
