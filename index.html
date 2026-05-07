@@ -1984,23 +1984,44 @@ body.dark #chat-minimize-channels-btn.is-collapsed{background:#14281e!important;
 </style>
 
 
-<style id="superadmin-ui-nav-fix-style-v1">
+
+
+<style id="superadmin-hard-ui-fix-style-v2">
   body.superadmin-mode #view-superadmin {
-    padding-bottom: 120px !important;
+    display: block !important;
+    min-height: calc(100vh - 90px) !important;
+    padding-bottom: 160px !important;
+  }
+
+  body.superadmin-mode .mni {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
+  body.superadmin-mode .mni,
+  body.superadmin-mode .mni * {
+    display: none !important;
+    visibility: hidden !important;
   }
 
   body.superadmin-mode .bottom-nav,
   body.superadmin-mode #bottom-nav,
-  body.superadmin-mode [class*="bottom-nav"] {
+  body.superadmin-mode [class*="bottom"],
+  body.superadmin-mode [id*="bottom"] {
     display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
   }
 
-  body.superadmin-mode #view-superadmin .card {
-    margin-bottom: 14px;
+  body.superadmin-mode #view-superadmin .card,
+  body.superadmin-mode #view-superadmin .sc {
+    visibility: visible !important;
   }
 
-  body.superadmin-mode #view-superadmin {
-    min-height: calc(100vh - 80px);
+  body.superadmin-mode #superadmin-nav-item {
+    display: flex !important;
+    visibility: visible !important;
   }
 </style>
 
@@ -15567,9 +15588,11 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 </script>
 
 
-<script id="superadmin-ui-nav-fix-v1">
+
+
+<script id="superadmin-hard-ui-fix-v2">
 (function(){
-  function currentRole(){
+  function roleKey(){
     try{
       var cur = S && S.cur ? S.cur : {};
       var role = cur.roleKey || cur.role || '';
@@ -15582,7 +15605,6 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
       }
 
       role = String(role || '').trim().toLowerCase();
-
       if(role === 'administrator') role = 'admin';
       if(role === 'cashier') role = 'sales';
 
@@ -15593,134 +15615,212 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
   }
 
   function isSuperadmin(){
-    return currentRole() === 'superadmin';
+    return roleKey() === 'superadmin';
   }
 
-  function isSuperadminVisible(){
-    var view = document.getElementById('view-superadmin');
-    return !!(view && (view.classList.contains('on') || view.style.display !== 'none'));
+  function isSuPath(){
+    return location.pathname === '/su' || location.pathname === '/su/';
   }
 
-  function setHeader(){
-    if(!isSuperadminVisible()) return;
+  function superadminView(){
+    return document.getElementById('view-superadmin');
+  }
 
-    var title =
-      document.querySelector('#topbar h1') ||
-      document.querySelector('#page-title') ||
-      document.querySelector('.page-title') ||
-      document.querySelector('#main h1');
+  function isSuperadminOpen(){
+    var view = superadminView();
+    if(!view) return false;
 
-    if(title){
-      title.textContent = 'Superadmin Panel';
+    return view.classList.contains('on') || view.style.display !== 'none';
+  }
+
+  function forceTopbarTitle(){
+    if(!isSuperadminOpen()) return;
+
+    var candidates = [
+      document.querySelector('#topbar h1'),
+      document.querySelector('#topbar h2'),
+      document.querySelector('#topbar .ttl'),
+      document.querySelector('#topbar .title'),
+      document.querySelector('#topbar [id*="title"]'),
+      document.querySelector('#page-title'),
+      document.querySelector('.page-title')
+    ].filter(Boolean);
+
+    candidates.forEach(function(el){
+      el.textContent = 'Superadmin Panel';
+    });
+
+    // Fallback: in your screenshot, the visible topbar text is the first big heading after hamburger.
+    var topbar = document.getElementById('topbar');
+    if(topbar){
+      Array.from(topbar.querySelectorAll('*')).forEach(function(el){
+        var t = String(el.textContent || '').trim();
+        if(t === 'Dashboard' || t === 'Admin Panel' || t === 'Products' || t === 'Orders'){
+          el.textContent = 'Superadmin Panel';
+        }
+      });
     }
 
     document.title = 'Superadmin Panel · Fruit Story POS';
   }
 
-  function showAllNavForSuperadmin(){
+  function forceSidebarForSuperadmin(){
     if(!isSuperadmin()) return;
 
-    document.querySelectorAll('.ni[data-v], .mni[data-v]').forEach(function(item){
+    document.querySelectorAll('.ni[data-v]').forEach(function(item){
       item.style.display = '';
       item.style.visibility = 'visible';
+      item.style.pointerEvents = '';
       item.setAttribute('data-firebase-role-allowed', 'true');
+      item.setAttribute('data-role-direct-allowed', 'true');
     });
 
     var superItem = document.getElementById('superadmin-nav-item');
     if(superItem){
       superItem.style.display = '';
       superItem.style.visibility = 'visible';
+      superItem.style.pointerEvents = '';
       superItem.setAttribute('data-firebase-role-allowed', 'true');
     }
   }
 
-  function markSuperadminMode(){
-    if(isSuperadminVisible()){
-      document.body.classList.add('superadmin-mode');
-      setHeader();
-    }else{
-      document.body.classList.remove('superadmin-mode');
-    }
+  function hideMobileBottomNav(){
+    if(!isSuperadminOpen()) return;
+
+    document.querySelectorAll('.mni').forEach(function(item){
+      item.style.display = 'none';
+      item.style.visibility = 'hidden';
+      item.style.pointerEvents = 'none';
+
+      var parent = item.parentElement;
+      if(parent){
+        parent.style.display = 'none';
+        parent.style.visibility = 'hidden';
+        parent.style.pointerEvents = 'none';
+      }
+    });
   }
 
-  function improveOpenSuperadmin(){
-    if(window.__superadminUiNavFixWrapped) return;
+  function openSuperadminHard(){
+    if(!isSuperadmin()) return false;
+
+    var view = superadminView();
+    if(!view) return false;
+
+    document.querySelectorAll('[id^="view-"], .view').forEach(function(v){
+      v.classList.remove('on');
+      v.style.display = 'none';
+    });
+
+    view.classList.add('on');
+    view.style.display = 'block';
+
+    document.querySelectorAll('.ni,.mni').forEach(function(n){
+      n.classList.remove('on');
+    });
+
+    var item = document.getElementById('superadmin-nav-item');
+    if(item){
+      item.classList.add('on');
+      item.style.display = '';
+      item.style.visibility = 'visible';
+    }
+
+    document.body.classList.add('superadmin-mode');
+
+    try{
+      if(typeof renderSuperadmin === 'function') renderSuperadmin();
+    }catch(e){}
+
+    forceTopbarTitle();
+    forceSidebarForSuperadmin();
+    hideMobileBottomNav();
+
+    setTimeout(function(){ window.scrollTo(0, 0); }, 50);
+
+    return true;
+  }
+
+  function patchSuperadminNavClick(){
+    var item = document.getElementById('superadmin-nav-item');
+    if(!item || item.__superadminHardClickFixed) return;
+
+    item.__superadminHardClickFixed = true;
+
+    item.addEventListener('click', function(event){
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      openSuperadminHard();
+      return false;
+    }, true);
+  }
+
+  function patchOpenSuperadmin(){
+    if(window.__superadminHardOpenWrapped) return;
 
     var oldOpen = window.openSuperadmin;
 
-    if(typeof oldOpen === 'function'){
-      window.openSuperadmin = function(){
-        var result = oldOpen.apply(this, arguments);
+    window.openSuperadmin = function(){
+      var result;
 
-        setTimeout(function(){
-          showAllNavForSuperadmin();
-          markSuperadminMode();
-          setHeader();
+      try{
+        if(typeof oldOpen === 'function'){
+          result = oldOpen.apply(this, arguments);
+        }
+      }catch(e){}
 
-          var view = document.getElementById('view-superadmin');
-          if(view){
-            view.scrollTop = 0;
-            window.scrollTo(0, 0);
-          }
-        }, 80);
+      setTimeout(openSuperadminHard, 50);
+      setTimeout(applyFixes, 120);
 
-        return result;
-      };
-    }
+      return result;
+    };
 
-    window.__superadminUiNavFixWrapped = true;
+    window.__superadminHardOpenWrapped = true;
   }
 
-  function openSuRouteIfNeeded(){
-    var isSu = location.pathname === '/su' || location.pathname === '/su/';
+  function applyFixes(){
+    if(isSuperadmin()){
+      forceSidebarForSuperadmin();
+      patchSuperadminNavClick();
+    }
 
-    if(!isSu) return;
+    if(isSuperadminOpen()){
+      document.body.classList.add('superadmin-mode');
+      forceTopbarTitle();
+      hideMobileBottomNav();
+    }else{
+      document.body.classList.remove('superadmin-mode');
+    }
 
-    if(isSuperadmin() && typeof window.openSuperadmin === 'function'){
-      window.openSuperadmin();
+    if(isSuPath() && isSuperadmin()){
+      openSuperadminHard();
     }
   }
 
   function boot(){
-    improveOpenSuperadmin();
-    showAllNavForSuperadmin();
-    markSuperadminMode();
-    openSuRouteIfNeeded();
+    patchOpenSuperadmin();
 
-    setTimeout(function(){
-      improveOpenSuperadmin();
-      showAllNavForSuperadmin();
-      markSuperadminMode();
-      openSuRouteIfNeeded();
-    }, 500);
+    applyFixes();
 
-    setTimeout(function(){
-      showAllNavForSuperadmin();
-      markSuperadminMode();
-      setHeader();
-    }, 1500);
+    setTimeout(applyFixes, 300);
+    setTimeout(applyFixes, 900);
+    setTimeout(applyFixes, 1800);
+    setTimeout(applyFixes, 3000);
 
-    setInterval(function(){
-      showAllNavForSuperadmin();
-      markSuperadminMode();
-      setHeader();
-    }, 2000);
+    setInterval(applyFixes, 1500);
 
     document.addEventListener('click', function(){
-      setTimeout(function(){
-        showAllNavForSuperadmin();
-        markSuperadminMode();
-        setHeader();
-      }, 100);
+      setTimeout(applyFixes, 100);
     }, true);
 
-    console.log('[Superadmin UI fix] started');
+    console.log('[Superadmin hard UI fix v2] started');
   }
 
   if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 500); });
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 300); });
   }else{
-    setTimeout(boot, 500);
+    setTimeout(boot, 300);
   }
 })();
 </script>
