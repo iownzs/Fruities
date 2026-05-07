@@ -1983,6 +1983,27 @@ body.dark #chat-minimize-channels-btn.is-collapsed{background:#14281e!important;
   }
 </style>
 
+
+<style id="superadmin-ui-nav-fix-style-v1">
+  body.superadmin-mode #view-superadmin {
+    padding-bottom: 120px !important;
+  }
+
+  body.superadmin-mode .bottom-nav,
+  body.superadmin-mode #bottom-nav,
+  body.superadmin-mode [class*="bottom-nav"] {
+    display: none !important;
+  }
+
+  body.superadmin-mode #view-superadmin .card {
+    margin-bottom: 14px;
+  }
+
+  body.superadmin-mode #view-superadmin {
+    min-height: calc(100vh - 80px);
+  }
+</style>
+
 </head>
 <body>
 
@@ -15541,6 +15562,165 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
     document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 800); });
   }else{
     setTimeout(boot, 800);
+  }
+})();
+</script>
+
+
+<script id="superadmin-ui-nav-fix-v1">
+(function(){
+  function currentRole(){
+    try{
+      var cur = S && S.cur ? S.cur : {};
+      var role = cur.roleKey || cur.role || '';
+
+      if(!role && cur.user && Array.isArray(S.accounts)){
+        var acc = S.accounts.find(function(a){
+          return String(a.user || a.username || a.id).toLowerCase() === String(cur.user).toLowerCase();
+        });
+        if(acc) role = acc.roleKey || acc.role;
+      }
+
+      role = String(role || '').trim().toLowerCase();
+
+      if(role === 'administrator') role = 'admin';
+      if(role === 'cashier') role = 'sales';
+
+      return role;
+    }catch(e){
+      return '';
+    }
+  }
+
+  function isSuperadmin(){
+    return currentRole() === 'superadmin';
+  }
+
+  function isSuperadminVisible(){
+    var view = document.getElementById('view-superadmin');
+    return !!(view && (view.classList.contains('on') || view.style.display !== 'none'));
+  }
+
+  function setHeader(){
+    if(!isSuperadminVisible()) return;
+
+    var title =
+      document.querySelector('#topbar h1') ||
+      document.querySelector('#page-title') ||
+      document.querySelector('.page-title') ||
+      document.querySelector('#main h1');
+
+    if(title){
+      title.textContent = 'Superadmin Panel';
+    }
+
+    document.title = 'Superadmin Panel · Fruit Story POS';
+  }
+
+  function showAllNavForSuperadmin(){
+    if(!isSuperadmin()) return;
+
+    document.querySelectorAll('.ni[data-v], .mni[data-v]').forEach(function(item){
+      item.style.display = '';
+      item.style.visibility = 'visible';
+      item.setAttribute('data-firebase-role-allowed', 'true');
+    });
+
+    var superItem = document.getElementById('superadmin-nav-item');
+    if(superItem){
+      superItem.style.display = '';
+      superItem.style.visibility = 'visible';
+      superItem.setAttribute('data-firebase-role-allowed', 'true');
+    }
+  }
+
+  function markSuperadminMode(){
+    if(isSuperadminVisible()){
+      document.body.classList.add('superadmin-mode');
+      setHeader();
+    }else{
+      document.body.classList.remove('superadmin-mode');
+    }
+  }
+
+  function improveOpenSuperadmin(){
+    if(window.__superadminUiNavFixWrapped) return;
+
+    var oldOpen = window.openSuperadmin;
+
+    if(typeof oldOpen === 'function'){
+      window.openSuperadmin = function(){
+        var result = oldOpen.apply(this, arguments);
+
+        setTimeout(function(){
+          showAllNavForSuperadmin();
+          markSuperadminMode();
+          setHeader();
+
+          var view = document.getElementById('view-superadmin');
+          if(view){
+            view.scrollTop = 0;
+            window.scrollTo(0, 0);
+          }
+        }, 80);
+
+        return result;
+      };
+    }
+
+    window.__superadminUiNavFixWrapped = true;
+  }
+
+  function openSuRouteIfNeeded(){
+    var isSu = location.pathname === '/su' || location.pathname === '/su/';
+
+    if(!isSu) return;
+
+    if(isSuperadmin() && typeof window.openSuperadmin === 'function'){
+      window.openSuperadmin();
+    }
+  }
+
+  function boot(){
+    improveOpenSuperadmin();
+    showAllNavForSuperadmin();
+    markSuperadminMode();
+    openSuRouteIfNeeded();
+
+    setTimeout(function(){
+      improveOpenSuperadmin();
+      showAllNavForSuperadmin();
+      markSuperadminMode();
+      openSuRouteIfNeeded();
+    }, 500);
+
+    setTimeout(function(){
+      showAllNavForSuperadmin();
+      markSuperadminMode();
+      setHeader();
+    }, 1500);
+
+    setInterval(function(){
+      showAllNavForSuperadmin();
+      markSuperadminMode();
+      setHeader();
+    }, 2000);
+
+    document.addEventListener('click', function(){
+      setTimeout(function(){
+        showAllNavForSuperadmin();
+        markSuperadminMode();
+        setHeader();
+      }, 100);
+    }, true);
+
+    console.log('[Superadmin UI fix] started');
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 500); });
+  }else{
+    setTimeout(boot, 500);
   }
 })();
 </script>
