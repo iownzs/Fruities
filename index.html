@@ -15902,5 +15902,210 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 })();
 </script>
 
+
+<script id="firebase-billing-permission-alias-v1">
+(function(){
+  var DB_URL = 'https://fruities-pos-default-rtdb.asia-southeast1.firebasedatabase.app';
+  var STORE_ID = 'fruit-story-main';
+  var CACHE_KEY = 'fruities_cached_firebase_roles_v1';
+
+  function normalizeRole(role){
+    role = String(role || '').toLowerCase().trim();
+    if(role === 'cashier')role = 'sales';
+    if(role === 'administrator')role = 'admin';
+    return role || 'sales';
+  }
+
+  function currentRole(){
+    try{
+      var cur = S && S.cur ? S.cur : {};
+      var role = cur.roleKey || cur.role || '';
+
+      if(!role && cur.user && Array.isArray(S.accounts)){
+        var account = S.accounts.find(function(a){
+          return String(a.user || a.username || a.id).toLowerCase() === String(cur.user).toLowerCase();
+        });
+        if(account)role = account.roleKey || account.role;
+      }
+
+      return normalizeRole(role);
+    }catch(e){
+      return 'sales';
+    }
+  }
+
+  function patchJson(path, data){
+    return fetch(DB_URL + path + '.json', {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(data)
+    }).then(function(res){
+      if(!res.ok){
+        return res.text().then(function(t){
+          throw new Error('PATCH failed ' + res.status + ': ' + t);
+        });
+      }
+      return res.json();
+    });
+  }
+
+  function addBillingAliasesToRole(role){
+    role = role || {};
+
+    var billingAllowed = !!(
+      role.billing ||
+      role.posBilling ||
+      role.pos_billing ||
+      role.billingAccess
+    );
+
+    role.billing = billingAllowed;
+    role.posBilling = billingAllowed;
+    role.pos_billing = billingAllowed;
+    role.billingAccess = billingAllowed;
+
+    return role;
+  }
+
+  function patchAllRoles(data){
+    data = data || {};
+
+    var writes = Object.keys(data).map(function(key){
+      var role = addBillingAliasesToRole(Object.assign({}, data[key] || {}));
+
+      return patchJson('/stores/' + STORE_ID + '/roles/' + key, {
+        billing: role.billing,
+        posBilling: role.posBilling,
+        pos_billing: role.pos_billing,
+        billingAccess: role.billingAccess,
+        updatedAt: Date.now(),
+        updatedBy: 'billing-alias'
+      });
+    });
+
+    return Promise.allSettled(writes).then(function(){
+      console.log('[Billing permission alias] Firebase roles patched');
+    });
+  }
+
+  function applyAliasesLocal(data){
+    data = data || {};
+
+    try{
+      Object.keys(data).forEach(function(key){
+        var roleKey = normalizeRole(key);
+        var role = addBillingAliasesToRole(Object.assign({}, data[key] || {}));
+
+        S.roles = S.roles || {};
+        S.rolePerms = S.rolePerms || {};
+
+        var title = roleKey.charAt(0).toUpperCase() + roleKey.slice(1);
+        if(roleKey === 'sales')title = 'Sales';
+        if(roleKey === 'dispatcher')title = 'Dispatcher';
+
+        S.roles[roleKey] = role;
+        S.roles[title] = role;
+        S.rolePerms[roleKey] = role;
+        S.rolePerms[title] = role;
+      });
+
+      if(S.roles.sales){
+        S.roles.cashier = S.roles.sales;
+        S.roles.Cashier = S.roles.sales;
+        S.rolePerms.cashier = S.roles.sales;
+        S.rolePerms.Cashier = S.roles.sales;
+      }
+
+      localStorage.setItem(CACHE_KEY, JSON.stringify(S.roles || {}));
+
+      try{ if(typeof sv === 'function')sv(); }catch(e){}
+    }catch(e){
+      console.warn('[Billing permission alias] local apply failed', e);
+    }
+  }
+
+  function loadAndPatch(){
+    fetch(DB_URL + '/stores/' + STORE_ID + '/roles.json', {cache:'no-store'})
+      .then(function(res){ return res.json(); })
+      .then(function(data){
+        applyAliasesLocal(data);
+        return patchAllRoles(data);
+      })
+      .catch(function(err){
+        console.warn('[Billing permission alias] failed', err);
+      });
+  }
+
+  function patchPermissionFunctions(){
+    var billingNames = [
+      'billing',
+      'posBilling',
+      'pos_billing',
+      'billingAccess',
+      'pos billing',
+      'POS Billing'
+    ];
+
+    [
+      'canAccess',
+      'hasAccess',
+      'canView',
+      'hasPerm',
+      'allowed',
+      'can'
+    ].forEach(function(name){
+      var old = window[name] || (typeof globalThis[name] === 'function' ? globalThis[name] : null);
+
+      if(typeof old === 'function' && !old.__billingAliasV1){
+        var wrapped = function(perm){
+          if(billingNames.indexOf(String(perm)) !== -1){
+            try{
+              var role =
+                (S.rolePerms && (S.rolePerms[currentRole()] || S.rolePerms[currentRole().charAt(0).toUpperCase() + currentRole().slice(1)])) ||
+                (S.roles && (S.roles[currentRole()] || S.roles[currentRole().charAt(0).toUpperCase() + currentRole().slice(1)])) ||
+                {};
+
+              return !!(role.billing || role.posBilling || role.pos_billing || role.billingAccess);
+            }catch(e){
+              return false;
+            }
+          }
+
+          return old.apply(this, arguments);
+        };
+
+        wrapped.__billingAliasV1 = true;
+
+        window[name] = wrapped;
+        try{ globalThis[name] = wrapped; }catch(e){}
+        try{ eval(name + ' = window["' + name + '"]'); }catch(e){}
+      }
+    });
+  }
+
+  function boot(){
+    loadAndPatch();
+    patchPermissionFunctions();
+
+    setTimeout(function(){
+      loadAndPatch();
+      patchPermissionFunctions();
+    }, 1000);
+
+    setInterval(function(){
+      patchPermissionFunctions();
+    }, 3000);
+
+    console.log('[Billing permission alias] started');
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 200); });
+  }else{
+    setTimeout(boot, 200);
+  }
+})();
+</script>
+
 </body>
 </html>
