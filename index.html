@@ -11787,5 +11787,169 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 })();
 </script>
 
+
+<script id="firebase-pickup-status-direct-sync-v1">
+(function(){
+  var DB_URL = 'https://fruities-pos-default-rtdb.asia-southeast1.firebasedatabase.app';
+  var STORE_ID = 'fruit-story-main';
+
+  function cleanKey(raw){
+    return String(raw || ('order_' + Date.now()))
+      .replace(/[.#$\[\]\/]/g, '_')
+      .replace(/\s+/g, '_');
+  }
+
+  function orderKey(orderOrId){
+    if(typeof orderOrId === 'object' && orderOrId){
+      return cleanKey(orderOrId.id || orderOrId.orderNumber || orderOrId.no || orderOrId.num);
+    }
+    return cleanKey(orderOrId);
+  }
+
+  function findOrder(id){
+    try{
+      return (S.orders || []).find(function(o){
+        return String(o.id) === String(id) ||
+               String(o.orderNumber || '') === String(id) ||
+               String(o.no || '') === String(id);
+      });
+    }catch(e){
+      return null;
+    }
+  }
+
+  function inferPickupStatus(order){
+    if(order.pickupStatus === 'picked_up') return 'picked_up';
+    if(order.kitPickup || order.pickedUpAt || order.kitPickedAt) return 'picked_up';
+    if(order.pickupStatus === 'ready') return 'ready';
+    if(order.kitForPickup || order.kitForPickupRequested) return 'ready';
+    return order.pickupStatus || 'waiting';
+  }
+
+  function patchFirebasePickup(order){
+    if(!order)return Promise.resolve();
+
+    var key = orderKey(order);
+    var now = Date.now();
+    var pickupStatus = inferPickupStatus(order);
+
+    var patch = {
+      pickupStatus: pickupStatus,
+      kitForPickup: !!order.kitForPickup,
+      kitForPickupRequested: !!order.kitForPickupRequested,
+      kitPickup: !!order.kitPickup,
+      kitPickedAt: order.kitPickedAt || order.pickedUpAt || null,
+      pickedUpAt: order.pickedUpAt || order.kitPickedAt || null,
+      pickupDate: order.pickupDate || '',
+      pickupTime: order.pickupTime || '',
+      pickupName: order.pickupName || order.cust || '',
+      pickupPhone: order.pickupPhone || order.phone || '',
+      updatedAt: now,
+      pickupSyncedAt: now
+    };
+
+    var url = DB_URL + '/stores/' + STORE_ID + '/orders/' + encodeURIComponent(key) + '.json';
+
+    return fetch(url, {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(patch)
+    }).then(function(res){
+      if(!res.ok){
+        return res.text().then(function(t){
+          throw new Error('Pickup sync failed ' + res.status + ': ' + t);
+        });
+      }
+      return res.json();
+    }).then(function(){
+      order.pickupStatus = pickupStatus;
+      order.pickupSyncedAt = now;
+      order.updatedAt = now;
+
+      try{ if(typeof sv === 'function') sv(); }catch(e){}
+      console.log('[Firebase pickup sync] Synced', key, patch);
+    }).catch(function(err){
+      console.warn('[Firebase pickup sync] Failed', key, err);
+      try{ if(typeof toast === 'function') toast('Pickup Firebase sync failed', 'err'); }catch(e){}
+    });
+  }
+
+  function install(){
+    if(window.__firebasePickupStatusDirectSyncV1)return;
+    window.__firebasePickupStatusDirectSyncV1 = true;
+
+    function wrap(name, after){
+      var old = window[name] || (typeof globalThis[name] === 'function' ? globalThis[name] : null);
+      if(typeof old !== 'function')return false;
+      if(old.__firebasePickupStatusDirectSyncV1)return true;
+
+      var wrapped = function(){
+        var args = arguments;
+        var result = old.apply(this, args);
+
+        setTimeout(function(){
+          try{ after.apply(null, args); }catch(e){ console.warn('[Firebase pickup sync] after hook failed', name, e); }
+        }, 150);
+
+        return result;
+      };
+
+      wrapped.__firebasePickupStatusDirectSyncV1 = true;
+      window[name] = wrapped;
+      try{ globalThis[name] = wrapped; }catch(e){}
+      try{ eval(name + ' = window["' + name + '"]'); }catch(e){}
+
+      console.log('[Firebase pickup sync] Wrapped', name);
+      return true;
+    }
+
+    // Known pickup/kitchen pickup actions
+    wrap('kitSendToPickup', function(id){
+      patchFirebasePickup(findOrder(id));
+    });
+
+    wrap('kitPickup', function(id){
+      patchFirebasePickup(findOrder(id));
+    });
+
+    // Common possible pickup function names; harmless if missing
+    wrap('markPickupReady', function(id){
+      patchFirebasePickup(findOrder(id));
+    });
+
+    wrap('markPickedUp', function(id){
+      patchFirebasePickup(findOrder(id));
+    });
+
+    wrap('pickupAction', function(id){
+      patchFirebasePickup(findOrder(id));
+    });
+
+    wrap('completePickup', function(id){
+      patchFirebasePickup(findOrder(id));
+    });
+  }
+
+  function boot(){
+    install();
+
+    var tries = 0;
+    var timer = setInterval(function(){
+      tries++;
+      install();
+      if(window.__firebasePickupStatusDirectSyncV1 || tries > 20){
+        clearInterval(timer);
+      }
+    }, 500);
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 1600); });
+  }else{
+    setTimeout(boot, 1600);
+  }
+})();
+</script>
+
 </body>
 </html>
