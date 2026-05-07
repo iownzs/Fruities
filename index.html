@@ -15040,5 +15040,133 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 
 
 
+
+<script id="remove-old-role-matrix-permanent-v1">
+(function(){
+  function cleanText(el){
+    return String(el && el.textContent || '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+  }
+
+  function isOldRoleMatrix(table){
+    var t = cleanText(table);
+
+    return (
+      t.indexOf('feature / page') !== -1 &&
+      t.indexOf('admin') !== -1 &&
+      t.indexOf('sales') !== -1 &&
+      t.indexOf('kitchen') !== -1 &&
+      t.indexOf('dispatcher') !== -1 &&
+      t.indexOf('rider') !== -1 &&
+      t.indexOf('pos terminal') !== -1 &&
+      t.indexOf('dashboard') !== -1
+    );
+  }
+
+  function removeOldRoleMatrix(){
+    var view = document.getElementById('view-accounts');
+    if(!view)return;
+
+    // Keep the new Firebase Role Editor visible.
+    var editor = document.getElementById('firebase-role-editor');
+    if(editor){
+      editor.style.display = '';
+    }
+
+    // Remove old top/manual save buttons.
+    Array.from(view.querySelectorAll('button')).forEach(function(btn){
+      var t = cleanText(btn);
+      var insideEditor = editor && editor.contains(btn);
+
+      if(insideEditor)return;
+
+      if(
+        t.indexOf('save roles to firebase') !== -1 ||
+        t.indexOf('reset to default') !== -1
+      ){
+        try{ btn.remove(); }catch(e){ btn.style.display = 'none'; }
+      }
+    });
+
+    // Remove the old role matrix table itself.
+    Array.from(view.querySelectorAll('table')).forEach(function(table){
+      if(isOldRoleMatrix(table)){
+        try{ table.remove(); }catch(e){ table.style.display = 'none'; }
+      }
+    });
+
+    // Remove old role heading/description.
+    Array.from(view.querySelectorAll('h1,h2,h3,h4,p,div,span')).forEach(function(el){
+      var t = cleanText(el);
+      var insideEditor = editor && editor.contains(el);
+
+      if(insideEditor)return;
+
+      if(
+        t === '🔑 role permissions click any cell to toggle' ||
+        t === 'role permissions click any cell to toggle' ||
+        t === 'role permissions' ||
+        t === 'click any cell to toggle'
+      ){
+        try{ el.remove(); }catch(e){ el.style.display = 'none'; }
+      }
+    });
+
+    // Move Firebase Role Editor into the role section area if it exists.
+    if(editor && view.contains(editor)){
+      var userCards = Array.from(view.querySelectorAll('button')).filter(function(btn){
+        var t = cleanText(btn);
+        return t === 'edit' || t === 'delete';
+      });
+
+      if(userCards.length){
+        var lastCard = userCards[userCards.length - 1];
+        var card = lastCard.closest('.card, .panel, [class*="card"], [class*="user"], div');
+
+        if(card && card.parentNode && card.nextSibling !== editor){
+          card.parentNode.insertBefore(editor, card.nextSibling);
+        }
+      }
+    }
+  }
+
+  function boot(){
+    removeOldRoleMatrix();
+
+    setTimeout(removeOldRoleMatrix, 100);
+    setTimeout(removeOldRoleMatrix, 500);
+    setTimeout(removeOldRoleMatrix, 1200);
+    setTimeout(removeOldRoleMatrix, 2500);
+
+    setInterval(removeOldRoleMatrix, 1000);
+
+    var view = document.getElementById('view-accounts');
+    if(view && typeof MutationObserver !== 'undefined'){
+      var observer = new MutationObserver(function(){
+        removeOldRoleMatrix();
+      });
+
+      observer.observe(view, {
+        childList: true,
+        subtree: true,
+        characterData: true
+      });
+    }
+
+    console.log('[Admin cleanup] Old role matrix permanently removed from UI');
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){
+      setTimeout(boot, 700);
+    });
+  }else{
+    setTimeout(boot, 700);
+  }
+})();
+</script>
+
 </body>
 </html>
