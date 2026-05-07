@@ -14296,6 +14296,12 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
       updatedBy: (window.S && S.cur && (S.cur.user || S.cur.name)) || 'admin'
     });
 
+    // Compatibility aliases: original app routes POS Billing through data-v="system".
+    payload.system = !!payload.billing;
+    payload.posBilling = !!payload.billing;
+    payload.pos_billing = !!payload.billing;
+    payload.billingAccess = !!payload.billing;
+
     var saveBtn = getEditor() && Array.from(getEditor().querySelectorAll('button')).find(function(btn){
       return btn.textContent.indexOf('Save Role') !== -1;
     });
@@ -14801,6 +14807,7 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
     'admin panel': 'accounts',
     'journal': 'journal',
     'pos billing': 'billing',
+    'system': 'billing',
     'billing': 'billing',
     'group chat': 'chat',
     'chat': 'chat'
@@ -15252,7 +15259,7 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
       product: 'products',
       accounts: 'accounts',
       admin: 'accounts',
-      system: 'accounts',
+      system: 'billing',
       journal: 'journal',
       reports: 'journal',
       billing: 'billing',
@@ -15460,6 +15467,7 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
     'journal': 'journal',
     'journal / reports': 'journal',
     'pos billing': 'billing',
+    'system': 'billing',
     'billing': 'billing',
     'group chat': 'chat',
     'chat': 'chat'
@@ -15690,11 +15698,12 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
     product: 'products',
     accounts: 'accounts',
     admin: 'accounts',
-    system: 'accounts',
+    system: 'billing',
     journal: 'journal',
     reports: 'journal',
     billing: 'billing',
     'pos billing': 'billing',
+    'system': 'billing',
     chat: 'chat',
     'group chat': 'chat'
   };
