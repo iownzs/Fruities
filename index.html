@@ -15445,5 +15445,122 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 })();
 </script>
 
+
+<script id="admin-panel-role-editor-layout-cleanup-v1">
+(function(){
+  function txt(el){
+    return String(el && el.textContent || '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+  }
+
+  function removeOldTopSaveButtons(){
+    var view = document.getElementById('view-accounts');
+    if(!view)return;
+
+    Array.from(view.querySelectorAll('button')).forEach(function(btn){
+      var t = txt(btn);
+
+      if(
+        t === 'save roles to firebase' ||
+        t.indexOf('save roles to firebase') !== -1 && btn.id !== 'firebase-role-editor-save-button'
+      ){
+        var editor = document.getElementById('firebase-role-editor');
+
+        // Do not remove the Save Role button inside the Firebase Role Editor.
+        if(editor && editor.contains(btn))return;
+
+        try{ btn.remove(); }catch(e){ btn.style.display = 'none'; }
+      }
+    });
+
+    [
+      'firebase-save-roles-manual-button',
+      'firebase-refresh-roles-button',
+      'firebase-admin-save-button'
+    ].forEach(function(id){
+      var el = document.getElementById(id);
+      if(el){
+        try{ el.remove(); }catch(e){ el.style.display = 'none'; }
+      }
+    });
+  }
+
+  function findUsersArea(){
+    var view = document.getElementById('view-accounts');
+    if(!view)return null;
+
+    var cards = Array.from(view.children).filter(function(el){
+      return el && el.id !== 'firebase-role-editor';
+    });
+
+    // Prefer placing editor after visible user cards/list and before nothing else.
+    var lastUseful = null;
+
+    cards.forEach(function(el){
+      var t = txt(el);
+
+      if(
+        t.indexOf('admin') !== -1 ||
+        t.indexOf('kitchen') !== -1 ||
+        t.indexOf('rider') !== -1 ||
+        t.indexOf('active') !== -1 ||
+        t.indexOf('edit') !== -1 ||
+        t.indexOf('delete') !== -1
+      ){
+        lastUseful = el;
+      }
+    });
+
+    return lastUseful;
+  }
+
+  function moveFirebaseRoleEditorDown(){
+    var view = document.getElementById('view-accounts');
+    var editor = document.getElementById('firebase-role-editor');
+
+    if(!view || !editor)return;
+
+    var target = findUsersArea();
+
+    if(target && target.parentNode){
+      if(target.nextSibling !== editor){
+        target.parentNode.insertBefore(editor, target.nextSibling);
+      }
+    }else{
+      view.appendChild(editor);
+    }
+
+    editor.style.marginTop = '18px';
+  }
+
+  function cleanup(){
+    removeOldTopSaveButtons();
+    moveFirebaseRoleEditorDown();
+  }
+
+  function boot(){
+    cleanup();
+
+    setTimeout(cleanup, 300);
+    setTimeout(cleanup, 1000);
+    setTimeout(cleanup, 2500);
+
+    setInterval(cleanup, 3000);
+
+    console.log('[Admin cleanup] Role editor moved and duplicate save removed');
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){
+      setTimeout(boot, 1200);
+    });
+  }else{
+    setTimeout(boot, 1200);
+  }
+})();
+</script>
+
 </body>
 </html>
