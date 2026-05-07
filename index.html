@@ -13911,15 +13911,52 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 
 
 
-<script id="firebase-admin-users-roles-writeback-v2">
+
+
+<script id="firebase-admin-roles-dom-save-v1">
 (function(){
   var DB_URL = 'https://fruities-pos-default-rtdb.asia-southeast1.firebasedatabase.app';
   var STORE_ID = 'fruit-story-main';
 
-  var lastUsersHash = '';
-  var lastRolesHash = '';
-  var saveTimer = null;
-  var toastTimer = null;
+  var ROLE_KEYS = ['admin', 'sales', 'kitchen', 'dispatcher', 'rider'];
+
+  var FEATURE_MAP = {
+    'dashboard': 'dashboard',
+    'pos terminal': 'pos',
+    'orders': 'orders',
+    'kitchen board': 'kitchen',
+    'delivery': 'delivery',
+    'pick up': 'pickup',
+    'pickup': 'pickup',
+    'stocks': 'stocks',
+    'products': 'products',
+    'journal / reports': 'journal',
+    'journal': 'journal',
+    'pos billing': 'billing',
+    'group chat': 'chat',
+    'admin panel': 'accounts',
+
+    'refund orders': 'refundOrders',
+    'mark paid': 'markPaid',
+    'adjust stock': 'adjustStock',
+    'manage products': 'manageProducts',
+    'apply discount': 'applyDiscount',
+    'export data': 'exportData',
+    'admin functions': 'adminFunctions',
+
+    'category tabs': 'categoryTabs',
+    'product search': 'productSearch',
+    'customer details': 'customerDetails',
+    'order notes': 'orderNotes',
+    'discount box': 'discountBox',
+    'clear cart button': 'clearCartButton',
+    'payment channels': 'paymentChannels',
+    'order status picker': 'orderStatusPicker',
+    'receipt print': 'receiptPrint',
+
+    'dashboard stats': 'dashboardStats',
+    'topbar new sale': 'topbarNewSale'
+  };
 
   function cleanKey(raw){
     return String(raw || '')
@@ -13944,317 +13981,245 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
     });
   }
 
-  function getRolesSource(){
-    if(typeof S === 'undefined' || !S)return {};
-    return S.roles || S.rolePerms || {};
+  function normalizeFeatureName(text){
+    text = String(text || '')
+      .replace(/[^\w\s/]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+
+    return FEATURE_MAP[text] || cleanKey(text);
   }
 
-  function compactRole(role){
-    var out = {};
+  function cellIsOn(cell){
+    var text = String(cell && cell.textContent || '').toLowerCase();
 
-    Object.keys(role || {}).forEach(function(k){
-      if(typeof role[k] === 'boolean'){
-        out[k] = role[k];
-      }
+    if(text.indexOf('locked') !== -1)return true;
+    if(text.indexOf('off') !== -1)return false;
+    if(text.indexOf('on') !== -1)return true;
+
+    var input = cell && cell.querySelector && cell.querySelector('input[type="checkbox"]');
+    if(input)return !!input.checked;
+
+    return false;
+  }
+
+  function findRoleTable(){
+    var view = document.getElementById('view-accounts');
+    if(!view)return null;
+
+    var tables = Array.from(view.querySelectorAll('table'));
+
+    var best = tables.find(function(table){
+      var text = String(table.textContent || '').toLowerCase();
+      return text.indexOf('dashboard') !== -1 &&
+             text.indexOf('pos terminal') !== -1 &&
+             text.indexOf('rider') !== -1;
     });
 
-    return out;
+    return best || tables[tables.length - 1] || null;
   }
 
-  function normalizeRoles(){
-    var source = getRolesSource();
-    var out = {};
+  function scrapeRolesFromTable(){
+    var table = findRoleTable();
+    if(!table)throw new Error('Role permissions table not found');
 
-    ['admin','cashier','kitchen','rider'].forEach(function(key){
-      var title = key.charAt(0).toUpperCase() + key.slice(1);
-
-      var role =
-        source[key] ||
-        source[title] ||
-        (S.rolePerms && (S.rolePerms[key] || S.rolePerms[title])) ||
-        {};
-
-      out[key] = compactRole(role);
-    });
-
-    return out;
-  }
-
-  function normalizeUser(account){
-    account = account || {};
-
-    var username = account.user || account.username || account.id || '';
-
-    return {
-      id: account.id || cleanKey(username),
-      name: account.name || username,
-      user: username,
-      username: account.username || username,
-      pass: account.pass || '',
-      role: account.role || 'Cashier',
-      roleKey: account.roleKey || String(account.role || 'cashier').toLowerCase(),
-      status: account.status || (account.active === false ? 'inactive' : 'active'),
-      active: account.active !== false && account.status !== 'inactive',
-      email: account.email || '',
-      updatedAt: Date.now(),
-      updatedBy: (S && S.cur && (S.cur.user || S.cur.name)) || 'admin'
+    var roles = {
+      admin: {},
+      sales: {},
+      cashier: {},
+      kitchen: {},
+      dispatcher: {},
+      rider: {}
     };
-  }
 
-  function normalizeUsers(){
-    if(typeof S === 'undefined' || !S || !Array.isArray(S.accounts))return {};
+    var rows = Array.from(table.querySelectorAll('tr'));
 
-    var out = {};
+    rows.forEach(function(row){
+      var cells = Array.from(row.children);
+      if(cells.length < 6)return;
 
-    S.accounts.forEach(function(account){
-      var payload = normalizeUser(account);
-      var key = cleanKey(payload.user || payload.username || payload.id);
+      var first = String(cells[0].textContent || '').trim();
+      var firstLower = first.toLowerCase();
 
-      if(key)out[key] = payload;
-    });
+      if(!first || firstLower.indexOf('feature') !== -1 || firstLower.indexOf('page') !== -1){
+        return;
+      }
 
-    return out;
-  }
+      var featureKey = normalizeFeatureName(first);
+      if(!featureKey)return;
 
-  function stableHash(obj){
-    return JSON.stringify(obj, Object.keys(obj).sort());
-  }
-
-  function showSavedOnce(message){
-    clearTimeout(toastTimer);
-
-    toastTimer = setTimeout(function(){
-      try{
-        if(typeof toast === 'function')toast(message || 'Admin changes saved ✅');
-      }catch(e){}
-    }, 300);
-  }
-
-  function saveRolesIfChanged(force){
-    var roles = normalizeRoles();
-    var hash = JSON.stringify(roles);
-
-    if(!force && hash === lastRolesHash){
-      return Promise.resolve(false);
-    }
-
-    lastRolesHash = hash;
-
-    var writes = Object.keys(roles).map(function(key){
-      var payload = Object.assign({}, roles[key], {
-        updatedAt: Date.now(),
-        updatedBy: (S && S.cur && (S.cur.user || S.cur.name)) || 'admin'
+      ROLE_KEYS.forEach(function(roleKey, index){
+        var cell = cells[index + 1];
+        roles[roleKey][featureKey] = cellIsOn(cell);
       });
-
-      return patchJson('/stores/' + STORE_ID + '/roles/' + cleanKey(key), payload);
     });
 
-    return Promise.allSettled(writes).then(function(){
-      console.log('[Firebase admin sync v2] Roles saved');
-      return true;
+    // Compatibility: old app/db used cashier. Make cashier mirror Sales.
+    roles.cashier = Object.assign({}, roles.sales);
+
+    // Admin must keep core admin access.
+    roles.admin.dashboard = true;
+    roles.admin.pos = true;
+    roles.admin.orders = true;
+    roles.admin.kitchen = true;
+    roles.admin.delivery = true;
+    roles.admin.pickup = true;
+    roles.admin.stocks = true;
+    roles.admin.products = true;
+    roles.admin.accounts = true;
+    roles.admin.journal = true;
+    roles.admin.billing = true;
+    roles.admin.chat = true;
+
+    var now = Date.now();
+    Object.keys(roles).forEach(function(roleKey){
+      roles[roleKey].updatedAt = now;
+      roles[roleKey].updatedBy = (window.S && S.cur && (S.cur.user || S.cur.name)) || 'admin';
     });
+
+    return roles;
   }
 
-  function saveUsersIfChanged(force){
-    var users = normalizeUsers();
-    var hash = JSON.stringify(users);
+  function saveRolesToFirebase(){
+    var button = document.getElementById('firebase-save-roles-manual-button');
 
-    if(!force && hash === lastUsersHash){
-      return Promise.resolve(false);
+    if(button){
+      button.disabled = true;
+      button.textContent = 'Saving roles...';
     }
 
-    lastUsersHash = hash;
+    var roles;
 
-    var writes = Object.keys(users).map(function(key){
-      return patchJson('/stores/' + STORE_ID + '/users/' + key, users[key]);
-    });
-
-    return Promise.allSettled(writes).then(function(){
-      console.log('[Firebase admin sync v2] Users saved');
-      return true;
-    });
-  }
-
-  function saveAdminChanges(force){
-    return Promise.all([
-      saveRolesIfChanged(force),
-      saveUsersIfChanged(force)
-    ]).then(function(results){
-      if(results[0] || results[1]){
-        showSavedOnce('Admin changes saved to Firebase ✅');
+    try{
+      roles = scrapeRolesFromTable();
+    }catch(error){
+      console.warn('[Firebase roles save] scrape failed', error);
+      if(button){
+        button.disabled = false;
+        button.textContent = '💾 Save Roles to Firebase';
       }
-    }).catch(function(err){
-      console.warn('[Firebase admin sync v2] Save failed', err);
-      try{ if(typeof toast === 'function')toast('Admin Firebase save failed', 'err'); }catch(e){}
+      try{ if(typeof toast === 'function')toast('Role table not found', 'err'); }catch(e){}
+      return;
+    }
+
+    var writes = Object.keys(roles).map(function(roleKey){
+      return patchJson('/stores/' + STORE_ID + '/roles/' + cleanKey(roleKey), roles[roleKey]);
+    });
+
+    Promise.allSettled(writes).then(function(){
+      if(window.S){
+        S.roles = Object.assign({}, S.roles || {}, roles);
+        S.rolePerms = Object.assign({}, S.rolePerms || {}, roles);
+        try{ if(typeof sv === 'function')sv(); }catch(e){}
+      }
+
+      if(button){
+        button.disabled = false;
+        button.textContent = '✅ Roles saved to Firebase';
+        setTimeout(function(){
+          button.textContent = '💾 Save Roles to Firebase';
+        }, 1800);
+      }
+
+      console.log('[Firebase roles save] saved roles', roles);
+    }).catch(function(error){
+      console.warn('[Firebase roles save] failed', error);
+      if(button){
+        button.disabled = false;
+        button.textContent = '💾 Save Roles to Firebase';
+      }
+      try{ if(typeof toast === 'function')toast('Roles save failed', 'err'); }catch(e){}
     });
   }
 
-  function scheduleSave(force){
-    clearTimeout(saveTimer);
-
-    saveTimer = setTimeout(function(){
-      saveAdminChanges(!!force);
-    }, 900);
+  function removeOldButtons(){
+    [
+      'firebase-admin-save-button',
+      'firebase-save-roles-manual-button'
+    ].forEach(function(id){
+      var el = document.getElementById(id);
+      if(el && id !== 'firebase-save-roles-manual-button'){
+        try{ el.remove(); }catch(e){}
+      }
+    });
   }
 
-  function wrap(name){
-    var old = window[name] || (typeof globalThis[name] === 'function' ? globalThis[name] : null);
-    if(typeof old !== 'function')return false;
-    if(old.__firebaseAdminWritebackV2)return true;
-
-    var wrapped = function(){
-      var result = old.apply(this, arguments);
-      scheduleSave(true);
-      return result;
-    };
-
-    wrapped.__firebaseAdminWritebackV2 = true;
-    window[name] = wrapped;
-    try{ globalThis[name] = wrapped; }catch(e){}
-    try{ eval(name + ' = window["' + name + '"]'); }catch(e){}
-
-    console.log('[Firebase admin sync v2] Wrapped', name);
-    return true;
-  }
-
-  function installSaveButton(){
-    if(document.getElementById('firebase-admin-save-button'))return;
-
+  function installButton(){
     var view = document.getElementById('view-accounts');
     if(!view)return;
 
+    removeOldButtons();
+
+    if(document.getElementById('firebase-save-roles-manual-button'))return;
+
+    var table = findRoleTable();
     var btn = document.createElement('button');
-    btn.id = 'firebase-admin-save-button';
+
+    btn.id = 'firebase-save-roles-manual-button';
     btn.type = 'button';
-    btn.textContent = '💾 Save Users/Roles to Firebase';
+    btn.textContent = '💾 Save Roles to Firebase';
     btn.style.cssText = [
-      'position:sticky',
-      'top:8px',
-      'z-index:50',
       'width:100%',
-      'margin:8px 0',
+      'margin:10px 0',
       'padding:12px',
       'border:0',
       'border-radius:14px',
       'background:#1e8a52',
-      'color:white',
+      'color:#fff',
       'font-weight:800',
       'font-size:15px'
     ].join(';');
 
-    btn.onclick = function(){
-      saveAdminChanges(true);
-    };
+    btn.onclick = saveRolesToFirebase;
 
-    view.insertBefore(btn, view.firstChild);
+    if(table && table.parentNode){
+      table.parentNode.insertBefore(btn, table);
+    }else{
+      view.insertBefore(btn, view.firstChild);
+    }
+
+    console.log('[Firebase roles save] Manual button installed');
   }
 
-  function install(){
-    if(window.__firebaseAdminUsersRolesWritebackV2)return;
-    window.__firebaseAdminUsersRolesWritebackV2 = true;
+  function suppressOldSpamToasts(){
+    var oldToast = window.toast;
 
-    [
-      'saveRoles',
-      'saveRole',
-      'savePerms',
-      'savePermissions',
-      'togglePerm',
-      'setPerm',
-      'updateRolePerm',
-      'saveUser',
-      'saveAccount',
-      'addUser',
-      'addAccount',
-      'editUser',
-      'deleteUser',
-      'toggleUser',
-      'rAccounts',
-      'rAdmUsers',
-      'rPermEditor'
-    ].forEach(wrap);
+    if(typeof oldToast !== 'function' || oldToast.__suppressFirebaseAdminSpam)return;
 
-    document.addEventListener('change', function(event){
-      var target = event.target;
-      var accountsView = document.getElementById('view-accounts');
-
-      if(!target || !accountsView || !accountsView.contains(target))return;
-
-      scheduleSave(true);
-    }, true);
-
-    document.addEventListener('click', function(event){
-      var target = event.target;
-      var accountsView = document.getElementById('view-accounts');
-
-      if(!target || !target.closest || !accountsView || !accountsView.contains(target))return;
-
-      var text = String(target.textContent || '').toLowerCase();
+    window.toast = function(message, type){
+      var text = String(message || '');
 
       if(
-        text.indexOf('save') !== -1 ||
-        text.indexOf('role') !== -1 ||
-        text.indexOf('permission') !== -1 ||
-        text.indexOf('user') !== -1 ||
-        text.indexOf('account') !== -1 ||
-        text.indexOf('add') !== -1 ||
-        text.indexOf('delete') !== -1 ||
-        text.indexOf('reset') !== -1
+        text.indexOf('Role saved to Firebase') !== -1 ||
+        text.indexOf('User saved to Firebase') !== -1 ||
+        text.indexOf('Admin changes saved to Firebase') !== -1
       ){
-        scheduleSave(true);
+        return;
       }
-    }, true);
 
-    setInterval(function(){
-      installSaveButton();
+      return oldToast.apply(this, arguments);
+    };
 
-      var accountsView = document.getElementById('view-accounts');
-      if(accountsView && accountsView.classList.contains('on')){
-        saveAdminChanges(false);
-      }
-    }, 5000);
+    window.toast.__suppressFirebaseAdminSpam = true;
 
-    console.log('[Firebase admin sync v2] Installed');
+    try{ toast = window.toast; }catch(e){}
   }
 
   function boot(){
-    install();
-    installSaveButton();
+    suppressOldSpamToasts();
+    installButton();
 
-    var tries = 0;
-    var timer = setInterval(function(){
-      tries++;
-      installSaveButton();
-
-      [
-        'saveRoles',
-        'saveRole',
-        'savePerms',
-        'savePermissions',
-        'togglePerm',
-        'setPerm',
-        'updateRolePerm',
-        'saveUser',
-        'saveAccount',
-        'addUser',
-        'addAccount',
-        'editUser',
-        'deleteUser',
-        'toggleUser',
-        'rAccounts',
-        'rAdmUsers',
-        'rPermEditor'
-      ].forEach(wrap);
-
-      if(tries > 20){
-        clearInterval(timer);
-      }
-    }, 500);
+    setInterval(function(){
+      suppressOldSpamToasts();
+      installButton();
+    }, 2000);
   }
 
   if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 2200); });
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 1500); });
   }else{
-    setTimeout(boot, 2200);
+    setTimeout(boot, 1500);
   }
 })();
 </script>
