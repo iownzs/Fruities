@@ -15562,5 +15562,98 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 })();
 </script>
 
+
+<script id="admin-remove-top-save-roles-button-v2">
+(function(){
+  function cleanText(el){
+    return String(el && el.textContent || '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+  }
+
+  function isEditorButton(btn){
+    var editor = document.getElementById('firebase-role-editor');
+    return !!(editor && editor.contains(btn));
+  }
+
+  function removeTopSaveRolesButton(){
+    var view = document.getElementById('view-accounts');
+    if(!view)return;
+
+    Array.from(view.querySelectorAll('button, .btn, [role="button"], div')).forEach(function(el){
+      var t = cleanText(el);
+
+      if(!t)return;
+
+      // Keep the new editor buttons.
+      if(isEditorButton(el))return;
+
+      // Remove old/top duplicate button only.
+      if(
+        t === 'save roles to firebase' ||
+        t === '💾 save roles to firebase' ||
+        t.indexOf('save roles to firebase') !== -1
+      ){
+        try{
+          el.remove();
+        }catch(e){
+          el.style.display = 'none';
+          el.style.visibility = 'hidden';
+        }
+      }
+    });
+
+    // Also remove known old IDs if they come back.
+    [
+      'firebase-save-roles-manual-button',
+      'firebase-refresh-roles-button',
+      'firebase-admin-save-button'
+    ].forEach(function(id){
+      var el = document.getElementById(id);
+      if(el && !isEditorButton(el)){
+        try{
+          el.remove();
+        }catch(e){
+          el.style.display = 'none';
+          el.style.visibility = 'hidden';
+        }
+      }
+    });
+  }
+
+  function boot(){
+    removeTopSaveRolesButton();
+
+    setTimeout(removeTopSaveRolesButton, 100);
+    setTimeout(removeTopSaveRolesButton, 400);
+    setTimeout(removeTopSaveRolesButton, 1000);
+    setTimeout(removeTopSaveRolesButton, 2500);
+
+    setInterval(removeTopSaveRolesButton, 1000);
+
+    var view = document.getElementById('view-accounts');
+    if(view && typeof MutationObserver !== 'undefined'){
+      var observer = new MutationObserver(removeTopSaveRolesButton);
+      observer.observe(view, {
+        childList: true,
+        subtree: true,
+        characterData: true
+      });
+    }
+
+    console.log('[Admin cleanup v2] Top Save Roles button remover installed');
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){
+      setTimeout(boot, 700);
+    });
+  }else{
+    setTimeout(boot, 700);
+  }
+})();
+</script>
+
 </body>
 </html>
