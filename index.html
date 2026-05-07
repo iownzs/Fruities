@@ -15665,7 +15665,9 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 </script>
 
 
-<script id="firebase-final-access-allow-override-v1">
+
+
+<script id="firebase-safe-access-override-v2">
 (function(){
   var DB_URL = 'https://fruities-pos-default-rtdb.asia-southeast1.firebasedatabase.app';
   var STORE_ID = 'fruit-story-main';
@@ -15692,7 +15694,9 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
     journal: 'journal',
     reports: 'journal',
     billing: 'billing',
-    chat: 'chat'
+    'pos billing': 'billing',
+    chat: 'chat',
+    'group chat': 'chat'
   };
 
   function normalizeRole(role){
@@ -15711,7 +15715,6 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
         var account = S.accounts.find(function(a){
           return String(a.user || a.username || a.id).toLowerCase() === String(cur.user).toLowerCase();
         });
-
         if(account) role = account.roleKey || account.role;
       }
 
@@ -15726,7 +15729,7 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
     return PAGE_MAP[page] || page;
   }
 
-  function currentPerms(){
+  function perms(){
     var key = currentRole();
 
     return roles[key] ||
@@ -15740,10 +15743,10 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 
     if(currentRole() === 'admin') return true;
 
-    var perms = currentPerms();
+    var p = perms();
 
-    if(Object.prototype.hasOwnProperty.call(perms, key)){
-      return !!perms[key];
+    if(Object.prototype.hasOwnProperty.call(p, key)){
+      return !!p[key];
     }
 
     return false;
@@ -15775,7 +15778,6 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 
         S.roles[key] = roles[key];
         S.roles[title] = roles[key];
-
         S.rolePerms[key] = roles[key];
         S.rolePerms[title] = roles[key];
       });
@@ -15790,12 +15792,12 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
       if(typeof sv === 'function') sv();
     }catch(e){}
 
-    installAccessOverride();
+    installOverrides();
 
-    console.log('[Final access override] roles applied:', currentRole(), currentPerms());
+    console.log('[Safe access override] roles applied:', currentRole(), perms());
   }
 
-  function loadCachedRoles(){
+  function loadCache(){
     try{
       var cached = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}') || {};
       if(Object.keys(cached).length){
@@ -15808,46 +15810,13 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
     fetch(DB_URL + '/stores/' + STORE_ID + '/roles.json', {cache:'no-store'})
       .then(function(res){ return res.json(); })
       .then(applyRoles)
-      .catch(function(err){ console.warn('[Final access override] fetch failed', err); });
+      .catch(function(err){ console.warn('[Safe access override] fetch failed', err); });
   }
 
-  function forceShowView(page){
-    var key = pageKey(page);
-
-    try{
-      document.querySelectorAll('[id^="view-"], .view').forEach(function(v){
-        v.classList.remove('on');
-        v.style.display = 'none';
-      });
-
-      var view = document.getElementById('view-' + key);
-      if(view){
-        view.classList.add('on');
-        view.style.display = '';
-      }
-
-      try{ if(typeof rDash === 'function' && key === 'dashboard') rDash(); }catch(e){}
-      try{ if(typeof rGrid === 'function' && key === 'pos') rGrid(); }catch(e){}
-      try{ if(typeof rOrds === 'function' && key === 'orders') rOrds(); }catch(e){}
-      try{ if(typeof rKitchen === 'function' && key === 'kitchen') rKitchen(); }catch(e){}
-      try{ if(typeof rDel === 'function' && key === 'delivery') rDel(); }catch(e){}
-      try{ if(typeof rPickup === 'function' && key === 'pickup') rPickup(); }catch(e){}
-      try{ if(typeof rStk === 'function' && key === 'stocks') rStk(); }catch(e){}
-      try{ if(typeof rProds === 'function' && key === 'products') rProds(); }catch(e){}
-      try{ if(typeof rAccounts === 'function' && key === 'accounts') rAccounts(); }catch(e){}
-
-      return true;
-    }catch(e){
-      console.warn('[Final access override] forceShowView failed', key, e);
-      return false;
-    }
-  }
-
-  function installAccessOverride(){
+  function installOverrides(){
     window.firebaseAllowed = firebaseAllowed;
     window.firebaseCanAccessPage = firebaseAllowed;
 
-    // Patch common permission functions.
     [
       'canAccess',
       'hasAccess',
@@ -15858,7 +15827,7 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
     ].forEach(function(name){
       var old = window[name] || (typeof globalThis[name] === 'function' ? globalThis[name] : null);
 
-      if(typeof old === 'function' && !old.__firebaseFinalAccessOverrideV1){
+      if(typeof old === 'function' && !old.__firebaseSafeAccessOverrideV2){
         var wrapped = function(page){
           var key = pageKey(page);
 
@@ -15872,7 +15841,7 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
           return old.apply(this, arguments);
         };
 
-        wrapped.__firebaseFinalAccessOverrideV1 = true;
+        wrapped.__firebaseSafeAccessOverrideV2 = true;
 
         window[name] = wrapped;
         try{ globalThis[name] = wrapped; }catch(e){}
@@ -15880,41 +15849,26 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
       }
     });
 
-    // Patch go. If Firebase says allowed but old go blocks it, force the view open.
+    // Important: do NOT force-open views here.
+    // Let the original app's go() function handle page routing.
     var oldGo = window.go || (typeof globalThis.go === 'function' ? globalThis.go : null);
 
-    if(typeof oldGo === 'function' && !oldGo.__firebaseFinalAccessOverrideV1){
+    if(typeof oldGo === 'function' && !oldGo.__firebaseSafeAccessOverrideV2){
       var wrappedGo = function(page){
         var key = pageKey(page);
 
         if([
           'dashboard','pos','orders','kitchen','delivery','pickup',
           'stocks','products','accounts','journal','billing','chat'
-        ].indexOf(key) !== -1){
-          if(!firebaseAllowed(key)){
-            try{ if(typeof toast === 'function') toast('Access restricted for your role', 'err'); }catch(e){}
-            return false;
-          }
-
-          var result = oldGo.apply(this, arguments);
-
-          setTimeout(function(){
-            var active = document.querySelector('[id^="view-"].on, .view.on');
-            var activeId = active && active.id ? active.id.replace('view-', '') : '';
-
-            if(activeId !== key){
-              forceShowView(key);
-            }
-          }, 80);
-
-          return result;
+        ].indexOf(key) !== -1 && !firebaseAllowed(key)){
+          try{ if(typeof toast === 'function') toast('Access restricted for your role', 'err'); }catch(e){}
+          return false;
         }
 
         return oldGo.apply(this, arguments);
       };
 
-      wrappedGo.__firebaseFinalAccessOverrideV1 = true;
-
+      wrappedGo.__firebaseSafeAccessOverrideV2 = true;
       window.go = wrappedGo;
       try{ globalThis.go = wrappedGo; }catch(e){}
       try{ go = wrappedGo; }catch(e){}
@@ -15922,22 +15876,22 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
   }
 
   function boot(){
-    loadCachedRoles();
+    loadCache();
     fetchRoles();
-    installAccessOverride();
+    installOverrides();
 
     setTimeout(function(){
-      loadCachedRoles();
+      loadCache();
       fetchRoles();
-      installAccessOverride();
+      installOverrides();
     }, 700);
 
     setInterval(function(){
       fetchRoles();
-      installAccessOverride();
+      installOverrides();
     }, 5000);
 
-    console.log('[Final access override] started');
+    console.log('[Safe access override] started');
   }
 
   if(document.readyState === 'loading'){
