@@ -387,7 +387,10 @@
     async function setPOSAccess(enabled){
       await patchJson('/stores/' + STORE_ID + '/billing', {
         posAccessEnabled: !!enabled,
-        status: enabled ? 'active' : 'locked',
+        status: enabled ? 'active' : 'disabled',
+        manualDisabled: !enabled,
+        autoDisable: true,
+        lockedAt: enabled ? null : Date.now(),
         updatedAt: Date.now(),
         updatedBy: 'superadmin'
       });
