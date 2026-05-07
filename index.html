@@ -11580,5 +11580,166 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 })();
 </script>
 
+
+<script id="firebase-order-status-writeback-v1">
+(function(){
+  var DB_URL = 'https://fruities-pos-default-rtdb.asia-southeast1.firebasedatabase.app';
+  var STORE_ID = 'fruit-story-main';
+  var SNAPSHOT_KEY = 'fruities_order_status_snapshot_v1';
+  var lastSnapshot = loadSnapshot();
+
+  function loadSnapshot(){
+    try{
+      return JSON.parse(localStorage.getItem(SNAPSHOT_KEY) || '{}') || {};
+    }catch(e){
+      return {};
+    }
+  }
+
+  function saveSnapshot(snapshot){
+    try{
+      localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(snapshot || {}));
+    }catch(e){}
+  }
+
+  function getOrders(){
+    try{
+      if(typeof S === 'undefined' || !S)return [];
+      if(!Array.isArray(S.orders))S.orders = [];
+      return S.orders;
+    }catch(e){
+      return [];
+    }
+  }
+
+  function cleanKey(raw){
+    return String(raw || ('order_' + Date.now()))
+      .replace(/[.#$\[\]\/]/g, '_')
+      .replace(/\s+/g, '_');
+  }
+
+  function getOrderKey(order){
+    return cleanKey(order && (order.id || order.orderNumber || order.no || order.num));
+  }
+
+  function statusDigest(order){
+    return JSON.stringify({
+      status: order.status || '',
+      payStatus: order.payStatus || '',
+      kitchenStatus: order.kitchenStatus || '',
+      deliveryStatus: order.deliveryStatus || '',
+      pickupStatus: order.pickupStatus || '',
+      type: order.type || '',
+      orderType: order.orderType || '',
+      rider: order.rider || '',
+      riderName: order.riderName || '',
+      priority: order.priority || '',
+      updatedAt: order.updatedAt || '',
+      deliveredAt: order.deliveredAt || '',
+      pickedUpAt: order.pickedUpAt || '',
+      readyAt: order.readyAt || '',
+      sentOutAt: order.sentOutAt || ''
+    });
+  }
+
+  function buildPatch(order){
+    var now = Date.now();
+
+    return {
+      status: order.status || order.payStatus || 'paid',
+      payStatus: order.payStatus || order.status || 'paid',
+      kitchenStatus: order.kitchenStatus || 'new',
+      deliveryStatus: order.deliveryStatus || 'waiting',
+      pickupStatus: order.pickupStatus || 'waiting',
+      orderType: order.orderType || order.type || 'walkin',
+      type: order.type || order.orderType || 'walkin',
+      rider: order.rider || '',
+      riderName: order.riderName || '',
+      priority: order.priority || 'normal',
+      updatedAt: now,
+      statusSyncedAt: now,
+      deliveredAt: order.deliveredAt || null,
+      pickedUpAt: order.pickedUpAt || null,
+      readyAt: order.readyAt || null,
+      sentOutAt: order.sentOutAt || null
+    };
+  }
+
+  function patchOrderToFirebase(order){
+    var key = getOrderKey(order);
+    var patch = buildPatch(order);
+    var url = DB_URL + '/stores/' + STORE_ID + '/orders/' + encodeURIComponent(key) + '.json';
+
+    return fetch(url, {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(patch)
+    }).then(function(res){
+      if(!res.ok){
+        return res.text().then(function(t){
+          throw new Error('Status sync failed ' + res.status + ': ' + t);
+        });
+      }
+      return res.json();
+    }).then(function(){
+      order.updatedAt = patch.updatedAt;
+      order.statusSyncedAt = patch.statusSyncedAt;
+
+      try{ if(typeof sv === 'function')sv(); }catch(e){}
+
+      console.log('[Firebase status sync] Updated:', key, patch);
+    }).catch(function(err){
+      console.warn('[Firebase status sync] Failed:', key, err);
+    });
+  }
+
+  function scanStatusChanges(){
+    var orders = getOrders();
+    var nextSnapshot = Object.assign({}, lastSnapshot);
+    var writes = [];
+
+    orders.forEach(function(order){
+      var key = getOrderKey(order);
+      if(!key)return;
+
+      var digest = statusDigest(order);
+
+      if(!lastSnapshot[key]){
+        nextSnapshot[key] = digest;
+        return;
+      }
+
+      if(lastSnapshot[key] !== digest){
+        nextSnapshot[key] = digest;
+        writes.push(patchOrderToFirebase(order));
+      }
+    });
+
+    lastSnapshot = nextSnapshot;
+    saveSnapshot(lastSnapshot);
+
+    return Promise.allSettled(writes);
+  }
+
+  function boot(){
+    scanStatusChanges();
+
+    setInterval(function(){
+      scanStatusChanges();
+    }, 2000);
+
+    console.log('[Firebase status sync] Watcher started');
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){
+      setTimeout(boot, 2000);
+    });
+  }else{
+    setTimeout(boot, 2000);
+  }
+})();
+</script>
+
 </body>
 </html>
