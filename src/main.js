@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getDatabase, ref, get } from 'firebase/database';
+import { getDatabase, ref, onValue } from 'firebase/database';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -11,6 +11,8 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
+const STORE_ID = 'fruit-story-main';
+
 function hasFirebaseConfig(config) {
   return Boolean(
     config.apiKey &&
@@ -21,32 +23,97 @@ function hasFirebaseConfig(config) {
   );
 }
 
-async function bootFirebaseModule() {
-  try {
-    if (!hasFirebaseConfig(firebaseConfig)) {
-      console.warn('[Fruities Firebase] Missing Firebase env config');
-      return;
-    }
+function $(id) {
+  return document.getElementById(id);
+}
 
+function setText(id, value) {
+  const el = $(id);
+  if (el) el.textContent = value;
+}
+
+function setInput(id, value) {
+  const el = $(id);
+  if (el) el.value = value;
+}
+
+function applySettings(settings = {}) {
+  const storeName = settings.storeName || 'Fruit Story';
+  const currency = settings.currency || '₱';
+  const theme = settings.theme || 'light';
+  const logoUrl = settings.logoUrl || '';
+
+  window.FruitiesFirebase = window.FruitiesFirebase || {};
+  window.FruitiesFirebase.settings = settings;
+
+  // Keep original app state compatible, but do not override app functions.
+  window.S = window.S || {};
+  window.S.settings = {
+    ...(window.S.settings || {}),
+    ...settings
+  };
+
+  setText('store-name-sidebar', storeName);
+  setText('store-name-login', storeName);
+  setText('store-name-login-footer', `🍓 ${storeName} POS`);
+
+  setInput('store-name-input', storeName);
+  setInput('store-currency', currency);
+
+  document.body.classList.toggle('dark', theme === 'dark');
+
+  const sidebarLogoWrap = $('sidebar-logo-wrap');
+  const sidebarLogoImg = $('sidebar-logo-img');
+  const sidebarLogoEmoji = $('sidebar-logo-emoji');
+  const loginLogoWrap = $('login-logo-wrap');
+  const loginLogoImg = $('login-logo-img');
+
+  if (logoUrl) {
+    if (sidebarLogoImg) sidebarLogoImg.src = logoUrl;
+    if (loginLogoImg) loginLogoImg.src = logoUrl;
+    if (sidebarLogoWrap) sidebarLogoWrap.classList.add('has-logo');
+    if (loginLogoWrap) loginLogoWrap.classList.add('has-logo');
+    if (sidebarLogoEmoji) sidebarLogoEmoji.style.display = 'none';
+  }
+
+  console.log('[Fruities Firebase] Settings applied', settings);
+}
+
+function bootFirebaseSettingsSync() {
+  if (!hasFirebaseConfig(firebaseConfig)) {
+    console.warn('[Fruities Firebase] Missing Firebase env config');
+    return;
+  }
+
+  try {
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-
-    const snap = await get(ref(db, 'stores/fruit-story-main/settings'));
 
     window.FruitiesFirebase = {
       app,
       db,
-      settings: snap.exists() ? snap.val() : null
+      storeId: STORE_ID
     };
 
-    console.log('[Fruities Firebase] Connected', window.FruitiesFirebase.settings);
+    const settingsRef = ref(db, `stores/${STORE_ID}/settings`);
+
+    onValue(settingsRef, (snapshot) => {
+      if (!snapshot.exists()) {
+        console.warn('[Fruities Firebase] No settings found');
+        return;
+      }
+
+      applySettings(snapshot.val());
+    });
+
+    console.log('[Fruities Firebase] Settings listener connected');
   } catch (error) {
-    console.error('[Fruities Firebase] Connection failed', error);
+    console.error('[Fruities Firebase] Boot failed', error);
   }
 }
 
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', bootFirebaseModule);
+  document.addEventListener('DOMContentLoaded', bootFirebaseSettingsSync);
 } else {
-  bootFirebaseModule();
+  bootFirebaseSettingsSync();
 }
