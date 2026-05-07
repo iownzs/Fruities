@@ -1985,6 +1985,33 @@ body.dark #chat-minimize-channels-btn.is-collapsed{background:#14281e!important;
 })();
 </script>
 
+
+<style id="role-menu-no-flicker-v2">
+  body:not(.role-menu-filtered) aside *,
+  body:not(.role-menu-filtered) nav *,
+  body:not(.role-menu-filtered) .sidebar *,
+  body:not(.role-menu-filtered) #sidebar *,
+  body:not(.role-menu-filtered) [class*="side"] *,
+  body:not(.role-menu-filtered) [class*="nav"] * {
+    visibility: hidden !important;
+  }
+
+  body.role-menu-filtered aside *,
+  body.role-menu-filtered nav *,
+  body.role-menu-filtered .sidebar *,
+  body.role-menu-filtered #sidebar *,
+  body.role-menu-filtered [class*="side"] *,
+  body.role-menu-filtered [class*="nav"] * {
+    visibility: visible;
+  }
+
+  [data-role-direct-allowed="false"],
+  [data-firebase-perm-allowed="false"] {
+    display: none !important;
+    visibility: hidden !important;
+  }
+</style>
+
 </head>
 <body>
 
@@ -15561,6 +15588,8 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
         row.setAttribute('data-role-direct-permission', permission);
         row.setAttribute('data-role-direct-allowed', allowed ? 'true' : 'false');
       });
+
+      try{ document.body.classList.add('role-menu-filtered'); }catch(e){}
     }catch(e){
       console.warn('[Role direct hide] failed', e);
     }
@@ -15621,6 +15650,8 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
     document.addEventListener('click', function(){
       setTimeout(hideOffMenus, 100);
     }, true);
+
+    setTimeout(function(){ try{ document.body.classList.add('role-menu-filtered'); }catch(e){} }, 800); // role-menu-filtered fallback
 
     console.log('[Role direct hide] started');
   }
