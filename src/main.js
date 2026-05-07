@@ -295,3 +295,78 @@ if (document.readyState === 'loading') {
 } else {
   bootFirebaseSettingsSync();
 }
+
+/* Robust order watcher: syncs any new local S.orders item to Firebase */
+function installOrderWatcher() {
+  if (window.__fruitiesOrderWatcherInstalled) return;
+  window.__fruitiesOrderWatcherInstalled = true;
+
+  const synced = new Set();
+
+  function safeOrderKey(order) {
+    const raw = order?.id || order?.orderNumber || order?.no || `order_${Date.now()}`;
+    return String(raw)
+      .replace(/[.#$\[\]\/]/g, '_')
+      .replace(/\s+/g, '_');
+  }
+
+  function firebaseReady() {
+    return Boolean(window.FruitiesFirebase && window.FruitiesFirebase.db);
+  }
+
+  async function syncOneOrder(order) {
+    if (!order || !firebaseReady()) return;
+
+    const key = safeOrderKey(order);
+    if (synced.has(key) || order.firebaseSynced === true) return;
+
+    const now = Date.now();
+
+    const payload = {
+      ...order,
+      id: order.id || key,
+      orderNumber: order.orderNumber || order.id || key,
+      createdAt: order.createdAt || order.time || order.createdByAt || now,
+      updatedAt: now,
+      syncedAt: now
+    };
+
+    try {
+      const { ref, set } = await import('firebase/database');
+      await set(
+        ref(window.FruitiesFirebase.db, `stores/fruit-story-main/orders/${key}`),
+        payload
+      );
+
+      synced.add(key);
+      order.firebaseSynced = true;
+
+      try {
+        localStorage.setItem('fs', JSON.stringify(window.S || {}));
+      } catch (e) {}
+
+      console.log('[Fruities Firebase] Order watcher synced', key);
+    } catch (error) {
+      console.error('[Fruities Firebase] Order watcher failed', key, error);
+    }
+  }
+
+  function scanOrders() {
+    const orders = Array.isArray(window.S?.orders) ? window.S.orders : [];
+    orders.forEach(syncOneOrder);
+  }
+
+  setInterval(scanOrders, 1500);
+  setTimeout(scanOrders, 500);
+  setTimeout(scanOrders, 2500);
+
+  console.log('[Fruities Firebase] Order watcher installed');
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(installOrderWatcher, 1500);
+  });
+} else {
+  setTimeout(installOrderWatcher, 1500);
+}
