@@ -15578,5 +15578,272 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 })();
 </script>
 
+
+<script id="superadmin-exact-admin-tabs-fix-v2">
+(function(){
+  function norm(role){
+    role = String(role || '').trim().toLowerCase();
+    if(role === 'administrator') role = 'admin';
+    if(role === 'cashier') role = 'sales';
+    return role;
+  }
+
+  function currentRole(){
+    try{
+      var cur = window.S && S.cur ? S.cur : {};
+      var role = cur.roleKey || cur.role || '';
+
+      if(!role && cur.user && Array.isArray(S.accounts)){
+        var acc = S.accounts.find(function(a){
+          return String(a.user || a.username || a.id).toLowerCase() === String(cur.user).toLowerCase();
+        });
+        if(acc) role = acc.roleKey || acc.role;
+      }
+
+      return norm(role);
+    }catch(e){
+      return '';
+    }
+  }
+
+  function isSuperadmin(){
+    return currentRole() === 'superadmin';
+  }
+
+  function grant(){
+    if(!isSuperadmin()) return;
+
+    try{
+      S.cur.roleKey = 'superadmin';
+      S.cur.role = 'Superadmin';
+
+      var full = {
+        superadmin:true,
+        dashboard:true,
+        pos:true,
+        orders:true,
+        kitchen:true,
+        delivery:true,
+        pickup:true,
+        stocks:true,
+        products:true,
+        accounts:true,
+        journal:true,
+        billing:true,
+        system:true,
+        chat:true,
+        admin:true,
+        adminPanel:true,
+        adminFunctions:true,
+        users:true,
+        manageUsers:true,
+        manageProducts:true,
+        settings:true
+      };
+
+      S.roles = S.roles || {};
+      S.rolePerms = S.rolePerms || {};
+
+      S.roles.superadmin = Object.assign({}, S.roles.superadmin || {}, full);
+      S.roles.Superadmin = S.roles.superadmin;
+
+      S.rolePerms.superadmin = Object.assign({}, S.rolePerms.superadmin || {}, full);
+      S.rolePerms.Superadmin = S.rolePerms.superadmin;
+    }catch(e){}
+  }
+
+  function showTabs(){
+    if(!isSuperadmin()) return;
+
+    var tabs = document.getElementById('adm-tabs');
+    var users = document.getElementById('adm-users');
+    var products = document.getElementById('adm-products');
+    var system = document.getElementById('adm-system');
+
+    if(tabs){
+      tabs.style.display = '';
+      tabs.style.visibility = 'visible';
+      tabs.style.pointerEvents = '';
+    }
+
+    document.querySelectorAll('#adm-tabs .adm-tab').forEach(function(tab){
+      tab.style.display = '';
+      tab.style.visibility = 'visible';
+      tab.style.pointerEvents = '';
+    });
+
+    [users, products, system].forEach(function(panel){
+      if(panel){
+        panel.style.visibility = 'visible';
+        panel.style.pointerEvents = '';
+      }
+    });
+
+    var logged = document.getElementById('admin-logged-user');
+    if(logged){
+      logged.textContent = 'Super Admin (Superadmin)';
+    }
+  }
+
+  function forceTab(tab){
+    if(!isSuperadmin()) return;
+
+    var users = document.getElementById('adm-users');
+    var products = document.getElementById('adm-products');
+    var system = document.getElementById('adm-system');
+
+    document.querySelectorAll('#adm-tabs .adm-tab').forEach(function(t){
+      t.classList.remove('on');
+    });
+
+    var targetIndex = tab === 'products' ? 1 : tab === 'system' ? 2 : 0;
+    var targetTab = document.querySelectorAll('#adm-tabs .adm-tab')[targetIndex];
+    if(targetTab) targetTab.classList.add('on');
+
+    if(users) users.style.display = tab === 'users' ? '' : 'none';
+    if(products) products.style.display = tab === 'products' ? '' : 'none';
+    if(system) system.style.display = tab === 'system' ? '' : 'none';
+
+    showTabs();
+  }
+
+  function patchSetAdmTab(){
+    var old = window.setAdmTab || (typeof setAdmTab === 'function' ? setAdmTab : null);
+
+    if(typeof old !== 'function' || old.__superadminExactAdminTabsFixV2) return;
+
+    var wrapped = function(tab, el){
+      grant();
+
+      if(isSuperadmin()){
+        forceTab(tab || 'users');
+        return false;
+      }
+
+      return old.apply(this, arguments);
+    };
+
+    wrapped.__superadminExactAdminTabsFixV2 = true;
+
+    window.setAdmTab = wrapped;
+    try{ setAdmTab = wrapped; }catch(e){}
+  }
+
+  function patchTabClicks(){
+    document.querySelectorAll('#adm-tabs .adm-tab').forEach(function(tabEl){
+      if(tabEl.__superadminTabClickFixV2) return;
+      tabEl.__superadminTabClickFixV2 = true;
+
+      tabEl.addEventListener('click', function(e){
+        if(!isSuperadmin()) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+
+        var text = String(tabEl.textContent || '').toLowerCase();
+        if(text.indexOf('products') !== -1) return forceTab('products');
+        if(text.indexOf('system') !== -1) return forceTab('system');
+        return forceTab('users');
+      }, true);
+    });
+  }
+
+  function addSuperadminToRoleEditor(){
+    try{
+      var selects = Array.from(document.querySelectorAll('select'));
+      selects.forEach(function(sel){
+        var txt = String(sel.parentElement && sel.parentElement.textContent || '').toLowerCase();
+        var hasRoles = Array.from(sel.options).some(function(o){
+          return ['sales','kitchen','rider','dispatcher','admin'].indexOf(String(o.value || '').toLowerCase()) !== -1;
+        });
+
+        if(!hasRoles) return;
+
+        var exists = Array.from(sel.options).some(function(o){
+          return String(o.value || '').toLowerCase() === 'superadmin';
+        });
+
+        if(!exists){
+          var opt = document.createElement('option');
+          opt.value = 'superadmin';
+          opt.textContent = '🛡️ Superadmin';
+          sel.insertBefore(opt, sel.firstChild);
+        }
+      });
+    }catch(e){}
+  }
+
+  function patchGo(){
+    if(window.__superadminExactAdminTabsGoFixV2) return;
+
+    var oldGo = window.go || (typeof go === 'function' ? go : null);
+    if(typeof oldGo !== 'function') return;
+
+    var wrapped = function(v){
+      grant();
+      var result = oldGo.apply(this, arguments);
+
+      if(String(v || '').toLowerCase() === 'accounts'){
+        setTimeout(function(){
+          showTabs();
+          patchSetAdmTab();
+          patchTabClicks();
+          addSuperadminToRoleEditor();
+        }, 100);
+
+        setTimeout(function(){
+          showTabs();
+          patchTabClicks();
+          addSuperadminToRoleEditor();
+        }, 500);
+      }
+
+      return result;
+    };
+
+    window.go = wrapped;
+    try{ go = wrapped; }catch(e){}
+
+    window.__superadminExactAdminTabsGoFixV2 = true;
+  }
+
+  function boot(){
+    grant();
+    patchSetAdmTab();
+    patchGo();
+    showTabs();
+    patchTabClicks();
+    addSuperadminToRoleEditor();
+
+    setTimeout(function(){
+      grant();
+      patchSetAdmTab();
+      patchGo();
+      showTabs();
+      patchTabClicks();
+      addSuperadminToRoleEditor();
+    }, 700);
+
+    setInterval(function(){
+      if(isSuperadmin() && document.getElementById('view-accounts')){
+        grant();
+        showTabs();
+        patchTabClicks();
+        addSuperadminToRoleEditor();
+      }
+    }, 2000);
+
+    console.log('[Superadmin exact admin tabs fix v2] started');
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 300); });
+  }else{
+    setTimeout(boot, 300);
+  }
+})();
+</script>
+
 </body>
 </html>
