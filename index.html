@@ -15893,5 +15893,96 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 })();
 </script>
 
+
+<script id="superadmin-normal-nav-close-fix-v1">
+(function(){
+  function closeSuperadminView(){
+    var view = document.getElementById('view-superadmin');
+
+    if(view){
+      view.classList.remove('on');
+      view.style.display = 'none';
+    }
+
+    document.body.classList.remove('superadmin-page-open');
+    document.body.classList.remove('superadmin-mode');
+
+    var mnav = document.getElementById('mnav');
+    if(mnav){
+      mnav.style.display = '';
+      mnav.style.visibility = '';
+      mnav.style.pointerEvents = '';
+    }
+
+    var superItem = document.getElementById('superadmin-nav-item');
+    if(superItem){
+      superItem.classList.remove('on');
+    }
+  }
+
+  function isSuperadminNav(el){
+    return !!(el && el.closest && el.closest('#superadmin-nav-item,[data-superadmin-nav="true"]'));
+  }
+
+  function isNormalNav(el){
+    if(!el || !el.closest) return false;
+
+    var nav = el.closest('.ni[data-v], .mni[data-v]');
+    if(!nav) return false;
+
+    return !isSuperadminNav(nav);
+  }
+
+  function patchGo(){
+    if(window.__closeSuperadminGoPatchV1) return;
+    window.__closeSuperadminGoPatchV1 = true;
+
+    var oldGo = window.go || (typeof go === 'function' ? go : null);
+    if(typeof oldGo !== 'function') return;
+
+    var wrapped = function(v){
+      if(String(v || '') !== 'superadmin'){
+        closeSuperadminView();
+      }
+
+      return oldGo.apply(this, arguments);
+    };
+
+    window.go = wrapped;
+    try{ go = wrapped; }catch(e){}
+  }
+
+  function installClickFix(){
+    if(window.__closeSuperadminClickPatchV1) return;
+    window.__closeSuperadminClickPatchV1 = true;
+
+    document.addEventListener('click', function(event){
+      if(isNormalNav(event.target)){
+        closeSuperadminView();
+
+        setTimeout(closeSuperadminView, 80);
+        setTimeout(closeSuperadminView, 200);
+      }
+    }, true);
+  }
+
+  function boot(){
+    patchGo();
+    installClickFix();
+
+    setTimeout(patchGo, 700);
+    setTimeout(patchGo, 1500);
+
+    console.log('[Superadmin close fix] normal nav closes Superadmin view');
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 300); });
+  }else{
+    setTimeout(boot, 300);
+  }
+})();
+</script>
+
 </body>
 </html>
