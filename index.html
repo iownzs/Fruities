@@ -15188,5 +15188,175 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 })();
 </script>
 
+
+<script id="superadmin-admin-panel-access-fix-v1">
+(function(){
+  function norm(role){
+    role = String(role || '').trim().toLowerCase();
+    if(role === 'administrator') role = 'admin';
+    if(role === 'cashier') role = 'sales';
+    return role;
+  }
+
+  function currentRole(){
+    try{
+      var cur = window.S && S.cur ? S.cur : {};
+      var role = cur.roleKey || cur.role || '';
+
+      if(!role && cur.user && Array.isArray(S.accounts)){
+        var acc = S.accounts.find(function(a){
+          return String(a.user || a.username || a.id).toLowerCase() === String(cur.user).toLowerCase();
+        });
+        if(acc) role = acc.roleKey || acc.role;
+      }
+
+      return norm(role);
+    }catch(e){
+      return '';
+    }
+  }
+
+  function isSuperadmin(){
+    return currentRole() === 'superadmin';
+  }
+
+  function grantAdminPanelForSuperadmin(){
+    if(!isSuperadmin()) return;
+
+    try{
+      if(S.cur){
+        S.cur.roleKey = 'superadmin';
+        S.cur.role = 'Superadmin';
+      }
+
+      S.roles = S.roles || {};
+      S.rolePerms = S.rolePerms || {};
+
+      var full = Object.assign({}, S.roles.superadmin || S.rolePerms.superadmin || {}, {
+        superadmin: true,
+        accounts: true,
+        admin: true,
+        adminPanel: true,
+        adminFunctions: true
+      });
+
+      S.roles.superadmin = full;
+      S.roles.Superadmin = full;
+      S.rolePerms.superadmin = full;
+      S.rolePerms.Superadmin = full;
+    }catch(e){}
+  }
+
+  function hideAdminOnlyBlock(){
+    if(!isSuperadmin()) return;
+
+    var view = document.getElementById('view-accounts');
+    if(!view) return;
+
+    Array.from(view.querySelectorAll('*')).forEach(function(el){
+      var text = String(el.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+
+      if(
+        text === 'admin access only' ||
+        text.indexOf('you need administrator role to view this panel') !== -1
+      ){
+        var card = el.closest('.card, .empty, .panel, div') || el;
+        try{ card.style.display = 'none'; }catch(e){}
+      }
+    });
+
+    // Make sure the real account/admin tools remain visible.
+    Array.from(view.querySelectorAll('.card, [id*="firebase-role"], [id*="admin"], [class*="adm"]')).forEach(function(el){
+      var text = String(el.textContent || '').toLowerCase();
+      if(text.indexOf('firebase role editor') !== -1 || text.indexOf('save role') !== -1){
+        el.style.display = '';
+        el.style.visibility = 'visible';
+      }
+    });
+  }
+
+  function patchAccountsRender(){
+    [
+      'rAccounts',
+      'renderAccounts',
+      'renderAdmin',
+      'rAdmin'
+    ].forEach(function(name){
+      var old = window[name] || (typeof globalThis[name] === 'function' ? globalThis[name] : null);
+
+      if(typeof old === 'function' && !old.__superadminAdminPanelAccessFixV1){
+        var wrapped = function(){
+          grantAdminPanelForSuperadmin();
+          var result = old.apply(this, arguments);
+          setTimeout(hideAdminOnlyBlock, 50);
+          setTimeout(hideAdminOnlyBlock, 250);
+          return result;
+        };
+
+        wrapped.__superadminAdminPanelAccessFixV1 = true;
+
+        window[name] = wrapped;
+        try{ globalThis[name] = wrapped; }catch(e){}
+        try{ eval(name + ' = window["' + name + '"]'); }catch(e){}
+      }
+    });
+  }
+
+  function patchGo(){
+    if(window.__superadminAdminPanelGoFixV1) return;
+
+    var oldGo = window.go || (typeof go === 'function' ? go : null);
+    if(typeof oldGo !== 'function') return;
+
+    var wrapped = function(v){
+      grantAdminPanelForSuperadmin();
+
+      var result = oldGo.apply(this, arguments);
+
+      if(String(v || '').toLowerCase() === 'accounts'){
+        setTimeout(hideAdminOnlyBlock, 80);
+        setTimeout(hideAdminOnlyBlock, 350);
+      }
+
+      return result;
+    };
+
+    window.go = wrapped;
+    try{ go = wrapped; }catch(e){}
+
+    window.__superadminAdminPanelGoFixV1 = true;
+  }
+
+  function boot(){
+    grantAdminPanelForSuperadmin();
+    patchAccountsRender();
+    patchGo();
+    hideAdminOnlyBlock();
+
+    setTimeout(function(){
+      grantAdminPanelForSuperadmin();
+      patchAccountsRender();
+      patchGo();
+      hideAdminOnlyBlock();
+    }, 700);
+
+    setTimeout(hideAdminOnlyBlock, 1500);
+
+    setInterval(function(){
+      grantAdminPanelForSuperadmin();
+      hideAdminOnlyBlock();
+    }, 3000);
+
+    console.log('[Superadmin Admin Panel access fix] started');
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 300); });
+  }else{
+    setTimeout(boot, 300);
+  }
+})();
+</script>
+
 </body>
 </html>
