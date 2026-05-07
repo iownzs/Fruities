@@ -1986,42 +1986,52 @@ body.dark #chat-minimize-channels-btn.is-collapsed{background:#14281e!important;
 
 
 
-<style id="superadmin-hard-ui-fix-style-v2">
+
+
+<style id="superadmin-exact-ui-fix-style-v3">
+  body.superadmin-mode #mnav {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
+  body.superadmin-mode #ct {
+    bottom: 0 !important;
+    padding-bottom: 140px !important;
+    scroll-padding-bottom: 140px !important;
+  }
+
   body.superadmin-mode #view-superadmin {
     display: block !important;
-    min-height: calc(100vh - 90px) !important;
-    padding-bottom: 160px !important;
-  }
-
-  body.superadmin-mode .mni {
-    display: none !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
-  }
-
-  body.superadmin-mode .mni,
-  body.superadmin-mode .mni * {
-    display: none !important;
-    visibility: hidden !important;
-  }
-
-  body.superadmin-mode .bottom-nav,
-  body.superadmin-mode #bottom-nav,
-  body.superadmin-mode [class*="bottom"],
-  body.superadmin-mode [id*="bottom"] {
-    display: none !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
+    padding-bottom: 180px !important;
+    min-height: calc(100dvh - 58px) !important;
   }
 
   body.superadmin-mode #view-superadmin .card,
-  body.superadmin-mode #view-superadmin .sc {
+  body.superadmin-mode #view-superadmin .sc,
+  body.superadmin-mode #view-superadmin .sg {
     visibility: visible !important;
   }
 
   body.superadmin-mode #superadmin-nav-item {
     display: flex !important;
     visibility: visible !important;
+  }
+
+  body.superadmin-mode .ni[data-v] {
+    visibility: visible !important;
+  }
+
+  @media(max-width:768px){
+    body.superadmin-mode #ct {
+      top: 52px !important;
+      bottom: 0 !important;
+      padding-bottom: 160px !important;
+    }
+
+    body.superadmin-mode #view-superadmin {
+      padding-bottom: 190px !important;
+    }
   }
 </style>
 
@@ -15590,7 +15600,9 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 
 
 
-<script id="superadmin-hard-ui-fix-v2">
+
+
+<script id="superadmin-exact-ui-fix-v3">
 (function(){
   function roleKey(){
     try{
@@ -15622,51 +15634,43 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
     return location.pathname === '/su' || location.pathname === '/su/';
   }
 
-  function superadminView(){
+  function view(){
     return document.getElementById('view-superadmin');
   }
 
-  function isSuperadminOpen(){
-    var view = superadminView();
-    if(!view) return false;
-
-    return view.classList.contains('on') || view.style.display !== 'none';
+  function isViewOpen(){
+    var v = view();
+    return !!(v && (v.classList.contains('on') || v.style.display !== 'none'));
   }
 
-  function forceTopbarTitle(){
-    if(!isSuperadminOpen()) return;
+  function setTopTitle(){
+    if(!isViewOpen()) return;
 
-    var candidates = [
-      document.querySelector('#topbar h1'),
-      document.querySelector('#topbar h2'),
-      document.querySelector('#topbar .ttl'),
-      document.querySelector('#topbar .title'),
-      document.querySelector('#topbar [id*="title"]'),
-      document.querySelector('#page-title'),
-      document.querySelector('.page-title')
-    ].filter(Boolean);
+    var topbar = document.getElementById('topbar');
+    if(!topbar) return;
 
-    candidates.forEach(function(el){
-      el.textContent = 'Superadmin Panel';
+    // Your app title is inside topbar text nodes/elements. Replace common page titles only.
+    Array.from(topbar.querySelectorAll('*')).forEach(function(el){
+      var t = String(el.textContent || '').trim();
+
+      if(['Dashboard','Admin Panel','Products','Orders','Kitchen Board','Delivery','Pick up','POS Terminal'].indexOf(t) !== -1){
+        el.textContent = 'Superadmin Panel';
+      }
     });
 
-    // Fallback: in your screenshot, the visible topbar text is the first big heading after hamburger.
-    var topbar = document.getElementById('topbar');
-    if(topbar){
-      Array.from(topbar.querySelectorAll('*')).forEach(function(el){
-        var t = String(el.textContent || '').trim();
-        if(t === 'Dashboard' || t === 'Admin Panel' || t === 'Products' || t === 'Orders'){
-          el.textContent = 'Superadmin Panel';
-        }
-      });
+    // Fallback: find the largest visible text element in topbar area.
+    var candidates = Array.from(topbar.querySelectorAll('h1,h2,h3,.ttl,.title,.page-title,[id*="title"]'));
+    if(candidates.length){
+      candidates[0].textContent = 'Superadmin Panel';
     }
 
     document.title = 'Superadmin Panel · Fruit Story POS';
   }
 
-  function forceSidebarForSuperadmin(){
+  function showSuperadminSidebar(){
     if(!isSuperadmin()) return;
 
+    // Superadmin gets full sidebar access.
     document.querySelectorAll('.ni[data-v]').forEach(function(item){
       item.style.display = '';
       item.style.visibility = 'visible';
@@ -15681,39 +15685,40 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
       superItem.style.visibility = 'visible';
       superItem.style.pointerEvents = '';
       superItem.setAttribute('data-firebase-role-allowed', 'true');
+      superItem.setAttribute('data-role-direct-allowed', 'true');
     }
   }
 
-  function hideMobileBottomNav(){
-    if(!isSuperadminOpen()) return;
+  function hideBottomNav(){
+    if(!isViewOpen()) return;
 
-    document.querySelectorAll('.mni').forEach(function(item){
+    var mnav = document.getElementById('mnav');
+    if(mnav){
+      mnav.style.display = 'none';
+      mnav.style.visibility = 'hidden';
+      mnav.style.pointerEvents = 'none';
+    }
+
+    document.querySelectorAll('#mnav .mni').forEach(function(item){
       item.style.display = 'none';
       item.style.visibility = 'hidden';
       item.style.pointerEvents = 'none';
-
-      var parent = item.parentElement;
-      if(parent){
-        parent.style.display = 'none';
-        parent.style.visibility = 'hidden';
-        parent.style.pointerEvents = 'none';
-      }
     });
   }
 
-  function openSuperadminHard(){
+  function hardOpenSuperadmin(){
     if(!isSuperadmin()) return false;
 
-    var view = superadminView();
-    if(!view) return false;
+    var v = view();
+    if(!v) return false;
 
-    document.querySelectorAll('[id^="view-"], .view').forEach(function(v){
-      v.classList.remove('on');
-      v.style.display = 'none';
+    document.querySelectorAll('[id^="view-"], .view').forEach(function(x){
+      x.classList.remove('on');
+      x.style.display = 'none';
     });
 
-    view.classList.add('on');
-    view.style.display = 'block';
+    v.classList.add('on');
+    v.style.display = 'block';
 
     document.querySelectorAll('.ni,.mni').forEach(function(n){
       n.classList.remove('on');
@@ -15729,92 +15734,92 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
     document.body.classList.add('superadmin-mode');
 
     try{
-      if(typeof renderSuperadmin === 'function') renderSuperadmin();
+      if(typeof window.renderSuperadmin === 'function') window.renderSuperadmin();
     }catch(e){}
 
-    forceTopbarTitle();
-    forceSidebarForSuperadmin();
-    hideMobileBottomNav();
-
-    setTimeout(function(){ window.scrollTo(0, 0); }, 50);
+    showSuperadminSidebar();
+    hideBottomNav();
+    setTopTitle();
 
     return true;
   }
 
-  function patchSuperadminNavClick(){
+  function patchSuperadminClick(){
     var item = document.getElementById('superadmin-nav-item');
-    if(!item || item.__superadminHardClickFixed) return;
+    if(!item || item.__suExactFixed) return;
 
-    item.__superadminHardClickFixed = true;
+    item.__suExactFixed = true;
 
-    item.addEventListener('click', function(event){
-      event.preventDefault();
-      event.stopPropagation();
-      event.stopImmediatePropagation();
-      openSuperadminHard();
+    item.addEventListener('click', function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      hardOpenSuperadmin();
       return false;
     }, true);
   }
 
-  function patchOpenSuperadmin(){
-    if(window.__superadminHardOpenWrapped) return;
+  function patchOpenFunction(){
+    if(window.__suExactOpenWrapped) return;
 
     var oldOpen = window.openSuperadmin;
 
     window.openSuperadmin = function(){
       var result;
-
       try{
-        if(typeof oldOpen === 'function'){
-          result = oldOpen.apply(this, arguments);
-        }
+        if(typeof oldOpen === 'function') result = oldOpen.apply(this, arguments);
       }catch(e){}
 
-      setTimeout(openSuperadminHard, 50);
-      setTimeout(applyFixes, 120);
-
+      setTimeout(hardOpenSuperadmin, 50);
+      setTimeout(apply, 120);
       return result;
     };
 
-    window.__superadminHardOpenWrapped = true;
+    window.__suExactOpenWrapped = true;
   }
 
-  function applyFixes(){
-    if(isSuperadmin()){
-      forceSidebarForSuperadmin();
-      patchSuperadminNavClick();
-    }
+  function apply(){
+    patchOpenFunction();
+    patchSuperadminClick();
 
-    if(isSuperadminOpen()){
-      document.body.classList.add('superadmin-mode');
-      forceTopbarTitle();
-      hideMobileBottomNav();
-    }else{
-      document.body.classList.remove('superadmin-mode');
+    if(isSuperadmin()){
+      showSuperadminSidebar();
     }
 
     if(isSuPath() && isSuperadmin()){
-      openSuperadminHard();
+      hardOpenSuperadmin();
+    }
+
+    if(isViewOpen()){
+      document.body.classList.add('superadmin-mode');
+      hideBottomNav();
+      setTopTitle();
+    }else{
+      document.body.classList.remove('superadmin-mode');
+      var mnav = document.getElementById('mnav');
+      if(mnav){
+        mnav.style.display = '';
+        mnav.style.visibility = '';
+        mnav.style.pointerEvents = '';
+      }
     }
   }
 
   function boot(){
-    patchOpenSuperadmin();
+    apply();
 
-    applyFixes();
+    setTimeout(apply, 300);
+    setTimeout(apply, 900);
+    setTimeout(apply, 1800);
+    setTimeout(apply, 3000);
 
-    setTimeout(applyFixes, 300);
-    setTimeout(applyFixes, 900);
-    setTimeout(applyFixes, 1800);
-    setTimeout(applyFixes, 3000);
-
-    setInterval(applyFixes, 1500);
+    setInterval(apply, 1200);
 
     document.addEventListener('click', function(){
-      setTimeout(applyFixes, 100);
+      setTimeout(apply, 100);
     }, true);
 
-    console.log('[Superadmin hard UI fix v2] started');
+    console.log('[Superadmin exact UI fix v3] started');
   }
 
   if(document.readyState === 'loading'){
