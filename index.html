@@ -12207,5 +12207,169 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 })();
 </script>
 
+
+<script id="firebase-kitchen-hide-out-orders-v1">
+(function(){
+  function shouldShowInKitchen(o){
+    if(!o)return false;
+    if(o.status === 'refunded')return false;
+    if(o.kitPickup)return false;
+    if(o.kitForPickup)return false;
+    if(o.kitStatus === 'out')return false;
+    if(o.deliveryStatus === 'out_for_delivery')return false;
+    if(o.deliveryStatus === 'delivered')return false;
+    if(o.pickupStatus === 'ready')return false;
+    if(o.pickupStatus === 'picked_up')return false;
+    return true;
+  }
+
+  function installKitchenFilter(){
+    window.kitOrders = function(){
+      return (S.orders || []).filter(shouldShowInKitchen);
+    };
+
+    try{
+      kitOrders = window.kitOrders;
+    }catch(e){}
+
+    console.log('[Kitchen hide-out] kitOrders filter installed');
+  }
+
+  function findOrder(id){
+    try{
+      return (S.orders || []).find(function(o){
+        return String(o.id) === String(id) ||
+               String(o.orderNumber || '') === String(id) ||
+               String(o.no || '') === String(id);
+      });
+    }catch(e){
+      return null;
+    }
+  }
+
+  function markOutLocally(id){
+    var o = findOrder(id);
+    if(!o)return;
+
+    var now = Date.now();
+
+    o.kitStatus = 'out';
+    o.kitchenStatus = 'out';
+    o.kitOutAt = o.kitOutAt || now;
+
+    if(o.fulfillmentType === 'pickup' || o.orderType === 'pickup' || o.type === 'pickup'){
+      o.kitForPickup = true;
+      o.pickupStatus = o.kitPickup ? 'picked_up' : 'ready';
+    }else{
+      o.deliveryStatus = o.deliveryStatus === 'delivered' ? 'delivered' : 'out_for_delivery';
+      o.outForDeliveryAt = o.outForDeliveryAt || now;
+    }
+
+    o.updatedAt = now;
+
+    try{ if(typeof sv === 'function')sv(); }catch(e){}
+  }
+
+  function refreshBoards(){
+    setTimeout(function(){
+      installKitchenFilter();
+      try{ if(typeof rKitchen === 'function')rKitchen(); }catch(e){}
+      try{ if(typeof rDel === 'function')rDel(); }catch(e){}
+      try{ if(typeof rPickup === 'function')rPickup(); }catch(e){}
+      try{ if(typeof rOrds === 'function')rOrds(); }catch(e){}
+      try{ if(typeof rDash === 'function')rDash(); }catch(e){}
+    }, 80);
+
+    setTimeout(function(){
+      installKitchenFilter();
+      try{ if(typeof rKitchen === 'function')rKitchen(); }catch(e){}
+      try{ if(typeof rDel === 'function')rDel(); }catch(e){}
+      try{ if(typeof rPickup === 'function')rPickup(); }catch(e){}
+    }, 700);
+  }
+
+  function wrap(name){
+    var old = window[name] || (typeof globalThis[name] === 'function' ? globalThis[name] : null);
+    if(typeof old !== 'function')return false;
+    if(old.__kitchenHideOutOrdersV1)return true;
+
+    var wrapped = function(){
+      var args = arguments;
+      var result = old.apply(this, args);
+
+      setTimeout(function(){
+        var id = args[0];
+
+        // These actions move the order out of Kitchen.
+        if(
+          name === 'kitSendToPickup' ||
+          name === 'kitSendToDelivery' ||
+          name === 'sendToDelivery' ||
+          name === 'sendOutDelivery' ||
+          name === 'outForDelivery' ||
+          name === 'markOutForDelivery'
+        ){
+          markOutLocally(id);
+        }
+
+        refreshBoards();
+      }, 100);
+
+      return result;
+    };
+
+    wrapped.__kitchenHideOutOrdersV1 = true;
+
+    window[name] = wrapped;
+    try{ globalThis[name] = wrapped; }catch(e){}
+    try{ eval(name + ' = window["' + name + '"]'); }catch(e){}
+
+    console.log('[Kitchen hide-out] Wrapped', name);
+    return true;
+  }
+
+  function boot(){
+    installKitchenFilter();
+
+    wrap('kitAction');
+    wrap('kitSendToPickup');
+    wrap('kitPickup');
+
+    wrap('kitSendToDelivery');
+    wrap('sendToDelivery');
+    wrap('sendOutDelivery');
+    wrap('outForDelivery');
+    wrap('markOutForDelivery');
+
+    refreshBoards();
+
+    var tries = 0;
+    var timer = setInterval(function(){
+      tries++;
+      installKitchenFilter();
+
+      wrap('kitAction');
+      wrap('kitSendToPickup');
+      wrap('kitPickup');
+      wrap('kitSendToDelivery');
+      wrap('sendToDelivery');
+      wrap('sendOutDelivery');
+      wrap('outForDelivery');
+      wrap('markOutForDelivery');
+
+      if(tries > 10){
+        clearInterval(timer);
+      }
+    }, 500);
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 1900); });
+  }else{
+    setTimeout(boot, 1900);
+  }
+})();
+</script>
+
 </body>
 </html>
