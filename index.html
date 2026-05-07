@@ -6732,7 +6732,313 @@ function printCode(){
     +codeHtml
     +'<div style="font-size:11px;color:#888;margin-top:12px">'+(o?'₱'+o.total.toFixed(2)+' · '+new Date(o.time).toLocaleDateString():'')+'</div>'
     +'<scr'+'ipt>window.onload=function(){window.print();window.close();}<\/scr'+'ipt>'
-    +'</body></html>');
+    +'
+<script id="firebase-admin-roles-click-align-v1">
+(function(){
+  var DB_URL = 'https://fruities-pos-default-rtdb.asia-southeast1.firebasedatabase.app';
+  var STORE_ID = 'fruit-story-main';
+  var ROLE_COLUMNS = ['admin', 'sales', 'kitchen', 'dispatcher', 'rider'];
+  var lastAppliedHash = '';
+
+  var FEATURE_MAP = {
+    'dashboard': 'dashboard',
+    'pos terminal': 'pos',
+    'orders': 'orders',
+    'kitchen board': 'kitchen',
+    'delivery': 'delivery',
+    'pick up': 'pickup',
+    'pickup': 'pickup',
+    'stocks': 'stocks',
+    'products': 'products',
+    'journal / reports': 'journal',
+    'journal': 'journal',
+    'pos billing': 'billing',
+    'group chat': 'chat',
+    'admin panel': 'accounts',
+
+    'refund orders': 'refundOrders',
+    'mark paid': 'markPaid',
+    'adjust stock': 'adjustStock',
+    'manage products': 'manageProducts',
+    'apply discount': 'applyDiscount',
+    'export data': 'exportData',
+    'admin functions': 'adminFunctions',
+
+    'category tabs': 'categoryTabs',
+    'product search': 'productSearch',
+    'customer details': 'customerDetails',
+    'order notes': 'orderNotes',
+    'discount box': 'discountBox',
+    'clear cart button': 'clearCartButton',
+    'payment channels': 'paymentChannels',
+    'order status picker': 'orderStatusPicker',
+    'receipt print': 'receiptPrint',
+
+    'dashboard stats': 'dashboardStats',
+    'topbar new sale': 'topbarNewSale'
+  };
+
+  function cleanFeature(text){
+    text = String(text || '')
+      .replace(/[^\w\s/]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+
+    return FEATURE_MAP[text] || text.replace(/\s+/g, '_');
+  }
+
+  function normalizeRoles(data){
+    var roles = {};
+
+    Object.keys(data || {}).forEach(function(key){
+      var normalizedKey = String(key || '').toLowerCase();
+
+      if(normalizedKey === 'cashier'){
+        normalizedKey = 'sales';
+      }
+
+      roles[normalizedKey] = Object.assign({}, data[key] || {});
+    });
+
+    if(roles.cashier && !roles.sales){
+      roles.sales = Object.assign({}, roles.cashier);
+    }
+
+    if(roles.sales && !roles.cashier){
+      roles.cashier = Object.assign({}, roles.sales);
+    }
+
+    return roles;
+  }
+
+  function applyRolesToState(roles){
+    if(typeof S === 'undefined' || !S)return;
+
+    S.roles = S.roles || {};
+    S.rolePerms = S.rolePerms || {};
+
+    Object.keys(roles).forEach(function(key){
+      var title = key.charAt(0).toUpperCase() + key.slice(1);
+
+      if(key === 'sales')title = 'Sales';
+      if(key === 'dispatcher')title = 'Dispatcher';
+
+      S.roles[key] = roles[key];
+      S.roles[title] = roles[key];
+
+      S.rolePerms[key] = roles[key];
+      S.rolePerms[title] = roles[key];
+    });
+
+    try{ if(typeof sv === 'function')sv(); }catch(e){}
+  }
+
+  function findRoleTable(){
+    var view = document.getElementById('view-accounts');
+    if(!view)return null;
+
+    var tables = Array.from(view.querySelectorAll('table'));
+
+    return tables.find(function(table){
+      var text = String(table.textContent || '').toLowerCase();
+      return text.indexOf('dashboard') !== -1 &&
+             text.indexOf('pos terminal') !== -1 &&
+             text.indexOf('rider') !== -1;
+    }) || null;
+  }
+
+  function cellState(cell){
+    var text = String(cell && cell.textContent || '').toLowerCase();
+
+    if(text.indexOf('locked') !== -1)return 'locked';
+    if(text.indexOf('off') !== -1)return false;
+    if(text.indexOf('on') !== -1)return true;
+
+    var input = cell && cell.querySelector && cell.querySelector('input[type="checkbox"]');
+    if(input)return !!input.checked;
+
+    return null;
+  }
+
+  function clickCell(cell){
+    if(!cell)return;
+
+    var target =
+      cell.querySelector('button') ||
+      cell.querySelector('[role="button"]') ||
+      cell.querySelector('.toggle') ||
+      cell;
+
+    target.dispatchEvent(new MouseEvent('click', {
+      bubbles: true,
+      cancelable: true,
+      view: window
+    }));
+  }
+
+  function alignVisibleTable(roles){
+    var table = findRoleTable();
+
+    if(!table){
+      console.warn('[Firebase roles align] Role table not found');
+      return;
+    }
+
+    var rows = Array.from(table.querySelectorAll('tr'));
+    var changed = 0;
+
+    rows.forEach(function(row){
+      var cells = Array.from(row.children);
+      if(cells.length < 6)return;
+
+      var featureText = String(cells[0].textContent || '').trim();
+      var featureKey = cleanFeature(featureText);
+
+      if(!featureKey || featureKey.indexOf('feature') !== -1 || featureKey.indexOf('page') !== -1){
+        return;
+      }
+
+      ROLE_COLUMNS.forEach(function(roleKey, index){
+        var role = roles[roleKey] || {};
+        var desired = role[featureKey];
+
+        if(typeof desired !== 'boolean')return;
+
+        var cell = cells[index + 1];
+        var current = cellState(cell);
+
+        if(current === 'locked')return;
+
+        if(current !== desired){
+          clickCell(cell);
+          changed++;
+        }
+      });
+    });
+
+    if(changed){
+      try{ if(typeof sv === 'function')sv(); }catch(e){}
+      console.log('[Firebase roles align] Clicked mismatched role cells:', changed);
+    }else{
+      console.log('[Firebase roles align] UI already matches Firebase');
+    }
+  }
+
+  function fetchRolesAndAlign(force){
+    fetch(DB_URL + '/stores/' + STORE_ID + '/roles.json', {cache:'no-store'})
+      .then(function(res){
+        if(!res.ok){
+          return res.text().then(function(t){
+            throw new Error('Roles read failed ' + res.status + ': ' + t);
+          });
+        }
+        return res.json();
+      })
+      .then(function(data){
+        var roles = normalizeRoles(data || {});
+        var hash = JSON.stringify(roles);
+
+        if(!force && hash === lastAppliedHash)return;
+        lastAppliedHash = hash;
+
+        applyRolesToState(roles);
+
+        // Let original app render first, then align by clicking real buttons.
+        setTimeout(function(){
+          try{ if(typeof rPermEditor === 'function')rPermEditor(); }catch(e){}
+        }, 100);
+
+        setTimeout(function(){
+          alignVisibleTable(roles);
+        }, 500);
+
+        setTimeout(function(){
+          alignVisibleTable(roles);
+        }, 1100);
+      })
+      .catch(function(err){
+        console.warn('[Firebase roles align] failed:', err);
+      });
+  }
+
+  function installButton(){
+    var view = document.getElementById('view-accounts');
+    if(!view)return;
+
+    if(document.getElementById('firebase-refresh-roles-button'))return;
+
+    var btn = document.createElement('button');
+    btn.id = 'firebase-refresh-roles-button';
+    btn.type = 'button';
+    btn.textContent = '🔄 Refresh Roles from Firebase';
+    btn.style.cssText = [
+      'width:100%',
+      'margin:8px 0',
+      'padding:12px',
+      'border:0',
+      'border-radius:14px',
+      'background:#0f766e',
+      'color:#fff',
+      'font-weight:800',
+      'font-size:15px'
+    ].join(';');
+
+    btn.onclick = function(){
+      btn.textContent = 'Refreshing roles...';
+      fetchRolesAndAlign(true);
+      setTimeout(function(){
+        btn.textContent = '🔄 Refresh Roles from Firebase';
+      }, 1500);
+    };
+
+    var saveBtn = document.getElementById('firebase-save-roles-manual-button');
+    if(saveBtn && saveBtn.parentNode){
+      saveBtn.parentNode.insertBefore(btn, saveBtn.nextSibling);
+    }else{
+      view.insertBefore(btn, view.firstChild);
+    }
+  }
+
+  function boot(){
+    installButton();
+    fetchRolesAndAlign(true);
+
+    document.addEventListener('click', function(event){
+      var target = event.target;
+      if(!target)return;
+
+      var text = String(target.textContent || '').toLowerCase();
+
+      if(text.indexOf('accounts') !== -1 || text.indexOf('admin') !== -1){
+        setTimeout(function(){
+          installButton();
+          fetchRolesAndAlign(true);
+        }, 800);
+      }
+    }, true);
+
+    setInterval(function(){
+      installButton();
+
+      var view = document.getElementById('view-accounts');
+      if(view && view.classList.contains('on')){
+        fetchRolesAndAlign(false);
+      }
+    }, 6000);
+
+    console.log('[Firebase roles align] Started');
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 2000); });
+  }else{
+    setTimeout(boot, 2000);
+  }
+})();
+</script>
+
+</body></html>');
   win.document.close();
 }
 
@@ -8695,7 +9001,313 @@ window.addEventListener('load',function(){
       + codeHtml
       + '<div style="font-size:11px;color:#555;margin-top:12px">₱' + money(order.total) + ' · ' + new Date(order.time).toLocaleDateString() + '</div>'
       + '<scr'+'ipt>window.onload=function(){window.print();window.close();}<\/scr'+'ipt>'
-      + '</body></html>');
+      + '
+<script id="firebase-admin-roles-click-align-v1">
+(function(){
+  var DB_URL = 'https://fruities-pos-default-rtdb.asia-southeast1.firebasedatabase.app';
+  var STORE_ID = 'fruit-story-main';
+  var ROLE_COLUMNS = ['admin', 'sales', 'kitchen', 'dispatcher', 'rider'];
+  var lastAppliedHash = '';
+
+  var FEATURE_MAP = {
+    'dashboard': 'dashboard',
+    'pos terminal': 'pos',
+    'orders': 'orders',
+    'kitchen board': 'kitchen',
+    'delivery': 'delivery',
+    'pick up': 'pickup',
+    'pickup': 'pickup',
+    'stocks': 'stocks',
+    'products': 'products',
+    'journal / reports': 'journal',
+    'journal': 'journal',
+    'pos billing': 'billing',
+    'group chat': 'chat',
+    'admin panel': 'accounts',
+
+    'refund orders': 'refundOrders',
+    'mark paid': 'markPaid',
+    'adjust stock': 'adjustStock',
+    'manage products': 'manageProducts',
+    'apply discount': 'applyDiscount',
+    'export data': 'exportData',
+    'admin functions': 'adminFunctions',
+
+    'category tabs': 'categoryTabs',
+    'product search': 'productSearch',
+    'customer details': 'customerDetails',
+    'order notes': 'orderNotes',
+    'discount box': 'discountBox',
+    'clear cart button': 'clearCartButton',
+    'payment channels': 'paymentChannels',
+    'order status picker': 'orderStatusPicker',
+    'receipt print': 'receiptPrint',
+
+    'dashboard stats': 'dashboardStats',
+    'topbar new sale': 'topbarNewSale'
+  };
+
+  function cleanFeature(text){
+    text = String(text || '')
+      .replace(/[^\w\s/]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+
+    return FEATURE_MAP[text] || text.replace(/\s+/g, '_');
+  }
+
+  function normalizeRoles(data){
+    var roles = {};
+
+    Object.keys(data || {}).forEach(function(key){
+      var normalizedKey = String(key || '').toLowerCase();
+
+      if(normalizedKey === 'cashier'){
+        normalizedKey = 'sales';
+      }
+
+      roles[normalizedKey] = Object.assign({}, data[key] || {});
+    });
+
+    if(roles.cashier && !roles.sales){
+      roles.sales = Object.assign({}, roles.cashier);
+    }
+
+    if(roles.sales && !roles.cashier){
+      roles.cashier = Object.assign({}, roles.sales);
+    }
+
+    return roles;
+  }
+
+  function applyRolesToState(roles){
+    if(typeof S === 'undefined' || !S)return;
+
+    S.roles = S.roles || {};
+    S.rolePerms = S.rolePerms || {};
+
+    Object.keys(roles).forEach(function(key){
+      var title = key.charAt(0).toUpperCase() + key.slice(1);
+
+      if(key === 'sales')title = 'Sales';
+      if(key === 'dispatcher')title = 'Dispatcher';
+
+      S.roles[key] = roles[key];
+      S.roles[title] = roles[key];
+
+      S.rolePerms[key] = roles[key];
+      S.rolePerms[title] = roles[key];
+    });
+
+    try{ if(typeof sv === 'function')sv(); }catch(e){}
+  }
+
+  function findRoleTable(){
+    var view = document.getElementById('view-accounts');
+    if(!view)return null;
+
+    var tables = Array.from(view.querySelectorAll('table'));
+
+    return tables.find(function(table){
+      var text = String(table.textContent || '').toLowerCase();
+      return text.indexOf('dashboard') !== -1 &&
+             text.indexOf('pos terminal') !== -1 &&
+             text.indexOf('rider') !== -1;
+    }) || null;
+  }
+
+  function cellState(cell){
+    var text = String(cell && cell.textContent || '').toLowerCase();
+
+    if(text.indexOf('locked') !== -1)return 'locked';
+    if(text.indexOf('off') !== -1)return false;
+    if(text.indexOf('on') !== -1)return true;
+
+    var input = cell && cell.querySelector && cell.querySelector('input[type="checkbox"]');
+    if(input)return !!input.checked;
+
+    return null;
+  }
+
+  function clickCell(cell){
+    if(!cell)return;
+
+    var target =
+      cell.querySelector('button') ||
+      cell.querySelector('[role="button"]') ||
+      cell.querySelector('.toggle') ||
+      cell;
+
+    target.dispatchEvent(new MouseEvent('click', {
+      bubbles: true,
+      cancelable: true,
+      view: window
+    }));
+  }
+
+  function alignVisibleTable(roles){
+    var table = findRoleTable();
+
+    if(!table){
+      console.warn('[Firebase roles align] Role table not found');
+      return;
+    }
+
+    var rows = Array.from(table.querySelectorAll('tr'));
+    var changed = 0;
+
+    rows.forEach(function(row){
+      var cells = Array.from(row.children);
+      if(cells.length < 6)return;
+
+      var featureText = String(cells[0].textContent || '').trim();
+      var featureKey = cleanFeature(featureText);
+
+      if(!featureKey || featureKey.indexOf('feature') !== -1 || featureKey.indexOf('page') !== -1){
+        return;
+      }
+
+      ROLE_COLUMNS.forEach(function(roleKey, index){
+        var role = roles[roleKey] || {};
+        var desired = role[featureKey];
+
+        if(typeof desired !== 'boolean')return;
+
+        var cell = cells[index + 1];
+        var current = cellState(cell);
+
+        if(current === 'locked')return;
+
+        if(current !== desired){
+          clickCell(cell);
+          changed++;
+        }
+      });
+    });
+
+    if(changed){
+      try{ if(typeof sv === 'function')sv(); }catch(e){}
+      console.log('[Firebase roles align] Clicked mismatched role cells:', changed);
+    }else{
+      console.log('[Firebase roles align] UI already matches Firebase');
+    }
+  }
+
+  function fetchRolesAndAlign(force){
+    fetch(DB_URL + '/stores/' + STORE_ID + '/roles.json', {cache:'no-store'})
+      .then(function(res){
+        if(!res.ok){
+          return res.text().then(function(t){
+            throw new Error('Roles read failed ' + res.status + ': ' + t);
+          });
+        }
+        return res.json();
+      })
+      .then(function(data){
+        var roles = normalizeRoles(data || {});
+        var hash = JSON.stringify(roles);
+
+        if(!force && hash === lastAppliedHash)return;
+        lastAppliedHash = hash;
+
+        applyRolesToState(roles);
+
+        // Let original app render first, then align by clicking real buttons.
+        setTimeout(function(){
+          try{ if(typeof rPermEditor === 'function')rPermEditor(); }catch(e){}
+        }, 100);
+
+        setTimeout(function(){
+          alignVisibleTable(roles);
+        }, 500);
+
+        setTimeout(function(){
+          alignVisibleTable(roles);
+        }, 1100);
+      })
+      .catch(function(err){
+        console.warn('[Firebase roles align] failed:', err);
+      });
+  }
+
+  function installButton(){
+    var view = document.getElementById('view-accounts');
+    if(!view)return;
+
+    if(document.getElementById('firebase-refresh-roles-button'))return;
+
+    var btn = document.createElement('button');
+    btn.id = 'firebase-refresh-roles-button';
+    btn.type = 'button';
+    btn.textContent = '🔄 Refresh Roles from Firebase';
+    btn.style.cssText = [
+      'width:100%',
+      'margin:8px 0',
+      'padding:12px',
+      'border:0',
+      'border-radius:14px',
+      'background:#0f766e',
+      'color:#fff',
+      'font-weight:800',
+      'font-size:15px'
+    ].join(';');
+
+    btn.onclick = function(){
+      btn.textContent = 'Refreshing roles...';
+      fetchRolesAndAlign(true);
+      setTimeout(function(){
+        btn.textContent = '🔄 Refresh Roles from Firebase';
+      }, 1500);
+    };
+
+    var saveBtn = document.getElementById('firebase-save-roles-manual-button');
+    if(saveBtn && saveBtn.parentNode){
+      saveBtn.parentNode.insertBefore(btn, saveBtn.nextSibling);
+    }else{
+      view.insertBefore(btn, view.firstChild);
+    }
+  }
+
+  function boot(){
+    installButton();
+    fetchRolesAndAlign(true);
+
+    document.addEventListener('click', function(event){
+      var target = event.target;
+      if(!target)return;
+
+      var text = String(target.textContent || '').toLowerCase();
+
+      if(text.indexOf('accounts') !== -1 || text.indexOf('admin') !== -1){
+        setTimeout(function(){
+          installButton();
+          fetchRolesAndAlign(true);
+        }, 800);
+      }
+    }, true);
+
+    setInterval(function(){
+      installButton();
+
+      var view = document.getElementById('view-accounts');
+      if(view && view.classList.contains('on')){
+        fetchRolesAndAlign(false);
+      }
+    }, 6000);
+
+    console.log('[Firebase roles align] Started');
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 2000); });
+  }else{
+    setTimeout(boot, 2000);
+  }
+})();
+</script>
+
+</body></html>');
     win.document.close();
   };
 })();
@@ -14227,75 +14839,201 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
 
 
 
-<script id="firebase-admin-roles-safe-reload-v2">
+
+
+<script id="firebase-admin-roles-click-align-v1">
 (function(){
   var DB_URL = 'https://fruities-pos-default-rtdb.asia-southeast1.firebasedatabase.app';
   var STORE_ID = 'fruit-story-main';
-  var lastHash = '';
+  var ROLE_COLUMNS = ['admin', 'sales', 'kitchen', 'dispatcher', 'rider'];
+  var lastAppliedHash = '';
 
-  function titleRole(key){
-    key = String(key || '').toLowerCase();
+  var FEATURE_MAP = {
+    'dashboard': 'dashboard',
+    'pos terminal': 'pos',
+    'orders': 'orders',
+    'kitchen board': 'kitchen',
+    'delivery': 'delivery',
+    'pick up': 'pickup',
+    'pickup': 'pickup',
+    'stocks': 'stocks',
+    'products': 'products',
+    'journal / reports': 'journal',
+    'journal': 'journal',
+    'pos billing': 'billing',
+    'group chat': 'chat',
+    'admin panel': 'accounts',
 
-    if(key === 'sales')return 'Sales';
-    if(key === 'cashier')return 'Sales';
-    if(key === 'dispatcher')return 'Dispatcher';
+    'refund orders': 'refundOrders',
+    'mark paid': 'markPaid',
+    'adjust stock': 'adjustStock',
+    'manage products': 'manageProducts',
+    'apply discount': 'applyDiscount',
+    'export data': 'exportData',
+    'admin functions': 'adminFunctions',
 
-    return key.charAt(0).toUpperCase() + key.slice(1);
+    'category tabs': 'categoryTabs',
+    'product search': 'productSearch',
+    'customer details': 'customerDetails',
+    'order notes': 'orderNotes',
+    'discount box': 'discountBox',
+    'clear cart button': 'clearCartButton',
+    'payment channels': 'paymentChannels',
+    'order status picker': 'orderStatusPicker',
+    'receipt print': 'receiptPrint',
+
+    'dashboard stats': 'dashboardStats',
+    'topbar new sale': 'topbarNewSale'
+  };
+
+  function cleanFeature(text){
+    text = String(text || '')
+      .replace(/[^\w\s/]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+
+    return FEATURE_MAP[text] || text.replace(/\s+/g, '_');
   }
 
-  function normalizeKey(key){
-    key = String(key || '').toLowerCase();
-    if(key === 'cashier')return 'sales';
-    return key;
-  }
+  function normalizeRoles(data){
+    var roles = {};
 
-  function applyRoles(data){
-    if(typeof S === 'undefined' || !S || !data)return;
+    Object.keys(data || {}).forEach(function(key){
+      var normalizedKey = String(key || '').toLowerCase();
 
-    var normalized = {};
+      if(normalizedKey === 'cashier'){
+        normalizedKey = 'sales';
+      }
 
-    Object.keys(data).forEach(function(key){
-      var roleKey = normalizeKey(key);
-      normalized[roleKey] = Object.assign({}, data[key] || {});
+      roles[normalizedKey] = Object.assign({}, data[key] || {});
     });
 
-    // Keep both names compatible.
-    if(normalized.sales && !normalized.cashier){
-      normalized.cashier = Object.assign({}, normalized.sales);
+    if(roles.cashier && !roles.sales){
+      roles.sales = Object.assign({}, roles.cashier);
     }
 
-    if(normalized.cashier && !normalized.sales){
-      normalized.sales = Object.assign({}, normalized.cashier);
+    if(roles.sales && !roles.cashier){
+      roles.cashier = Object.assign({}, roles.sales);
     }
+
+    return roles;
+  }
+
+  function applyRolesToState(roles){
+    if(typeof S === 'undefined' || !S)return;
 
     S.roles = S.roles || {};
     S.rolePerms = S.rolePerms || {};
 
-    Object.keys(normalized).forEach(function(key){
-      var role = normalized[key];
-      var title = titleRole(key);
+    Object.keys(roles).forEach(function(key){
+      var title = key.charAt(0).toUpperCase() + key.slice(1);
 
-      S.roles[key] = role;
-      S.roles[title] = role;
+      if(key === 'sales')title = 'Sales';
+      if(key === 'dispatcher')title = 'Dispatcher';
 
-      S.rolePerms[key] = role;
-      S.rolePerms[title] = role;
+      S.roles[key] = roles[key];
+      S.roles[title] = roles[key];
+
+      S.rolePerms[key] = roles[key];
+      S.rolePerms[title] = roles[key];
     });
 
     try{ if(typeof sv === 'function')sv(); }catch(e){}
-
-    // Let the original app rebuild clickable role cells.
-    var view = document.getElementById('view-accounts');
-    if(view && view.classList.contains('on')){
-      setTimeout(function(){
-        try{ if(typeof rPermEditor === 'function')rPermEditor(); }catch(e){}
-      }, 250);
-    }
-
-    console.log('[Firebase roles safe reload] Applied roles', normalized);
   }
 
-  function fetchRoles(force){
+  function findRoleTable(){
+    var view = document.getElementById('view-accounts');
+    if(!view)return null;
+
+    var tables = Array.from(view.querySelectorAll('table'));
+
+    return tables.find(function(table){
+      var text = String(table.textContent || '').toLowerCase();
+      return text.indexOf('dashboard') !== -1 &&
+             text.indexOf('pos terminal') !== -1 &&
+             text.indexOf('rider') !== -1;
+    }) || null;
+  }
+
+  function cellState(cell){
+    var text = String(cell && cell.textContent || '').toLowerCase();
+
+    if(text.indexOf('locked') !== -1)return 'locked';
+    if(text.indexOf('off') !== -1)return false;
+    if(text.indexOf('on') !== -1)return true;
+
+    var input = cell && cell.querySelector && cell.querySelector('input[type="checkbox"]');
+    if(input)return !!input.checked;
+
+    return null;
+  }
+
+  function clickCell(cell){
+    if(!cell)return;
+
+    var target =
+      cell.querySelector('button') ||
+      cell.querySelector('[role="button"]') ||
+      cell.querySelector('.toggle') ||
+      cell;
+
+    target.dispatchEvent(new MouseEvent('click', {
+      bubbles: true,
+      cancelable: true,
+      view: window
+    }));
+  }
+
+  function alignVisibleTable(roles){
+    var table = findRoleTable();
+
+    if(!table){
+      console.warn('[Firebase roles align] Role table not found');
+      return;
+    }
+
+    var rows = Array.from(table.querySelectorAll('tr'));
+    var changed = 0;
+
+    rows.forEach(function(row){
+      var cells = Array.from(row.children);
+      if(cells.length < 6)return;
+
+      var featureText = String(cells[0].textContent || '').trim();
+      var featureKey = cleanFeature(featureText);
+
+      if(!featureKey || featureKey.indexOf('feature') !== -1 || featureKey.indexOf('page') !== -1){
+        return;
+      }
+
+      ROLE_COLUMNS.forEach(function(roleKey, index){
+        var role = roles[roleKey] || {};
+        var desired = role[featureKey];
+
+        if(typeof desired !== 'boolean')return;
+
+        var cell = cells[index + 1];
+        var current = cellState(cell);
+
+        if(current === 'locked')return;
+
+        if(current !== desired){
+          clickCell(cell);
+          changed++;
+        }
+      });
+    });
+
+    if(changed){
+      try{ if(typeof sv === 'function')sv(); }catch(e){}
+      console.log('[Firebase roles align] Clicked mismatched role cells:', changed);
+    }else{
+      console.log('[Firebase roles align] UI already matches Firebase');
+    }
+  }
+
+  function fetchRolesAndAlign(force){
     fetch(DB_URL + '/stores/' + STORE_ID + '/roles.json', {cache:'no-store'})
       .then(function(res){
         if(!res.ok){
@@ -14306,22 +15044,74 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
         return res.json();
       })
       .then(function(data){
-        var hash = JSON.stringify(data || {});
+        var roles = normalizeRoles(data || {});
+        var hash = JSON.stringify(roles);
 
-        if(!force && hash === lastHash)return;
-        lastHash = hash;
+        if(!force && hash === lastAppliedHash)return;
+        lastAppliedHash = hash;
 
-        applyRoles(data);
+        applyRolesToState(roles);
+
+        // Let original app render first, then align by clicking real buttons.
+        setTimeout(function(){
+          try{ if(typeof rPermEditor === 'function')rPermEditor(); }catch(e){}
+        }, 100);
+
+        setTimeout(function(){
+          alignVisibleTable(roles);
+        }, 500);
+
+        setTimeout(function(){
+          alignVisibleTable(roles);
+        }, 1100);
       })
       .catch(function(err){
-        console.warn('[Firebase roles safe reload] failed', err);
+        console.warn('[Firebase roles align] failed:', err);
       });
   }
 
-  function boot(){
-    fetchRoles(true);
+  function installButton(){
+    var view = document.getElementById('view-accounts');
+    if(!view)return;
 
-    // Reload roles when opening Accounts/Admin.
+    if(document.getElementById('firebase-refresh-roles-button'))return;
+
+    var btn = document.createElement('button');
+    btn.id = 'firebase-refresh-roles-button';
+    btn.type = 'button';
+    btn.textContent = '🔄 Refresh Roles from Firebase';
+    btn.style.cssText = [
+      'width:100%',
+      'margin:8px 0',
+      'padding:12px',
+      'border:0',
+      'border-radius:14px',
+      'background:#0f766e',
+      'color:#fff',
+      'font-weight:800',
+      'font-size:15px'
+    ].join(';');
+
+    btn.onclick = function(){
+      btn.textContent = 'Refreshing roles...';
+      fetchRolesAndAlign(true);
+      setTimeout(function(){
+        btn.textContent = '🔄 Refresh Roles from Firebase';
+      }, 1500);
+    };
+
+    var saveBtn = document.getElementById('firebase-save-roles-manual-button');
+    if(saveBtn && saveBtn.parentNode){
+      saveBtn.parentNode.insertBefore(btn, saveBtn.nextSibling);
+    }else{
+      view.insertBefore(btn, view.firstChild);
+    }
+  }
+
+  function boot(){
+    installButton();
+    fetchRolesAndAlign(true);
+
     document.addEventListener('click', function(event){
       var target = event.target;
       if(!target)return;
@@ -14329,26 +15119,29 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
       var text = String(target.textContent || '').toLowerCase();
 
       if(text.indexOf('accounts') !== -1 || text.indexOf('admin') !== -1){
-        setTimeout(function(){ fetchRoles(true); }, 600);
+        setTimeout(function(){
+          installButton();
+          fetchRolesAndAlign(true);
+        }, 800);
       }
     }, true);
 
-    // Periodic reload only while admin panel is open.
     setInterval(function(){
-      var view = document.getElementById('view-accounts');
+      installButton();
 
+      var view = document.getElementById('view-accounts');
       if(view && view.classList.contains('on')){
-        fetchRoles(false);
+        fetchRolesAndAlign(false);
       }
     }, 6000);
 
-    console.log('[Firebase roles safe reload] Started');
+    console.log('[Firebase roles align] Started');
   }
 
   if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 1800); });
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 2000); });
   }else{
-    setTimeout(boot, 1800);
+    setTimeout(boot, 2000);
   }
 })();
 </script>
