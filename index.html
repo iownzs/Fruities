@@ -2216,6 +2216,65 @@ body.dark #chat-minimize-channels-btn.is-collapsed{background:#14281e!important;
   }
 </style>
 
+
+<style id="admin-products-toolbar-v1">
+  #adm-products .sh{
+    align-items:flex-start!important;
+  }
+
+  #adm-products .sh > div:last-child{
+    display:grid!important;
+    grid-template-columns:minmax(180px,1.2fr) minmax(160px,1fr) minmax(130px,.8fr) auto auto!important;
+    gap:8px!important;
+    align-items:center!important;
+    width:100%!important;
+  }
+
+  #adm-products #adm-prod-search,
+  #adm-products #adm-prod-cat-filter,
+  #adm-products #adm-prod-status-filter{
+    width:100%!important;
+    min-height:38px!important;
+  }
+
+  #adm-products #adm-prod-low-filter{
+    margin:0!important;
+  }
+
+  #adm-products .sh label.btn{
+    white-space:nowrap!important;
+    justify-content:center!important;
+    padding:8px 11px!important;
+  }
+
+  #adm-products .sh .btn.bg{
+    white-space:nowrap!important;
+    min-height:38px!important;
+    justify-content:center!important;
+  }
+
+  @media(max-width:768px){
+    #adm-products .sh > div:last-child{
+      grid-template-columns:1fr 1fr!important;
+      width:100%!important;
+    }
+
+    #adm-products #adm-prod-search{
+      grid-column:1/-1!important;
+    }
+
+    #adm-products .sh .btn.bg{
+      width:100%!important;
+    }
+  }
+
+  @media(max-width:430px){
+    #adm-products .sh > div:last-child{
+      grid-template-columns:1fr!important;
+    }
+  }
+</style>
+
 </head>
 <body>
 
