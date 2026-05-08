@@ -2176,7 +2176,7 @@ body.dark #chat-minimize-channels-btn.is-collapsed{background:#14281e!important;
 
   #adm-prod-grid .adm-pc-btns{
     display:grid!important;
-    grid-template-columns:1fr 1fr auto!important;
+    grid-template-columns:1fr 1fr!important;
     gap:7px!important;
     margin-top:auto!important;
   }
@@ -3217,7 +3217,34 @@ body.dark #chat-minimize-channels-btn.is-collapsed{background:#14281e!important;
               onclick="saveProd()">💾 Save Product</button>
     </div>
   </div>
+
 </div>
+
+<!-- Product Barcode Label -->
+<div class="ov" id="mprodlabel">
+  <div class="md" style="max-width:420px">
+    <div class="mh">
+      <div>
+        <h3>🏷️ Product Barcode Label</h3>
+        <div style="font-size:12px;color:var(--t3);margin-top:3px">Preview and print product barcode</div>
+      </div>
+      <button class="x" onclick="closeM('mprodlabel')">×</button>
+    </div>
+
+    <div id="prod-label-print-area" style="background:#fff;color:#111;border:1px solid var(--b);border-radius:18px;padding:18px;text-align:center;margin-bottom:14px">
+      <div id="prod-label-name" style="font-size:18px;font-weight:1000;line-height:1.25;margin-bottom:4px">Product Name</div>
+      <div id="prod-label-meta" style="font-size:12px;color:#555;margin-bottom:12px">SKU / Barcode</div>
+      <svg id="prod-label-barcode" style="width:100%;max-width:320px;height:92px"></svg>
+      <div id="prod-label-code" style="font-size:13px;font-weight:900;letter-spacing:1px;margin-top:8px">CODE</div>
+      <div id="prod-label-price" style="font-size:20px;font-weight:1000;color:#1e8a52;margin-top:10px">₱0.00</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
+      <button class="btn bw" onclick="closeM('mprodlabel')" style="justify-content:center">Close</button>
+      <button class="btn bg" onclick="printProductLabel()" style="justify-content:center">🖨️ Print Label</button>
+    </div>
+  </div>
+
 
 <!-- Stock -->
 <div class="ov" id="mstock">
@@ -5401,6 +5428,81 @@ function rProds(){
   }).join('');
 }
 
+
+let currentProductLabelId = null;
+
+function openProductLabel(id){
+  const product = (S.products || []).find(p=>String(p.id)===String(id));
+  if(!product){ toast('Product not found','err'); return; }
+
+  currentProductLabelId = id;
+
+  const name = product.n || product.name || 'Product';
+  const sku = product.sku || '';
+  const barcode = product.barcode || product.qrCode || sku || String(product.id);
+  const category = product.cat || product.category || 'Pantry';
+  const unit = productUnitLabel(product.unit || 'pcs');
+  const price = Number(product.p || product.price || 0);
+
+  $('prod-label-name').textContent = name;
+  $('prod-label-meta').textContent = category + ' · ' + unit;
+  $('prod-label-code').textContent = barcode;
+  $('prod-label-price').textContent = '₱' + price.toFixed(2);
+
+  const svg = $('prod-label-barcode');
+  if(svg){
+    svg.innerHTML = '';
+    try{
+      JsBarcode(svg, barcode, {
+        format:'CODE128',
+        width:2,
+        height:70,
+        displayValue:false,
+        background:'#ffffff',
+        lineColor:'#111111',
+        margin:8
+      });
+    }catch(e){
+      svg.outerHTML = '<div id="prod-label-barcode" style="font-size:12px;color:#777;padding:20px">Barcode unavailable</div>';
+    }
+  }
+
+  openM('mprodlabel');
+}
+
+function printProductLabel(){
+  const area = $('prod-label-print-area');
+  if(!area){ toast('Label not found','err'); return; }
+
+  const html = `
+    <html>
+      <head>
+        <title>Product Barcode Label</title>
+        <style>
+          body{font-family:Arial,sans-serif;margin:0;padding:18px;background:#fff;color:#111}
+          .label{width:320px;margin:0 auto;text-align:center;border:1px solid #ddd;border-radius:14px;padding:14px}
+          svg{width:100%;height:92px}
+          @media print{
+            body{padding:0}
+            .label{border:0;border-radius:0;width:100%;padding:8px}
+          }
+        </style>
+      </head>
+      <body>
+        <div class="label">${area.innerHTML}</div>
+        <script>window.onload=function(){setTimeout(function(){window.print();},200)}<\/script>
+      </body>
+    </html>
+  `;
+
+  const w = window.open('', '_blank', 'width=420,height=560');
+  if(!w){ toast('Allow popups to print label','warn'); return; }
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+}
+
+
 // ─────── IMAGE UPLOAD ───────
 function switchImgTab(tab){
   $('itab-img').classList.toggle('on', tab==='img');
@@ -6023,6 +6125,7 @@ function rAdmProds(){
         <div class="adm-pc-btns">
           ${perm('canManageProducts')?`<button class="btn bw bsm" onclick="editProd(${p.id})">✏️ Edit</button>`:''}
           ${perm('canAdjustStock')?`<button class="btn bw bsm" onclick="openStockFor(${p.id})">📦 Stock</button>`:''}
+          ${perm('canManageProducts')?`<button class="btn bw bsm" onclick="openProductLabel(${p.id})">🏷️ Label</button>`:''}
           ${perm('canManageProducts')?`<button class="btn br bsm" onclick="delProd(${p.id})" title="Delete">🗑️</button>`:''}
         </div>
       </div>
