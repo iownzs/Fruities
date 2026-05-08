@@ -16602,5 +16602,34 @@ font-size:14px">Okay</button>'
 })();
 </script>
 
+
+<script id="cart-default-pickup-final-v1">
+(function(){
+  function setPickupDefault(){
+    try{
+      if(!window.cart || !window.cart.length){
+        window.cartFulfillmentMode = 'pickup';
+        if(typeof fulfillmentType !== 'undefined') fulfillmentType = 'pickup';
+      }
+      if(typeof window.setCartFulfillmentMode === 'function' && (!window.cart || !window.cart.length)){
+        window.setCartFulfillmentMode('pickup');
+      }
+      if(typeof syncFulfillmentUI === 'function') syncFulfillmentUI();
+      if(typeof window.applyCartModeUI === 'function') window.applyCartModeUI();
+    }catch(e){}
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){
+      setTimeout(setPickupDefault, 300);
+      setTimeout(setPickupDefault, 1200);
+    });
+  }else{
+    setTimeout(setPickupDefault, 300);
+    setTimeout(setPickupDefault, 1200);
+  }
+})();
+</script>
+
 </body>
 </html>
