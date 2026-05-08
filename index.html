@@ -16410,5 +16410,142 @@ font-size:14px">Okay</button>'
 })();
 </script>
 
+
+<script id="firebase-product-read-sync-v1">
+(function(){
+  var DB_URL = 'https://fruities-pos-default-rtdb.asia-southeast1.firebasedatabase.app';
+  var STORE_ID = 'fruit-story-main';
+  var PRODUCT_PATH = DB_URL + '/stores/' + STORE_ID + '/products.json';
+
+  function normalizeProduct(id, p){
+    p = p || {};
+    var copy = Object.assign({}, p);
+
+    if(copy.id == null) copy.id = isNaN(Number(id)) ? id : Number(id);
+
+    copy.n = copy.n || copy.name || 'Product';
+    copy.name = copy.name || copy.n;
+
+    copy.cat = copy.cat || copy.category || 'Pantry';
+    copy.category = copy.category || copy.cat;
+
+    copy.p = Number(copy.p != null ? copy.p : copy.price || 0);
+    copy.price = Number(copy.price != null ? copy.price : copy.p || 0);
+
+    copy.s = Number(copy.s != null ? copy.s : copy.stock || 0);
+    copy.stock = Number(copy.stock != null ? copy.stock : copy.s || 0);
+
+    copy.min = Number(copy.min != null ? copy.min : 5);
+
+    copy.e = copy.e || copy.emoji || '🍎';
+    copy.img = copy.img || copy.imageData || copy.imageUrl || '';
+
+    copy.unit = copy.unit || 'pcs';
+
+    copy.sku = copy.sku || '';
+    copy.barcode = copy.barcode || copy.qrCode || copy.sku || '';
+    copy.qrCode = copy.qrCode || copy.barcode || copy.sku || '';
+
+    copy.active = copy.active !== false;
+    copy.hidden = !!copy.hidden;
+
+    return copy;
+  }
+
+  function firebaseProductsToArray(data){
+    if(!data) return [];
+
+    if(Array.isArray(data)){
+      return data
+        .filter(Boolean)
+        .map(function(p, idx){ return normalizeProduct(p.id != null ? p.id : idx, p); });
+    }
+
+    return Object.keys(data).map(function(id){
+      return normalizeProduct(id, data[id]);
+    });
+  }
+
+  function mergeProducts(remoteProducts){
+    if(!window.S) return false;
+    if(!Array.isArray(S.products)) S.products = [];
+
+    var map = {};
+
+    S.products.forEach(function(local){
+      if(!local) return;
+      var key = String(local.id);
+      map[key] = local;
+    });
+
+    remoteProducts.forEach(function(remote){
+      if(!remote) return;
+      var key = String(remote.id);
+
+      if(map[key]){
+        map[key] = Object.assign({}, map[key], remote);
+      }else{
+        map[key] = remote;
+      }
+    });
+
+    S.products = Object.keys(map)
+      .map(function(k){ return map[k]; })
+      .sort(function(a,b){
+        var ai = Number(a.id);
+        var bi = Number(b.id);
+        if(!isNaN(ai) && !isNaN(bi)) return ai - bi;
+        return String(a.name||a.n||'').localeCompare(String(b.name||b.n||''));
+      });
+
+    try{ sv(); }catch(e){}
+
+    try{ if(typeof rProds === 'function') rProds(); }catch(e){}
+    try{ if(typeof rAdmProds === 'function') rAdmProds(); }catch(e){}
+    try{ if(typeof rPOS === 'function') rPOS(); }catch(e){}
+    try{ if(typeof rGrid === 'function') rGrid(); }catch(e){}
+    try{ if(typeof rHome === 'function') rHome(); }catch(e){}
+
+    return true;
+  }
+
+  function syncProductsFromFirebase(){
+    return fetch(PRODUCT_PATH, {cache:'no-store'})
+      .then(function(res){
+        if(!res.ok) throw new Error('Product read failed');
+        return res.json();
+      })
+      .then(function(data){
+        var remote = firebaseProductsToArray(data);
+        if(!remote.length) return false;
+
+        mergeProducts(remote);
+        console.log('[Firebase Products] loaded', remote.length);
+        return true;
+      })
+      .catch(function(err){
+        console.warn('[Firebase Products] read failed', err);
+        return false;
+      });
+  }
+
+  window.syncProductsFromFirebase = syncProductsFromFirebase;
+
+  function boot(){
+    syncProductsFromFirebase();
+
+    // Refresh again after app state/UI finishes loading.
+    setTimeout(syncProductsFromFirebase, 1200);
+    setTimeout(syncProductsFromFirebase, 3500);
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 500); });
+  }else{
+    setTimeout(boot, 500);
+  }
+})();
+</script>
+
 </body>
 </html>
