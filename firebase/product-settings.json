@@ -1,0 +1,32 @@
+{
+  "categories": {
+    "mothers_day": "Mother's Day",
+    "fathers_day": "Father's Day",
+    "valentines_day": "Valentine's Day",
+    "anniversary": "Anniversary",
+    "happy_birthday": "Happy Birthday",
+    "thank_you": "Thank You",
+    "get_well_soon": "Get Well Soon",
+    "im_sorry": "I'm Sorry",
+    "grandparents_day": "Grandparents Day",
+    "congratulations": "Congratulations",
+    "christmas": "Christmas",
+    "new_year": "New Year",
+    "fruit_platter": "Fruit Platter",
+    "fruit_donut": "Fruit Donut",
+    "gift_basket": "Gift Basket",
+    "pantry": "Pantry",
+    "mango_sago": "Mango Sago",
+    "melon": "Melon",
+    "avocado": "Avocado"
+  },
+  "units": {
+    "pcs": "Pcs",
+    "pantry": "Pantry",
+    "cups": "Cups",
+    "box": "Box",
+    "arrangement": "Arrangement"
+  },
+  "updatedAt": 1778190000000,
+  "updatedBy": "admin"
+}

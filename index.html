@@ -2924,18 +2924,38 @@ body.dark #chat-minimize-channels-btn.is-collapsed{background:#14281e!important;
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
         <div class="fg"><label>Name</label><input class="fi" id="pname" placeholder="e.g. Red Apple"></div>
         <div class="fg"><label>Category</label>
-          <select class="fs" id="pcat">
-            <option>Tropical</option><option>Citrus</option><option>Berries</option>
-            <option>Stone Fruits</option><option>Exotic</option><option>Others</option>
-            <option>Pick up</option>
-          </select>
+          <select class="fs" id="pcat"></select>
         </div>
       </div>
+
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
         <div class="fg"><label>Price (₱)</label><input class="fi" type="number" id="pprice" placeholder="0.00" min="0" step="0.01"></div>
-        <div class="fg"><label>Stock</label><input class="fi" type="number" id="pstock" placeholder="0" min="0"></div>
+        <div class="fg"><label>Stock Quantity</label><input class="fi" type="number" id="pstock" placeholder="0" min="0"></div>
       </div>
-      <div class="fg"><label>Min Stock Level</label><input class="fi" type="number" id="pmin" placeholder="5" min="0"></div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
+        <div class="fg"><label>Minimum Stock Alert</label><input class="fi" type="number" id="pmin" placeholder="5" min="0"></div>
+        <div class="fg"><label>Unit Type</label>
+          <select class="fs" id="punit"></select>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
+        <div class="fg"><label>SKU</label><input class="fi" id="psku" placeholder="e.g. MS-CUP-001"></div>
+        <div class="fg"><label>QR Code</label><input class="fi" id="pqr" placeholder="Auto uses SKU/name"></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
+        <label class="fg" style="display:flex;align-items:center;gap:9px;margin:0;padding:10px 0">
+          <input type="checkbox" id="pactive" checked>
+          <span style="font-size:12px;font-weight:800;color:var(--t2)">Active / Sellable</span>
+        </label>
+        <label class="fg" style="display:flex;align-items:center;gap:9px;margin:0;padding:10px 0">
+          <input type="checkbox" id="phidden">
+          <span style="font-size:12px;font-weight:800;color:var(--t2)">Hidden from POS</span>
+        </label>
+      </div>
+
       <div class="fg"><label>Description</label><textarea class="ft" id="pdesc" placeholder="Short description…"></textarea></div>
       <button class="btn bg" style="width:100%;justify-content:center;padding:13px;font-size:14px"
               onclick="saveProd()">💾 Save Product</button>
@@ -5200,23 +5220,105 @@ window.addEventListener('DOMContentLoaded', function(){
   }
 });
 
+
+const PRODUCT_CATEGORY_OPTIONS = {
+  mothers_day: "Mother's Day",
+  fathers_day: "Father's Day",
+  valentines_day: "Valentine's Day",
+  anniversary: "Anniversary",
+  happy_birthday: "Happy Birthday",
+  thank_you: "Thank You",
+  get_well_soon: "Get Well Soon",
+  im_sorry: "I'm Sorry",
+  grandparents_day: "Grandparents Day",
+  congratulations: "Congratulations",
+  christmas: "Christmas",
+  new_year: "New Year",
+  fruit_platter: "Fruit Platter",
+  fruit_donut: "Fruit Donut",
+  gift_basket: "Gift Basket",
+  pantry: "Pantry",
+  mango_sago: "Mango Sago",
+  melon: "Melon",
+  avocado: "Avocado"
+};
+
+const PRODUCT_UNIT_OPTIONS = {
+  pcs: "Pcs",
+  pantry: "Pantry",
+  cups: "Cups",
+  box: "Box",
+  arrangement: "Arrangement"
+};
+
+function productCategoryLabel(key){
+  return PRODUCT_CATEGORY_OPTIONS[key] || key || 'Pantry';
+}
+
+function productUnitLabel(key){
+  return PRODUCT_UNIT_OPTIONS[key] || key || 'Pcs';
+}
+
+function findCategoryKeyByLabel(label){
+  label = String(label || '').trim().toLowerCase();
+  return Object.keys(PRODUCT_CATEGORY_OPTIONS).find(function(k){
+    return PRODUCT_CATEGORY_OPTIONS[k].toLowerCase() === label;
+  }) || 'pantry';
+}
+
+function fillProductSelects(){
+  const cat = $('pcat');
+  if(cat){
+    cat.innerHTML = Object.keys(PRODUCT_CATEGORY_OPTIONS).map(function(k){
+      return '<option value="'+k+'">'+PRODUCT_CATEGORY_OPTIONS[k]+'</option>';
+    }).join('');
+  }
+
+  const unit = $('punit');
+  if(unit){
+    unit.innerHTML = Object.keys(PRODUCT_UNIT_OPTIONS).map(function(k){
+      return '<option value="'+k+'">'+PRODUCT_UNIT_OPTIONS[k]+'</option>';
+    }).join('');
+  }
+}
+
+function makeProductCode(name){
+  return String(name || 'product')
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g,'-')
+    .replace(/^-+|-+$/g,'')
+    .slice(0,18) || 'PRODUCT';
+}
+
 function openProdM(){
   if(!perm('canManageProducts')){toast('\u26d4 Admin only: Manage Products','err');return;}
+  fillProductSelects();
   $('peid').value='';$('pmt').textContent='Add Product';
   $('pname').value='';$('pprice').value='';$('pstock').value='';
   $('pmin').value='5';$('pdesc').value='';
+  $('pcat').value='pantry';$('punit').value='pcs';
+  $('psku').value='';$('pqr').value='';
+  $('pactive').checked=true;$('phidden').checked=false;
   $('pemoji').value='🍎';$('pimg').value='';
   clearImg();rEGrid('🍎');switchImgTab('img');openM('mprod');
 }
 function editProd(id){
   if(!perm('canManageProducts')){toast('⛔ Admin only: Edit Products','err');return;}
+  fillProductSelects();
   const p=S.products.find(x=>x.id===id);if(!p)return;
   $('peid').value=p.id;$('pmt').textContent='Edit Product';
-  $('pname').value=p.n;$('pprice').value=p.p;$('pstock').value=p.s;
-  $('pmin').value=p.min;$('pdesc').value=p.d||'';
-  $('pemoji').value=p.e||'🍎';$('pcat').value=p.cat;
+  $('pname').value=p.n||p.name||'';$('pprice').value=p.p||p.price||'';$('pstock').value=p.s||p.stock||0;
+  $('pmin').value=p.min||5;$('pdesc').value=p.d||p.description||'';
+  $('pemoji').value=p.e||'🍎';
+  $('pcat').value=p.categoryKey||findCategoryKeyByLabel(p.cat||p.category);
+  $('punit').value=p.unit||'pcs';
+  $('psku').value=p.sku||'';
+  $('pqr').value=p.qrCode||p.barcode||p.sku||'';
+  $('pactive').checked=p.active!==false;
+  $('phidden').checked=!!p.hidden;
   clearImg();
-  if(p.img){showImgPreview(p.img);switchImgTab('img');}
+  if(p.img||p.imageData||p.imageUrl){showImgPreview(p.img||p.imageData||p.imageUrl);switchImgTab('img');}
   else{switchImgTab('emoji');}
   rEGrid(p.e||'🍎');openM('mprod');
 }
@@ -5227,17 +5329,51 @@ function saveProd(){
   const n=$('pname').value.trim(),p=parseFloat($('pprice').value)||0;
   if(!n||!p){toast('Name and price required','err');return;}
   const eid=parseInt($('peid').value)||0;
+  const now=Date.now();
   const img=$('pimg').value.trim()||'';
+  const categoryKey=$('pcat').value||'pantry';
+  const category=productCategoryLabel(categoryKey);
+  const unit=$('punit').value||'pcs';
+  const sku=($('psku').value.trim()||makeProductCode(n)+'-'+now.toString().slice(-4)).toUpperCase();
+  const qrCode=$('pqr').value.trim()||sku;
+  const old=eid?S.products.find(x=>x.id===eid):null;
+  const createdBy=old&&old.createdBy?old.createdBy:(S.cur&&S.cur.user?S.cur.user:'admin');
+  const createdAt=old&&old.createdAt?old.createdAt:now;
+
   const obj={
+    // legacy fields used by current POS
     e:$('pemoji').value||'🍎',
     img,
-    n,cat:$('pcat').value,p,
+    n,
+    cat:category,
+    p,
     s:parseInt($('pstock').value)||0,
     min:parseInt($('pmin').value)||5,
-    d:$('pdesc').value.trim()
+    d:$('pdesc').value.trim(),
+
+    // extended product fields
+    name:n,
+    category,
+    categoryKey,
+    price:p,
+    stock:parseInt($('pstock').value)||0,
+    unit,
+    sku,
+    barcode:old&&old.barcode?old.barcode:'',
+    qrCode,
+    imageData:img,
+    imageUrl:old&&old.imageUrl?old.imageUrl:'',
+    description:$('pdesc').value.trim(),
+    active:$('pactive').checked,
+    hidden:$('phidden').checked,
+    createdBy,
+    createdAt,
+    updatedBy:S.cur&&S.cur.user?S.cur.user:'admin',
+    updatedAt:now
   };
-  if(eid){Object.assign(S.products.find(x=>x.id===eid),obj);addAct('✏️','Updated',n,'var(--bl)');toast('Updated');}
-  else{S.products.push({id:Date.now(),...obj});addAct('➕','Product Added',n,'var(--gl)');toast('Product added');}
+
+  if(eid){Object.assign(old,obj);addAct('✏️','Updated',n,'var(--bl)');toast('Updated');}
+  else{S.products.push({id:now,...obj});addAct('➕','Product Added',n,'var(--gl)');toast('Product added');}
   sv();closeM('mprod');
   // Reset active category to 'All' so the new product is always visible
   actCat='All';
