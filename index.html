@@ -3857,7 +3857,7 @@ function rDash(){
 
 // ─────── POS ───────
 function rPOS(){
-  const cats=['All',...new Set(S.products.map(p=>p.cat))];
+  const cats=['All',...new Set(S.products.filter(p=>p.active!==false&&!p.hidden).map(p=>p.cat))];
   if(!cats.includes('Pick up')) cats.push('Pick up');
   const rolePerms = PERMS[(S.cur&&S.cur.role)||'Sales'] || PERMS.Sales;
   if(rolePerms.showPosCategoryTabs){
@@ -5600,15 +5600,23 @@ function rAdmProds(){
           :`<span style="font-size:44px">${p.e||'🍎'}</span>`}
       </div>
       <div class="adm-pc-body">
-        <div class="adm-pc-name" title="${p.n}">${p.n}</div>
-        <div style="font-size:11px;color:var(--t3);margin-bottom:6px">${p.cat}</div>
+        <div class="adm-pc-name" title="${p.n||p.name}">${p.n||p.name}</div>
+        <div style="font-size:11px;color:var(--t3);margin-bottom:6px">${p.cat||p.category||'Pantry'} · ${productUnitLabel(p.unit||'pcs')}</div>
         <div class="adm-pc-meta">
-          <span class="adm-pc-price">₱${p.p.toFixed(2)}</span>
+          <span class="adm-pc-price">₱${Number(p.p||p.price||0).toFixed(2)}</span>
           <span>${stLabel(p)}</span>
         </div>
-        <div class="adm-pc-stock" style="margin-bottom:9px">
-          <span style="color:${stColor(p)};font-weight:700">${p.s}</span> in stock
-          · min <strong>${p.min}</strong>
+        <div class="adm-pc-stock" style="margin-bottom:7px">
+          <span style="color:${stColor(p)};font-weight:700">${p.s||p.stock||0}</span> ${productUnitLabel(p.unit||'pcs')} in stock
+          · min <strong>${p.min||0}</strong>
+        </div>
+        <div style="display:grid;gap:5px;margin-bottom:9px;font-size:11px;color:var(--t3)">
+          <div><strong style="color:var(--t2)">SKU:</strong> ${p.sku||'—'}</div>
+          <div><strong style="color:var(--t2)">QR:</strong> ${p.qrCode||p.barcode||p.sku||'—'}</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:2px">
+            ${p.active===false?'<span class="tg gr">Inactive</span>':'<span class="tg gg">Active</span>'}
+            ${p.hidden?'<span class="tg go">Hidden</span>':'<span class="tg gb">Visible</span>'}
+          </div>
         </div>
         <div class="adm-pc-btns">
           ${perm('canManageProducts')?`<button class="btn bw bsm" style="flex:1;justify-content:center" onclick="editProd(${p.id})">✏️ Edit</button>`:''}
