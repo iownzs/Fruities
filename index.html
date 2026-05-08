@@ -2661,7 +2661,7 @@ body.dark #chat-minimize-channels-btn.is-collapsed{background:#14281e!important;
     <!-- PRODUCTS -->
     <div class="view" id="view-products">
       <div class="sh"><h2>Products</h2><button class="btn bg" onclick="openProdM()">+ Add Product</button></div>
-      <div class="card"><div class="tw"><table><thead><tr><th>Product</th><th>Category</th><th>Unit</th><th>SKU / QR</th><th>Price</th><th>Stock</th><th>Status</th><th></th></tr></thead><tbody id="ptbl"></tbody></table></div></div>
+      <div class="card"><div class="tw"><table><thead><tr><th>Product</th><th>Category</th><th>Unit</th><th>SKU / Barcode</th><th>Price</th><th>Stock</th><th>Status</th><th></th></tr></thead><tbody id="ptbl"></tbody></table></div></div>
     </div>
 
     <!-- ADMIN PANEL -->
@@ -3198,7 +3198,7 @@ body.dark #chat-minimize-channels-btn.is-collapsed{background:#14281e!important;
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
         <div class="fg"><label>SKU</label><input class="fi" id="psku" placeholder="e.g. MS-CUP-001"></div>
-        <div class="fg"><label>QR Code</label><input class="fi" id="pqr" placeholder="Auto uses SKU/name"></div>
+        <div class="fg"><label>Barcode</label><input class="fi" id="pqr" placeholder="Auto uses SKU"></div>
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
@@ -5376,7 +5376,7 @@ function rProds(){
     const stock=Number(p.s||p.stock||0);
     const min=Number(p.min||0);
     const sku=p.sku||'—';
-    const qr=p.qrCode||p.barcode||p.sku||'—';
+    const barcode=p.barcode||p.qrCode||p.sku||'—';
     const active=p.active!==false;
     const hidden=!!p.hidden;
 
@@ -5386,7 +5386,7 @@ function rProds(){
       <td><span class="tg gb">${productUnitLabel(unit)}</span></td>
       <td style="font-size:11px;color:var(--t2);line-height:1.45">
         <div><strong>SKU:</strong> ${sku}</div>
-        <div><strong>QR:</strong> ${qr}</div>
+        <div><strong>Barcode:</strong> ${barcode}</div>
       </td>
       <td><strong style="color:var(--green)">₱${price.toFixed(2)}</strong></td>
       <td>${stock<=min&&stock>0?'⚠️ ':''}${stock<=0?'<span style="color:var(--red)">0</span>':stock}</td>
@@ -5637,7 +5637,7 @@ function editProd(id){
   $('pcat').value=p.categoryKey||findCategoryKeyByLabel(p.cat||p.category);
   $('punit').value=p.unit||'pcs';
   $('psku').value=p.sku||'';
-  $('pqr').value=p.qrCode||p.barcode||p.sku||'';
+  $('pqr').value=p.barcode||p.qrCode||p.sku||'';
   $('pactive').checked=p.active!==false;
   $('phidden').checked=!!p.hidden;
   clearImg();
@@ -5658,7 +5658,8 @@ function saveProd(){
   const category=productCategoryLabel(categoryKey);
   const unit=$('punit').value||'pcs';
   const sku=($('psku').value.trim()||makeProductCode(n)+'-'+now.toString().slice(-4)).toUpperCase();
-  const qrCode=$('pqr').value.trim()||sku;
+  const barcode=$('pqr').value.trim()||sku;
+  const qrCode=barcode; // legacy compatibility; products use barcode, orders use QR
   const old=eid?S.products.find(x=>x.id===eid):null;
   const createdBy=old&&old.createdBy?old.createdBy:(S.cur&&S.cur.user?S.cur.user:'admin');
   const createdAt=old&&old.createdAt?old.createdAt:now;
@@ -5682,7 +5683,7 @@ function saveProd(){
     stock:parseInt($('pstock').value)||0,
     unit,
     sku,
-    barcode:old&&old.barcode?old.barcode:'',
+    barcode,
     qrCode,
     imageData:img,
     imageUrl:old&&old.imageUrl?old.imageUrl:'',
