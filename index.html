@@ -5291,6 +5291,52 @@ function makeProductCode(name){
     .slice(0,18) || 'PRODUCT';
 }
 
+
+const PRODUCT_FIREBASE_DB_URL = 'https://fruities-pos-default-rtdb.asia-southeast1.firebasedatabase.app';
+const PRODUCT_FIREBASE_STORE_ID = 'fruit-story-main';
+
+function firebaseSafeProduct(product){
+  const copy = Object.assign({}, product || {});
+  delete copy.__tmp;
+  return copy;
+}
+
+function saveProductToFirebase(product){
+  if(!product || product.id == null) return Promise.resolve(false);
+
+  return fetch(PRODUCT_FIREBASE_DB_URL + '/stores/' + PRODUCT_FIREBASE_STORE_ID + '/products/' + encodeURIComponent(product.id) + '.json', {
+    method: 'PUT',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(firebaseSafeProduct(product))
+  })
+  .then(function(res){
+    if(!res.ok) throw new Error('Firebase product save failed');
+    return true;
+  })
+  .catch(function(err){
+    console.warn('[Product Firebase Save]', err);
+    try{ toast('⚠️ Product saved locally, Firebase sync failed','warn'); }catch(e){}
+    return false;
+  });
+}
+
+function deleteProductFromFirebase(id){
+  if(id == null) return Promise.resolve(false);
+
+  return fetch(PRODUCT_FIREBASE_DB_URL + '/stores/' + PRODUCT_FIREBASE_STORE_ID + '/products/' + encodeURIComponent(id) + '.json', {
+    method: 'DELETE'
+  })
+  .then(function(res){
+    if(!res.ok) throw new Error('Firebase product delete failed');
+    return true;
+  })
+  .catch(function(err){
+    console.warn('[Product Firebase Delete]', err);
+    try{ toast('⚠️ Product deleted locally, Firebase delete failed','warn'); }catch(e){}
+    return false;
+  });
+}
+
 function openProdM(){
   if(!perm('canManageProducts')){toast('\u26d4 Admin only: Manage Products','err');return;}
   fillProductSelects();
@@ -5372,8 +5418,24 @@ function saveProd(){
     updatedAt:now
   };
 
-  if(eid){Object.assign(old,obj);addAct('✏️','Updated',n,'var(--bl)');toast('Updated');}
-  else{S.products.push({id:now,...obj});addAct('➕','Product Added',n,'var(--gl)');toast('Product added');}
+  let savedProduct;
+  if(eid){
+    Object.assign(old,obj);
+    savedProduct = old;
+    addAct('✏️','Updated',n,'var(--bl)');
+    toast('Updated');
+  }
+  else{
+    savedProduct = {id:now,...obj};
+    S.products.push(savedProduct);
+    addAct('➕','Product Added',n,'var(--gl)');
+    toast('Product added');
+  }
+
+  saveProductToFirebase(savedProduct).then(function(ok){
+    if(ok) toast('Product synced to Firebase ✅');
+  });
+
   sv();closeM('mprod');
   // Reset active category to 'All' so the new product is always visible
   actCat='All';
@@ -5387,6 +5449,9 @@ function delProd(id){
   if(!perm('canManageProducts')){toast('⛔ Admin only: Delete Products','err');return;}
   if(!confirm('Delete?'))return;
   S.products=S.products.filter(x=>x.id!==id);
+  deleteProductFromFirebase(id).then(function(ok){
+    if(ok) toast('Product removed from Firebase ✅');
+  });
   // If current actCat no longer has any products, reset to 'All'
   if(actCat!=='All'&&!S.products.find(p=>p.cat===actCat)) actCat='All';
   sv();rProds();
