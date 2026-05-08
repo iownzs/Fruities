@@ -2027,7 +2027,7 @@ body.dark #chat-minimize-channels-btn.is-collapsed{background:#14281e!important;
   }
 
   html.firebase-billing-checking body::after {
-    content: "Checking POS access...";
+    content: "Opening POS...";
     position: fixed;
     left: 50%;
     top: calc(50% + 10px);
@@ -15908,9 +15908,9 @@ font-size:14px">Okay</button>'
 
     fetchBilling();
 
-    setTimeout(fetchBilling, 500);
-    setTimeout(fetchBilling, 1500);
-    setTimeout(fetchBilling, 3500);
+    setTimeout(fetchBilling, 150);
+    setTimeout(fetchBilling, 600);
+    setTimeout(fetchBilling, 1200);
 
     setInterval(fetchBilling, 10000);
 
@@ -15986,13 +15986,14 @@ font-size:14px">Okay</button>'
     if(document.documentElement.classList.contains('firebase-billing-checking')){
       check();
     }
-  }, 2500);
+  }, 600);
 
   setTimeout(function(){
     if(document.documentElement.classList.contains('firebase-billing-checking')){
       releaseGate();
+      check();
     }
-  }, 6000);
+  }, 1200);
 })();
 </script>
 
