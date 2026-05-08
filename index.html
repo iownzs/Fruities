@@ -5670,7 +5670,6 @@ function rAccs(){
 
   $('admin-logged-user').textContent = S.cur.name + ' (' + S.cur.role + ')';
   setAdmTab(admTab, document.querySelector('.adm-tab.on') || document.querySelector('.adm-tab'));
-  rPermTable();
 }
 
 function rAdmOverview(){
@@ -5723,11 +5722,48 @@ function setAdmTab(tab, el){
   $('adm-system').style.display   = tab==='system'   ? '' : 'none';
 
   if(tab==='overview') rAdmOverview();
-  if(tab==='users')    { rAdmUsers(); rPermTable(); }
+  if(tab==='users')    { rAdmUsers(); }
   if(tab==='products') rAdmProds();
-  if(tab==='roles')    { /* Roles placeholder only for now */ }
+  if(tab==='roles')    { rAdmRoles(); }
   if(tab==='system')   rAdmSystem();
 }
+
+
+function rAdmRoles(){
+  const roles = $('adm-roles');
+  if(!roles) return;
+
+  let mount = $('adm-roles-editor-mount');
+  if(!mount){
+    roles.innerHTML = `
+      <div class="card" style="margin-bottom:14px">
+        <div class="ct2">🔐 Roles & Permissions</div>
+        <div style="font-size:13px;color:var(--t2);line-height:1.6">
+          Control what each role can access in the POS.
+        </div>
+      </div>
+      <div class="card">
+        <div id="adm-roles-editor-mount"></div>
+      </div>
+    `;
+    mount = $('adm-roles-editor-mount');
+  }
+
+  const oldWrap = $('perm-editor-wrap');
+  if(oldWrap && oldWrap.parentNode !== mount){
+    mount.appendChild(oldWrap);
+    oldWrap.style.display = '';
+  }
+
+  const firebaseEditor = $('firebase-role-editor');
+  if(firebaseEditor && firebaseEditor.parentNode !== mount){
+    mount.appendChild(firebaseEditor);
+    firebaseEditor.style.display = '';
+  }
+
+  if(typeof rPermTable === 'function') rPermTable();
+}
+
 
 // ── Users ──
 function rAdmUsers(){
