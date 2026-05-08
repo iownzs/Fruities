@@ -2617,13 +2617,33 @@ body.dark #chat-minimize-channels-btn.is-collapsed{background:#14281e!important;
 
         <!-- Admin tabs -->
         <div class="adm-tabs" id="adm-tabs">
-          <div class="adm-tab on" onclick="setAdmTab('users',this)">👥 Users</div>
+          <div class="adm-tab on" onclick="setAdmTab('overview',this)">📊 Overview</div>
+          <div class="adm-tab" onclick="setAdmTab('users',this)">👥 Users</div>
           <div class="adm-tab" onclick="setAdmTab('products',this)">🏷️ Products</div>
           <div class="adm-tab" onclick="setAdmTab('system',this)">⚙️ System</div>
         </div>
 
+        <!-- ── OVERVIEW TAB ── -->
+        <div id="adm-overview">
+          <div id="adm-overview-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px"></div>
+
+          <div class="card" style="margin-bottom:14px">
+            <div class="ct2">📌 Admin Workspace</div>
+            <div style="font-size:13px;color:var(--t2);line-height:1.6">
+              Use Users for staff accounts, Products for catalogue and stock, and System for store/data settings.
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="ct2">✅ Recommended Checks</div>
+            <div style="font-size:13px;color:var(--t2);line-height:1.6">
+              Review low-stock products, confirm visible products are active, and check POS access/billing before daily operation.
+            </div>
+          </div>
+        </div>
+
         <!-- ── USERS TAB ── -->
-        <div id="adm-users">
+        <div id="adm-users" style="display:none">
           <div class="sh" style="margin-bottom:14px">
             <div style="font-size:15px;font-weight:700;color:var(--t2)">👥 System Users <span id="adm-user-count" class="tg gy" style="font-family:inherit;font-size:12px;margin-left:6px"></span></div>
             <button class="btn bg" onclick="openAccM()">+ Add User</button>
@@ -5621,7 +5641,7 @@ function delProd(id){
 }
 
 // ─────── ADMIN PANEL ───────
-let admTab='users';
+let admTab='overview';
 
 function rAccs(){
   // Guard: only admin can see this
@@ -5635,13 +5655,55 @@ function rAccs(){
   rPermTable();
 }
 
+function rAdmOverview(){
+  const products = Array.isArray(S.products) ? S.products : [];
+  const users = Array.isArray(S.accounts) ? S.accounts : [];
+  const orders = Array.isArray(S.orders) ? S.orders : [];
+  const billing = S.billing || {};
+
+  const activeUsers = users.filter(u=>u.status!=='inactive' && u.active!==false).length;
+  const visibleProducts = products.filter(p=>p.active!==false && !p.hidden).length;
+  const hiddenProducts = products.filter(p=>p.hidden).length;
+  const lowStock = products.filter(p=>{
+    const s = Number(p.s ?? p.stock ?? 0);
+    const m = Number(p.min ?? 0);
+    return s > 0 && m > 0 && s <= m;
+  }).length;
+  const outStock = products.filter(p=>Number(p.s ?? p.stock ?? 0)<=0).length;
+  const pendingOrders = orders.filter(o=>o.status==='pending'||o.status==='cod').length;
+  const locked = billing.posAccessEnabled===false || billing.manualDisabled===true || billing.status==='disabled' || billing.status==='locked';
+
+  const card = (icon,label,value,sub,color='var(--t)') => `
+    <div class="sc" style="min-height:112px">
+      <div class="sl">${label}</div>
+      <div class="sv" style="font-size:24px;color:${color}">${value}</div>
+      <div class="ss">${sub}</div>
+      <div class="si">${icon}</div>
+    </div>`;
+
+  const grid = $('adm-overview-grid');
+  if(!grid) return;
+
+  grid.innerHTML =
+    card('👥','Users',users.length,activeUsers+' active') +
+    card('🏷️','Products',products.length,visibleProducts+' visible · '+hiddenProducts+' hidden') +
+    card('⚠️','Low Stock',lowStock,outStock+' out of stock','var(--orange)') +
+    card('🧾','Pending Orders',pendingOrders,'needs attention') +
+    card('🔐','POS Access',locked?'Locked':'Active',billing.status||'active',locked?'var(--red)':'var(--green)') +
+    card('💳','Next Due',billing.nextDueDate||billing.nextDue||'—','billing date');
+}
+
 function setAdmTab(tab, el){
   admTab=tab;
   document.querySelectorAll('.adm-tab').forEach(t=>t.classList.remove('on'));
   if(el) el.classList.add('on');
+
+  $('adm-overview').style.display = tab==='overview' ? '' : 'none';
   $('adm-users').style.display    = tab==='users'    ? '' : 'none';
   $('adm-products').style.display = tab==='products' ? '' : 'none';
   $('adm-system').style.display   = tab==='system'   ? '' : 'none';
+
+  if(tab==='overview') rAdmOverview();
   if(tab==='users')    { rAdmUsers(); rPermTable(); }
   if(tab==='products') rAdmProds();
   if(tab==='system')   rAdmSystem();
