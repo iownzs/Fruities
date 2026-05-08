@@ -4782,7 +4782,7 @@ function rKitchen(){
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
           <div>
             <div class="k-card-id">${o.id}</div>
-            <div class="k-card-cust">${o.cust||'Walk-in'}</div>
+            <div class="k-card-cust">${o.cust||'Pickup'}</div>
             <div class="k-prio-row"><span class="k-prio-badge ${orderPriority(o)}">${getPriorityLabel(orderPriority(o))}</span></div>
           </div>
           <div style="text-align:right">
@@ -4849,7 +4849,7 @@ function kitSendToPickup(id){
   o.kitForPickup=true;
   o.kitStatus='out';
   if(!o.kitOutAt) o.kitOutAt=Date.now();
-  addAct('🛍️','Sent to Pickup',`${o.id} — ${o.cust||'Walk-in'}`,'var(--ol)');
+  addAct('🛍️','Sent to Pickup',`${o.id} — ${o.cust||'Pickup'}`,'var(--ol)');
   sv();updBadge();rKitchen();toast('🛍️ Sent to Pick up!');updTrackData();
 }
 
@@ -4860,7 +4860,7 @@ function kitPickup(id){
   o.kitStatus='out';
   if(!o.kitOutAt) o.kitOutAt=Date.now();
   if(o.status==='pending'||o.status==='cod') o.status='completed';
-  addAct('🛍️','Picked Up',`${o.id} — ${o.cust||'Walk-in'}`,'var(--ol)');
+  addAct('🛍️','Picked Up',`${o.id} — ${o.cust||'Pickup'}`,'var(--ol)');
   sv();updBadge();rKitchen();rPickup();toast('🛍️ Order picked up!');updTrackData();updBadge();
 }
 
@@ -4917,7 +4917,7 @@ function rPickup(){
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
         <div>
           <div class="k-card-id">${o.id}</div>
-          <div class="k-card-cust">${o.cust||'Walk-in'}</div>
+          <div class="k-card-cust">${o.cust||'Pickup'}</div>
           ${o.phone?`<div style="font-size:12px;color:var(--t2);margin-top:2px">📞 ${o.phone}</div>`:''}
         </div>
         <div style="text-align:right">
@@ -4968,7 +4968,7 @@ const TRACK_KEY='fs_kitchen_track';
 function updTrackData(){
   // Store lightweight public-facing status in localStorage under a shared key
   const pub=S.orders.filter(o=>o.status!=='refunded').map(o=>({
-    id:o.id,cust:o.cust||'Walk-in',
+    id:o.id,cust:o.cust||'Pickup',
     items:o.items.map(i=>(i.e||'🍎')+' '+i.n+' ×'+i.q).join(', '),
     total:o.total,
     kitStatus:o.kitStatus||'new',
@@ -5328,7 +5328,7 @@ function rDel(){
         <div style="margin-top:3px"><span class="prio-badge ${orderPriority(o)}">${getPriorityLabel(orderPriority(o))}</span></div>
       </div>
       <div class="dtc-mid">
-        <div class="dtc-cust">${d.cust || 'Walk-in'}</div>
+        <div class="dtc-cust">${d.cust || 'Pickup'}</div>
         <div class="dtc-sub" style="color:var(--green);font-weight:700">👤 Created by: ${orderCreatorLabel(o)}</div>
         ${d.recipient?`<div class="dtc-sub">🎁 ${d.recipient}${d.recipientPhone?' · '+d.recipientPhone:''}</div>`:''}
         <div class="dtc-sub">🏍️ ${d.rider || 'No rider yet'}</div>
@@ -6985,7 +6985,7 @@ function findOrderDelivery(o){
     return String(d.oid||d.orderId||d.order_id||d.order||'')===oid;
   }) || null;
 }
-function orderCustomerName(o){ return o.cust || o.customer || o.customerName || 'Walk-in'; }
+function orderCustomerName(o){ return o.cust || o.customer || o.customerName || 'Pickup'; }
 function orderCustomerPhone(o){ return o.phone || o.customerNumber || o.customerPhone || o.cphone || ''; }
 function orderRecipientName(o){ return o.recipientName || o.recipient || o.receiverName || ''; }
 function orderRecipientPhone(o){ return o.recipientNumber || o.recipientPhone || o.receiverPhone || ''; }
@@ -7087,7 +7087,7 @@ function handleChatOrderInput(){
   chatOrderIndex=0;
   if(!chatOrderMatches.length){menu.innerHTML='<div class="chat-mention-hint">No matching orders</div>';menu.classList.add('on');return true;}
   menu.innerHTML='<div class="chat-mention-hint">Tag an order for live status</div>'+chatOrderMatches.map(function(o,i){
-    return '<div class="chat-order-option '+(i===0?'on':'')+'" data-i="'+i+'" onmousedown="event.preventDefault();selectChatOrder('+i+')"><div><div class="oid">#'+esc(o.id)+'</div><div class="meta">'+esc(o.cust||'Walk-in')+' · '+esc(o.status||'—')+' · '+esc(getPriorityLabel(orderPriority(o)))+'</div></div><div class="amt">₱'+Number(o.total||0).toFixed(2)+'</div></div>';
+    return '<div class="chat-order-option '+(i===0?'on':'')+'" data-i="'+i+'" onmousedown="event.preventDefault();selectChatOrder('+i+')"><div><div class="oid">#'+esc(o.id)+'</div><div class="meta">'+esc(o.cust||'Pickup')+' · '+esc(o.status||'—')+' · '+esc(getPriorityLabel(orderPriority(o)))+'</div></div><div class="amt">₱'+Number(o.total||0).toFixed(2)+'</div></div>';
   }).join('');
   menu.classList.add('on');
   return true;
@@ -7804,7 +7804,7 @@ window.addEventListener('load',function(){
     var recipientPhone = (($('crecipientphone') && $('crecipientphone').value) || '').trim();
     var addr = (($('caddr') && $('caddr').value) || '').trim();
 
-    if($('cart-customer-label')) $('cart-customer-label').textContent = '👤 ' + (cust || 'Walk-in');
+    if($('cart-customer-label')) $('cart-customer-label').textContent = '👤 ' + (cust || 'Pickup');
 
     if($('cart-customer-meta')){
       var meta = [];
@@ -8163,7 +8163,7 @@ window.addEventListener('load',function(){
       }
     }
 
-    var cust = (byId('cin') && byId('cin').value.trim()) || 'Walk-in';
+    var cust = (byId('cin') && byId('cin').value.trim()) || 'Pickup';
     var phone = (byId('cphone') && byId('cphone').value.trim()) || '';
     var recipient = (byId('crecipient') && byId('crecipient').value.trim()) || '';
     var recipientPhone = (byId('crecipientphone') && byId('crecipientphone').value.trim()) || '';
@@ -8444,7 +8444,7 @@ window.addEventListener('load',function(){
       }
     }
 
-    var cust = (byId('cin') && byId('cin').value.trim()) || 'Walk-in';
+    var cust = (byId('cin') && byId('cin').value.trim()) || 'Pickup';
     var phone = (byId('cphone') && byId('cphone').value.trim()) || '';
     var recipient = (byId('crecipient') && byId('crecipient').value.trim()) || '';
     var recipientPhone = (byId('crecipientphone') && byId('crecipientphone').value.trim()) || '';
@@ -8818,7 +8818,7 @@ window.addEventListener('load',function(){
       }
     }
 
-    var cust = (byId('cin') && byId('cin').value.trim()) || 'Walk-in';
+    var cust = (byId('cin') && byId('cin').value.trim()) || 'Pickup';
     var phone = (byId('cphone') && byId('cphone').value.trim()) || '';
     var recipient = (byId('crecipient') && byId('crecipient').value.trim()) || '';
     var recipientPhone = (byId('crecipientphone') && byId('crecipientphone').value.trim()) || '';
@@ -9196,7 +9196,7 @@ window.addEventListener('load',function(){
           +'<div class="g77-total"><div class="meta">Total</div><div class="value">₱'+fmtPeso(o.total || 0)+'</div></div>'
           +'<div class="g77-grid">'
             +'<div class="g77-box"><span class="g77-box-label">Details</span><div class="g77-kv">'
-              +'<div class="g77-kv-row"><span>Customer</span><strong>'+esc(cust || 'Walk-in')+'</strong></div>'
+              +'<div class="g77-kv-row"><span>Customer</span><strong>'+esc(cust || 'Pickup')+'</strong></div>'
               +'<div class="g77-kv-row"><span>Customer Number</span><strong>'+(phone ? esc(phone) : '—')+'</strong></div>'
               +(rec ? '<div class="g77-kv-row"><span>Recipient</span><strong>'+esc(rec)+'</strong></div>' : '')
               +(rec || recPhone ? '<div class="g77-kv-row"><span>Recipient Number</span><strong>'+(recPhone ? esc(recPhone) : '—')+'</strong></div>' : '')
@@ -9311,7 +9311,7 @@ window.addEventListener('load',function(){
           +'<div class="g77-total"><div class="meta">Total</div><div class="value">₱'+fmtPeso(o.total || 0)+'</div></div>'
           +'<div class="g77-grid">'
             +'<div class="g77-box"><span class="g77-box-label">Details</span><div class="g77-kv">'
-              +'<div class="g77-kv-row"><span>Customer</span><strong>'+esc(cust || 'Walk-in')+'</strong></div>'
+              +'<div class="g77-kv-row"><span>Customer</span><strong>'+esc(cust || 'Pickup')+'</strong></div>'
               +'<div class="g77-kv-row"><span>Customer Number</span><strong>'+(phone ? esc(phone) : '—')+'</strong></div>'
               +(rec ? '<div class="g77-kv-row"><span>Recipient</span><strong>'+esc(rec)+'</strong></div>' : '')
               +(rec || recPhone ? '<div class="g77-kv-row"><span>Recipient Number</span><strong>'+(recPhone ? esc(recPhone) : '—')+'</strong></div>' : '')
@@ -9461,7 +9461,7 @@ window.addEventListener('load',function(){
   function orderQrPayload(o){
     if(!o) return '';
     // Single shared payload for both printed receipt QR and Orders > Order Code QR.
-    return String(o.id || '') + '|' + String(o.cust || 'Walk-in') + '|' + money(o.total || 0);
+    return String(o.id || '') + '|' + String(o.cust || 'Pickup') + '|' + money(o.total || 0);
   }
 
   function drawBlackWhiteQR(target, order, size){
@@ -10021,7 +10021,7 @@ window.addEventListener('load',function(){
         '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">'+
           '<div style="min-width:0">'+
             '<div class="k-card-id">'+escV(o.id)+'</div>'+
-            '<div class="k-card-cust">'+escV(o.cust||'Walk-in')+'</div>'+
+            '<div class="k-card-cust">'+escV(o.cust||'Pickup')+'</div>'+
             '<div class="k-prio-row"><span class="k-prio-badge '+escV(orderPriority(o))+'">'+escV(getPriorityLabel(orderPriority(o)))+'</span></div>'+
           '</div>'+
           '<div style="text-align:right;flex-shrink:0">'+
@@ -10127,7 +10127,7 @@ window.addEventListener('load',function(){
     if(!o.kitOutAt) o.kitOutAt = Date.now();
 
     if(typeof addAct === 'function'){
-      addAct('🛍️','Sent to Pickup', o.id + ' — ' + (o.cust || 'Walk-in'), 'var(--ol)');
+      addAct('🛍️','Sent to Pickup', o.id + ' — ' + (o.cust || 'Pickup'), 'var(--ol)');
     }
 
     try{ if(typeof sv === 'function') sv(); }catch(e){}
@@ -10216,7 +10216,7 @@ window.addEventListener('load',function(){
         '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">'+
           '<div style="min-width:0">'+
             '<div class="k-card-id">'+escV(o.id)+'</div>'+
-            '<div class="k-card-cust">'+escV(o.cust||'Walk-in')+'</div>'+
+            '<div class="k-card-cust">'+escV(o.cust||'Pickup')+'</div>'+
             '<div class="k-prio-row"><span class="k-prio-badge '+escV(orderPriority(o))+'">'+escV(getPriorityLabel(orderPriority(o)))+'</span></div>'+
           '</div>'+
           '<div style="text-align:right;flex-shrink:0">'+
@@ -10626,7 +10626,7 @@ window.addEventListener('load',function(){
           o.pickupTime = String((byId('cpickuptime') && byId('cpickuptime').value) || '').trim();
 
           // Reuse existing fields so it appears across Orders, receipt, pickup, and group cards.
-          o.cust = o.pickupName || o.cust || 'Walk-in';
+          o.cust = o.pickupName || o.cust || 'Pickup';
           o.phone = o.pickupPhone || o.phone || '';
           o.deliveryDate = o.pickupDate;
           o.deliveryTime = o.pickupTime;
@@ -10743,7 +10743,7 @@ window.addEventListener('load',function(){
     if(!o.kitOutAt) o.kitOutAt = Date.now();
 
     if(typeof addAct === 'function'){
-      addAct('🛍️','Sent to Pickup', o.id + ' — ' + (o.cust || 'Walk-in'), 'var(--ol)');
+      addAct('🛍️','Sent to Pickup', o.id + ' — ' + (o.cust || 'Pickup'), 'var(--ol)');
     }
 
     try{ if(typeof sv === 'function') sv(); }catch(e){}
@@ -10866,7 +10866,7 @@ window.addEventListener('load',function(){
         '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">'+
           '<div style="min-width:0">'+
             '<div class="k-card-id">'+escV(o.id)+'</div>'+
-            '<div class="k-card-cust">'+escV(o.cust||'Walk-in')+'</div>'+
+            '<div class="k-card-cust">'+escV(o.cust||'Pickup')+'</div>'+
             '<div class="k-prio-row"><span class="k-prio-badge '+escV(orderPriority(o))+'">'+escV(getPriorityLabel(orderPriority(o)))+'</span></div>'+
             pickupBadge+
           '</div>'+
@@ -11228,7 +11228,7 @@ window.addEventListener('load',function(){
     if(!o.kitOutAt) o.kitOutAt = Date.now();
 
     if(typeof addAct === 'function'){
-      addAct('🛍️','Sent to Pickup', o.id + ' — ' + (o.cust || 'Walk-in'), 'var(--ol)');
+      addAct('🛍️','Sent to Pickup', o.id + ' — ' + (o.cust || 'Pickup'), 'var(--ol)');
     }
 
     try{ if(typeof sv === 'function') sv(); }catch(e){}
@@ -11350,7 +11350,7 @@ window.addEventListener('load',function(){
         '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">'+
           '<div style="min-width:0">'+
             '<div class="k-card-id">'+escV(o.id)+'</div>'+
-            '<div class="k-card-cust">'+escV(o.cust||'Walk-in')+'</div>'+
+            '<div class="k-card-cust">'+escV(o.cust||'Pickup')+'</div>'+
             '<div class="k-prio-row"><span class="k-prio-badge '+escV(orderPriority(o))+'">'+escV(getPriorityLabel(orderPriority(o)))+'</span></div>'+
             typeBadge+
           '</div>'+
@@ -11618,7 +11618,7 @@ window.addEventListener('load',function(){
 
   window.addScanItemRow=function(item){const box=document.getElementById('scan-items');if(!box)return;const row=document.createElement('div');row.className='scan-item-row';row.innerHTML='<input class="fi scan-item-name" placeholder="Product name" value="'+String((item&&item.name)||'').replace(/"/g,'&quot;')+'"><input class="fi scan-item-qty" type="number" min="1" value="'+((item&&item.qty)||1)+'"><input class="fi scan-item-price" type="number" min="0" step="0.01" placeholder="Price" value="'+((item&&item.price)||'')+'"><button type="button" title="Remove" onclick="this.parentElement.remove()">×</button>';box.appendChild(row)};
   function collectScanItems(){return Array.from(document.querySelectorAll('#scan-items .scan-item-row')).map(row=>({name:norm(row.querySelector('.scan-item-name')?.value||''),qty:parseInt(row.querySelector('.scan-item-qty')?.value||'1',10)||1,price:parseFloat(row.querySelector('.scan-item-price')?.value||'0')||0})).filter(x=>x.name)}
-  window.applyScanDraftToCart=function(){if(!window.cart)window.cart=[];setVal('cin',val('scan-customer')||'Walk-in');setVal('cphone',val('scan-phone'));setVal('crecipient',val('scan-recipient'));setVal('crecipientphone',val('scan-recipient-phone'));const addrParts=[];if(val('scan-address'))addrParts.push(val('scan-address'));if(val('scan-delivery-date'))addrParts.push('Delivery Date: '+val('scan-delivery-date'));if(val('scan-delivery-time'))addrParts.push('Delivery Time: '+val('scan-delivery-time'));if(val('scan-order-type'))addrParts.push('Order Type: '+val('scan-order-type'));setVal('caddr',addrParts.join(' | '));setVal('cnotes',val('scan-notes'));if(typeof setCartPriority==='function')setCartPriority(val('scan-priority')||'normal');const products=(window.S&&Array.isArray(S.products))?S.products:[];collectScanItems().forEach(it=>{const match=productPriceByName(it.name);const p=products.find(x=>(x.name||x.n||'')===match.matched);if(p&&typeof productId==='function'){const id=String(productId(p));const existing=cart.find(c=>String(c.id)===id);if(existing)existing.q+=it.qty;else cart.push({id,n:p.name||p.n,e:p.emoji||p.e||'🍎',img:p.img||'',p:parseFloat(p.price||p.p||it.price||0)||0,q:it.qty})}else{const id='scan-'+Date.now()+'-'+Math.random().toString(36).slice(2,7);cart.push({id,n:it.name,e:'📝',img:'',p:it.price||0,q:it.qty})}});if(typeof rCart==='function')rCart();if(typeof rGrid==='function')rGrid();if(window.innerWidth<=768&&document.getElementById('pr'))document.getElementById('pr').classList.add('on');if(typeof closeM==='function')closeM('mscanorder');if(typeof toast==='function')toast('Draft applied to Current Order')};
+  window.applyScanDraftToCart=function(){if(!window.cart)window.cart=[];setVal('cin',val('scan-customer')||'Pickup');setVal('cphone',val('scan-phone'));setVal('crecipient',val('scan-recipient'));setVal('crecipientphone',val('scan-recipient-phone'));const addrParts=[];if(val('scan-address'))addrParts.push(val('scan-address'));if(val('scan-delivery-date'))addrParts.push('Delivery Date: '+val('scan-delivery-date'));if(val('scan-delivery-time'))addrParts.push('Delivery Time: '+val('scan-delivery-time'));if(val('scan-order-type'))addrParts.push('Order Type: '+val('scan-order-type'));setVal('caddr',addrParts.join(' | '));setVal('cnotes',val('scan-notes'));if(typeof setFulfillmentType==='function')setFulfillmentType(val('scan-order-type')||'delivery');if(typeof setCartPriority==='function')setCartPriority(val('scan-priority')||'normal');const products=(window.S&&Array.isArray(S.products))?S.products:[];collectScanItems().forEach(it=>{const match=productPriceByName(it.name);const p=products.find(x=>(x.name||x.n||'')===match.matched);if(p&&typeof productId==='function'){const id=String(productId(p));const existing=cart.find(c=>String(c.id)===id);if(existing)existing.q+=it.qty;else cart.push({id,n:p.name||p.n,e:p.emoji||p.e||'🍎',img:p.img||'',p:parseFloat(p.price||p.p||it.price||0)||0,q:it.qty})}else{const id='scan-'+Date.now()+'-'+Math.random().toString(36).slice(2,7);cart.push({id,n:it.name,e:'📝',img:'',p:it.price||0,q:it.qty})}});if(typeof rCart==='function')rCart();if(typeof rGrid==='function')rGrid();if(window.innerWidth<=768&&document.getElementById('pr'))document.getElementById('pr').classList.add('on');if(typeof closeM==='function')closeM('mscanorder');if(typeof toast==='function')toast('Draft applied to Current Order')};
 
 })();
 </script>
@@ -11988,7 +11988,7 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
     var last=S.__lastChatSystemSig||'';
     if(last===sig)return;
     S.__lastChatSystemSig=sig;
-    var cust=o.cust||o.customer||'Walk-in';
+    var cust=o.cust||o.customer||'Pickup';
     var text='🔔 '+action+' — #'+id+' · '+cust+' · '+shortStatus(o)+(extra?' · '+extra:'');
     S.chat.push({id:'SYS-'+Date.now()+'-'+Math.floor(Math.random()*9999),channelId:'general',user:'system',name:'System',role:'System',system:true,text:text,mentions:[],time:nowIso()});
     if(S.chat.length>700)S.chat=S.chat.slice(-700);
@@ -12065,7 +12065,7 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
     var board=byId('k-board'),empty=byId('k-empty');if(!board)return;board.className='k-board-restored-v1';if(!orders.length){board.style.display='none';if(empty)empty.style.display='';return}board.style.display='grid';if(empty)empty.style.display='none';
     function timerHtml(o){var s=normalizedKitStatus(o),start=Number(o.kitStart||0);if(s==='preparing'&&start){var ms=Date.now()-start;return '<div class="k-timer '+timerCls(ms)+'" id="kt-'+safe(o.id)+'">'+elapsedLabel(ms)+'</div><div style="font-size:10px;color:var(--t3)">prep time</div>'}if(s==='ready'&&start){var readyMs=(Number(o.kitReadyAt||Date.now())-start);return '<div style="font-size:11px;color:var(--green);font-weight:800;margin-top:6px">✅ Ready in '+elapsedLabel(readyMs)+'</div>'}return ''}
     function buttons(o){var s=normalizedKitStatus(o);if(s==='new')return '<button class="btn bg bsm" onclick="kitAction(\''+q(o.id)+'\',\'preparing\')">▶ Start Prep</button>';if(s==='preparing')return '<button class="btn bg bsm" onclick="kitAction(\''+q(o.id)+'\',\'ready\')">✅ Mark Ready</button>';if(s==='ready'){if(isPickup(o))return '<button class="btn bsm" style="background:var(--orange);color:#fff;border:none" onclick="kitSendToPickup(\''+q(o.id)+'\')">🛍️ For Pickup</button><button class="btn bw bsm" onclick="kitAction(\''+q(o.id)+'\',\'preparing\')">↩ Re-prep</button>';return '<button class="btn bg bsm" onclick="kitAction(\''+q(o.id)+'\',\'out\')">🚚 Send Delivery</button><button class="btn bsm" style="background:var(--orange);color:#fff;border:none" onclick="kitSendToPickup(\''+q(o.id)+'\')">🛍️ Pickup Instead</button><button class="btn bw bsm" onclick="kitAction(\''+q(o.id)+'\',\'preparing\')">↩ Re-prep</button>'}return ''}
-    function card(o){var items=(o.items||[]).map(function(i){return safe((i.e||'🍎')+' '+(i.n||i.name||'Item')+' ×'+(i.q||1))}).join('<br>')||'<span style="color:var(--t3)">No items</span>';var type=isPickup(o)?'<span class="tg go" style="margin-left:0;margin-top:6px">🛍️ Pickup</span>':'<span class="tg gb" style="margin-left:0;margin-top:6px">🚚 Delivery</span>';return '<div class="k-card"><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px"><div style="min-width:0"><div class="k-card-id">'+safe(o.id)+'</div><div class="k-card-cust">'+safe(o.cust||'Walk-in')+'</div><div class="k-prio-row"><span class="k-prio-badge '+safe(pri(o))+'">'+safe(priLabel(o))+'</span></div>'+type+'</div><div style="text-align:right;flex-shrink:0"><div style="font-size:13px;font-weight:800;color:var(--green)">₱'+money(o.total)+'</div><div style="font-size:10px;color:var(--t3);margin-top:1px">'+safe(fmtTime(o.time))+'</div></div></div><div class="k-card-items">'+items+'</div>'+(o.notes?'<div style="font-size:11px;background:var(--ol);color:#c45522;padding:5px 8px;border-radius:6px;margin-top:6px">📝 '+safe(o.notes)+'</div>':'')+timerHtml(o)+'<div class="k-card-btns">'+buttons(o)+'</div></div>'}
+    function card(o){var items=(o.items||[]).map(function(i){return safe((i.e||'🍎')+' '+(i.n||i.name||'Item')+' ×'+(i.q||1))}).join('<br>')||'<span style="color:var(--t3)">No items</span>';var type=isPickup(o)?'<span class="tg go" style="margin-left:0;margin-top:6px">🛍️ Pickup</span>':'<span class="tg gb" style="margin-left:0;margin-top:6px">🚚 Delivery</span>';return '<div class="k-card"><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px"><div style="min-width:0"><div class="k-card-id">'+safe(o.id)+'</div><div class="k-card-cust">'+safe(o.cust||'Pickup')+'</div><div class="k-prio-row"><span class="k-prio-badge '+safe(pri(o))+'">'+safe(priLabel(o))+'</span></div>'+type+'</div><div style="text-align:right;flex-shrink:0"><div style="font-size:13px;font-weight:800;color:var(--green)">₱'+money(o.total)+'</div><div style="font-size:10px;color:var(--t3);margin-top:1px">'+safe(fmtTime(o.time))+'</div></div></div><div class="k-card-items">'+items+'</div>'+(o.notes?'<div style="font-size:11px;background:var(--ol);color:#c45522;padding:5px 8px;border-radius:6px;margin-top:6px">📝 '+safe(o.notes)+'</div>':'')+timerHtml(o)+'<div class="k-card-btns">'+buttons(o)+'</div></div>'}
     function col(title,color,bg,list,emptyText){return '<div class="k-col"><div class="k-col-hdr" style="background:'+bg+';color:'+color+'"><span>'+title+'</span><span class="k-count">'+list.length+'</span></div>'+(list.length?list.map(card).join(''):'<div style="text-align:center;padding:24px 12px;color:var(--t3);font-size:13px">'+emptyText+'</div>')+'</div>'}
     board.innerHTML=col('🆕 New Orders','var(--blue)','var(--bl)',groups.new,'No new orders')+col('🔥 Preparing','#c45522','var(--ol)',groups.preparing,'Nothing cooking')+col('✅ Ready','var(--gd)','var(--gl)',groups.ready,'Nothing ready yet');
     if(groups.preparing.length){try{kitTimerInterval=setInterval(function(){groups.preparing.forEach(function(o){var el=byId('kt-'+o.id);if(el&&o.kitStart){var ms=Date.now()-Number(o.kitStart);el.textContent=elapsedLabel(ms);el.className='k-timer '+timerCls(ms)}})},1000)}catch(e){}}
@@ -12122,7 +12122,7 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
     if(s==='new')btn='<button class="btn bg bsm" onclick="kitAction(\''+Q(o.id)+'\',\'preparing\')">▶ Start Prep</button>';
     if(s==='preparing')btn='<button class="btn bg bsm" onclick="kitAction(\''+Q(o.id)+'\',\'ready\')">✅ Mark Ready</button>';
     if(s==='ready')btn=(isPickup(o)?'<button class="btn bsm" style="background:var(--orange);color:#fff;border:none" onclick="kitSendToPickup(\''+Q(o.id)+'\')">🛍️ For Pickup</button>':'<button class="btn bg bsm" onclick="kitAction(\''+Q(o.id)+'\',\'out\')">🚚 Send Delivery</button><button class="btn bsm" style="background:var(--orange);color:#fff;border:none" onclick="kitSendToPickup(\''+Q(o.id)+'\')">🛍️ Pickup Instead</button>')+'<button class="btn bw bsm" onclick="kitAction(\''+Q(o.id)+'\',\'preparing\')">↩ Re-prep</button>';
-    return '<div class="k-card"><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px"><div style="min-width:0"><div class="k-card-id">'+H(id)+'</div><div class="k-card-cust">'+H(o.cust||'Walk-in')+'</div><div class="k-prio-row"><span class="k-prio-badge '+H(pri(o))+'">'+H(pril(o))+'</span></div><span class="tg '+(isPickup(o)?'go':'gb')+'" style="margin-left:0;margin-top:6px">'+(isPickup(o)?'🛍️ Pickup':'🚚 Delivery')+'</span></div><div style="text-align:right;flex-shrink:0"><div style="font-size:13px;font-weight:800;color:var(--green)">₱'+Number(o.total||0).toFixed(2)+'</div><div style="font-size:10px;color:var(--t3);margin-top:1px">'+H(ftime(o.time))+'</div></div></div><div class="k-card-items">'+items+'</div>'+(o.notes?'<div style="font-size:11px;background:var(--ol);color:#c45522;padding:5px 8px;border-radius:6px;margin-top:6px">📝 '+H(o.notes)+'</div>':'')+timer+'<div class="k-card-btns">'+btn+'</div></div>';
+    return '<div class="k-card"><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px"><div style="min-width:0"><div class="k-card-id">'+H(id)+'</div><div class="k-card-cust">'+H(o.cust||'Pickup')+'</div><div class="k-prio-row"><span class="k-prio-badge '+H(pri(o))+'">'+H(pril(o))+'</span></div><span class="tg '+(isPickup(o)?'go':'gb')+'" style="margin-left:0;margin-top:6px">'+(isPickup(o)?'🛍️ Pickup':'🚚 Delivery')+'</span></div><div style="text-align:right;flex-shrink:0"><div style="font-size:13px;font-weight:800;color:var(--green)">₱'+Number(o.total||0).toFixed(2)+'</div><div style="font-size:10px;color:var(--t3);margin-top:1px">'+H(ftime(o.time))+'</div></div></div><div class="k-card-items">'+items+'</div>'+(o.notes?'<div style="font-size:11px;background:var(--ol);color:#c45522;padding:5px 8px;border-radius:6px;margin-top:6px">📝 '+H(o.notes)+'</div>':'')+timer+'<div class="k-card-btns">'+btn+'</div></div>';
   }
   function col(t,c,b,a,empty){return '<div class="k-col"><div class="k-col-hdr" style="background:'+b+';color:'+c+'"><span>'+t+'</span><span class="k-count">'+a.length+'</span></div>'+(a.length?a.map(card).join(''):'<div style="text-align:center;padding:24px 12px;color:var(--t3);font-size:13px">'+empty+'</div>')+'</div>'}
   window.rKitchen=function(){
@@ -14039,7 +14039,7 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
       id: deliveryId(o),
       oid: oid,
 
-      cust: o.cust || o.customerName || (o.customer && o.customer.name) || 'Walk-in',
+      cust: o.cust || o.customerName || (o.customer && o.customer.name) || 'Pickup',
       phone: o.phone || (o.customer && o.customer.phone) || '',
 
       recipient: o.recipient || o.recipientName || '',
