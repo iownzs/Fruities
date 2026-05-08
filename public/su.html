@@ -395,6 +395,12 @@
         updatedBy: 'superadmin'
       });
 
+      if(enabled){
+        try{ localStorage.setItem('fruities_pos_recent_unlock_at', String(Date.now())); }catch(e){}
+      }else{
+        try{ localStorage.removeItem('fruities_pos_recent_unlock_at'); }catch(e){}
+      }
+
       toast(enabled ? 'POS unlocked ✅' : 'POS locked ⛔');
       await refresh();
     }
