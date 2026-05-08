@@ -15330,11 +15330,7 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
       var payBtn = document.getElementById('firebase-pos-lock-pay');
       if(payBtn){
         payBtn.onclick = function(){
-          alert(
-            'Pay Billing\\n\\n' +
-            'Please send payment to the owner/admin.\\n\\n' +
-            'After payment, contact the owner to confirm and unlock POS access from Superadmin.'
-          );
+          showBillingPaymentModal();
         };
       }
 
@@ -15357,6 +15353,63 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
     }
 
     overlay.style.display = 'flex';
+  }
+
+
+  function showBillingPaymentModal(){
+    var modal = document.getElementById('firebase-billing-pay-modal');
+
+    if(!modal){
+      modal = document.createElement('div');
+      modal.id = 'firebase-billing-pay-modal';
+      modal.style.cssText = [
+        'position:fixed',
+        'inset:0',
+        'z-index:1000000',
+        'background:rgba(16,24,20,.48)',
+        'display:flex',
+        'align-items:center',
+        'justify-content:center',
+        'padding:22px',
+        'font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif'
+      ].join(';');
+
+      modal.innerHTML = ''
+        + '<div style="width:min(440px,100%);background:#fff;border:1px solid #eadfd2;border-radius:28px;padding:22px;box-shadow:0 18px 50px rgba(0,0,0,.18)">'
+        + '  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px">'
+        + '    <div>'
+        + '      <div style="font-size:22px;font-weight:1000;color:#103d2a">💳 Pay Billing</div>'
+        + '      <div style="font-size:13px;color:#7b6b6b;line-height:1.5;margin-top:4px">Send payment to the owner/admin, then contact them to confirm and unlock POS access.</div>'
+        + '    </div>'
+        + '    <button id="firebase-billing-pay-close" style="border:0;background:#f4f1e9;color:#103d2a;border-radius:12px;width:36px;height:36px;font-weight:1000;font-size:18px">×</button>'
+        + '  </div>'
+        + '  <div style="background:#fff8ec;border:1px solid #f2dfbd;border-radius:18px;padding:14px;margin-bottom:12px">'
+        + '    <div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #f0dfc5"><span style="color:#8a6b3f;font-weight:800">GCash / Maya</span><strong id="pay-wallet-number">Add number</strong></div>'
+        + '    <div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #f0dfc5"><span style="color:#8a6b3f;font-weight:800">Account Name</span><strong id="pay-account-name">Owner/Admin</strong></div>'
+        + '    <div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0"><span style="color:#8a6b3f;font-weight:800">Reference</span><strong>Store Billing</strong></div>'
+        + '  </div>'
+        + '  <div style="font-size:12px;color:#7b6b6b;line-height:1.6;margin-bottom:14px">'
+        + '    After payment, send the screenshot/reference number to the owner. POS access will remain locked until the owner confirms and unlocks it from Superadmin.'
+        + '  </div>'
+        + '  <button id="firebase-billing-pay-ok" style="width:100%;border:0;border-radius:14px;padding:12px 14px;background:#1e8a52;color:#fff;font-weight:900;font-size:14px">Okay</button>'
+        + '</div>';
+
+      document.body.appendChild(modal);
+
+      document.getElementById('firebase-billing-pay-close').onclick = function(){
+        modal.style.display = 'none';
+      };
+
+      document.getElementById('firebase-billing-pay-ok').onclick = function(){
+        modal.style.display = 'none';
+      };
+
+      modal.addEventListener('click', function(e){
+        if(e.target === modal) modal.style.display = 'none';
+      });
+    }
+
+    modal.style.display = 'flex';
   }
 
   function hideLockedOverlay(){
