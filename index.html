@@ -2620,6 +2620,7 @@ body.dark #chat-minimize-channels-btn.is-collapsed{background:#14281e!important;
           <div class="adm-tab on" onclick="setAdmTab('overview',this)">📊 Overview</div>
           <div class="adm-tab" onclick="setAdmTab('users',this)">👥 Users</div>
           <div class="adm-tab" onclick="setAdmTab('products',this)">🏷️ Products</div>
+          <div class="adm-tab" onclick="setAdmTab('roles',this)">🔐 Roles</div>
           <div class="adm-tab" onclick="setAdmTab('system',this)">⚙️ System</div>
         </div>
 
@@ -2677,6 +2678,23 @@ body.dark #chat-minimize-channels-btn.is-collapsed{background:#14281e!important;
             </div>
           </div>
           <div id="adm-prod-grid"></div>
+        </div>
+
+        <!-- ── ROLES TAB ── -->
+        <div id="adm-roles" style="display:none">
+          <div class="card" style="margin-bottom:14px">
+            <div class="ct2">🔐 Roles & Permissions</div>
+            <div style="font-size:13px;color:var(--t2);line-height:1.6">
+              Control what each role can access in the POS. The role editor will be moved here after this tab is confirmed stable.
+            </div>
+          </div>
+
+          <div class="card">
+            <div style="font-size:14px;font-weight:800;color:var(--t2);margin-bottom:8px">Current Role Editor Location</div>
+            <div style="font-size:13px;color:var(--t3);line-height:1.6">
+              For now, role permissions remain under the Users tab. This avoids breaking the existing editor while we test the new Admin layout.
+            </div>
+          </div>
         </div>
 
         <!-- ── SYSTEM TAB ── -->
@@ -5701,11 +5719,13 @@ function setAdmTab(tab, el){
   $('adm-overview').style.display = tab==='overview' ? '' : 'none';
   $('adm-users').style.display    = tab==='users'    ? '' : 'none';
   $('adm-products').style.display = tab==='products' ? '' : 'none';
+  $('adm-roles').style.display    = tab==='roles'    ? '' : 'none';
   $('adm-system').style.display   = tab==='system'   ? '' : 'none';
 
   if(tab==='overview') rAdmOverview();
   if(tab==='users')    { rAdmUsers(); rPermTable(); }
   if(tab==='products') rAdmProds();
+  if(tab==='roles')    { /* Roles placeholder only for now */ }
   if(tab==='system')   rAdmSystem();
 }
 
