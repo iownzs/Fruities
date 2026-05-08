@@ -2683,10 +2683,17 @@ body.dark #chat-minimize-channels-btn.is-collapsed{background:#14281e!important;
                      style="width:200px;padding:8px 11px;font-size:13px" oninput="rAdmProds()">
               <select class="fi" id="adm-prod-cat-filter" style="padding:8px 11px;font-size:13px" onchange="rAdmProds()">
                 <option value="">All Categories</option>
-                <option>Tropical</option><option>Citrus</option><option>Berries</option>
-                <option>Stone Fruits</option><option>Exotic</option><option>Others</option>
-                <option>Pick up</option>
               </select>
+              <select class="fi" id="adm-prod-status-filter" style="padding:8px 11px;font-size:13px" onchange="rAdmProds()">
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="visible">Visible</option>
+                <option value="hidden">Hidden</option>
+                <option value="inactive">Inactive</option>
+              </select>
+              <label class="btn bw bsm" style="gap:7px;min-height:38px">
+                <input type="checkbox" id="adm-prod-low-filter" onchange="rAdmProds()"> Low Stock
+              </label>
               <button class="btn bg" onclick="openProdM()">+ Add Product</button>
             </div>
           </div>
@@ -5874,13 +5881,50 @@ function switchUser(){
 }
 
 // ── Admin Products ──
+
+function fillAdminProductFilters(){
+  const cat = $('adm-prod-cat-filter');
+  if(cat && typeof PRODUCT_CATEGORY_OPTIONS !== 'undefined'){
+    const current = cat.value || '';
+    cat.innerHTML = '<option value="">All Categories</option>' + Object.keys(PRODUCT_CATEGORY_OPTIONS).map(k=>{
+      const label = PRODUCT_CATEGORY_OPTIONS[k];
+      return '<option value="'+label+'">'+label+'</option>';
+    }).join('');
+    cat.value = current;
+  }
+}
+
 function rAdmProds(){
+  fillAdminProductFilters();
+
   const q=($('adm-prod-search').value||'').toLowerCase();
   const cf=$('adm-prod-cat-filter').value;
-  const prods=S.products.filter(p=>
-    (!q||p.n.toLowerCase().includes(q)||p.cat.toLowerCase().includes(q))&&
-    (!cf||p.cat===cf)
-  );
+  const sf=($('adm-prod-status-filter')&&$('adm-prod-status-filter').value)||'';
+  const lowOnly=!!($('adm-prod-low-filter')&&$('adm-prod-low-filter').checked);
+
+  const prods=S.products.filter(p=>{
+    const name=String(p.n||p.name||'').toLowerCase();
+    const cat=String(p.cat||p.category||'');
+    const sku=String(p.sku||'').toLowerCase();
+    const barcode=String(p.barcode||'').toLowerCase();
+    const stock=Number(p.s??p.stock??0);
+    const min=Number(p.min??0);
+    const active=p.active!==false;
+    const hidden=!!p.hidden;
+
+    const matchSearch=!q||name.includes(q)||cat.toLowerCase().includes(q)||sku.includes(q)||barcode.includes(q);
+    const matchCat=!cf||cat===cf;
+
+    let matchStatus=true;
+    if(sf==='active') matchStatus=active;
+    if(sf==='inactive') matchStatus=!active;
+    if(sf==='hidden') matchStatus=hidden;
+    if(sf==='visible') matchStatus=!hidden;
+
+    const matchLow=!lowOnly||stock<=0||(stock>0&&min>0&&stock<=min);
+
+    return matchSearch&&matchCat&&matchStatus&&matchLow;
+  });
   $('adm-prod-count').textContent=prods.length+' / '+S.products.length+' products';
   const stColor=p=>p.s<=0?'var(--red)':p.s<=p.min?'var(--orange)':'var(--green)';
   const stLabel=p=>p.s<=0?'<span class="tg gr">Out</span>':p.s<=p.min?'<span class="tg go">Low</span>':'<span class="tg gg">OK</span>';
