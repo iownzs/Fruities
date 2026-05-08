@@ -10306,7 +10306,15 @@ window.addEventListener('load',function(){
   window.setCartFulfillmentMode = function(mode){
     window.cartFulfillmentMode = mode === 'delivery' ? 'delivery' : 'pickup';
     try{ fulfillmentType = window.cartFulfillmentMode; }catch(e){}
+
+    var label = byId('cart-customer-label');
+    var cust = byId('cin') ? String(byId('cin').value || '').trim() : '';
+    if(label){
+      label.textContent = '👤 ' + (cust || (window.cartFulfillmentMode === 'delivery' ? 'Delivery' : 'Pickup'));
+    }
+
     applyModeUI();
+    try{ if(typeof syncFulfillmentUI === 'function') syncFulfillmentUI(); }catch(e){}
     try{ if(typeof rCart === 'function') rCart(); }catch(e){}
   };
 
