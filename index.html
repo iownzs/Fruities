@@ -2450,7 +2450,7 @@ body.dark #chat-minimize-channels-btn.is-collapsed{background:#14281e!important;
     <!-- PRODUCTS -->
     <div class="view" id="view-products">
       <div class="sh"><h2>Products</h2><button class="btn bg" onclick="openProdM()">+ Add Product</button></div>
-      <div class="card"><div class="tw"><table><thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Description</th><th></th></tr></thead><tbody id="ptbl"></tbody></table></div></div>
+      <div class="card"><div class="tw"><table><thead><tr><th>Product</th><th>Category</th><th>Unit</th><th>SKU / QR</th><th>Price</th><th>Stock</th><th>Status</th><th></th></tr></thead><tbody id="ptbl"></tbody></table></div></div>
     </div>
 
     <!-- ADMIN PANEL -->
@@ -5112,16 +5112,37 @@ function prodThumb(p){
   return `<span style="font-size:17px;margin-right:5px">${p.e||'🍎'}</span>`;
 }
 function rProds(){
-  $('ptbl').innerHTML=S.products.map(p=>`<tr>
-    <td style="white-space:nowrap">${prodThumb(p)}<strong>${p.n}</strong></td>
-    <td><span class="tg gy">${p.cat}</span></td>
-    <td><strong style="color:var(--green)">₱${p.p.toFixed(2)}</strong></td>
-    <td>${p.s<=p.min&&p.s>0?'⚠️ ':''}${p.s<=0?'<span style="color:var(--red)">0</span>':p.s}</td>
-    <td style="color:var(--t2);font-size:12px;max-width:140px">${p.d||'—'}</td>
-    <td style="white-space:nowrap">
-      ${perm('canManageProducts')?`<button class="btn bw bsm" onclick="editProd(${p.id})" style="margin-right:4px">Edit</button><button class="btn br bsm" onclick="delProd(${p.id})">Delete</button>`:''}
-    </td>
-  </tr>`).join('');
+  $('ptbl').innerHTML=S.products.map(p=>{
+    const name=p.n||p.name||'—';
+    const cat=p.cat||p.category||'Pantry';
+    const unit=p.unit||'pcs';
+    const price=Number(p.p||p.price||0);
+    const stock=Number(p.s||p.stock||0);
+    const min=Number(p.min||0);
+    const sku=p.sku||'—';
+    const qr=p.qrCode||p.barcode||p.sku||'—';
+    const active=p.active!==false;
+    const hidden=!!p.hidden;
+
+    return `<tr>
+      <td style="white-space:nowrap">${prodThumb(p)}<strong>${name}</strong></td>
+      <td><span class="tg gy">${cat}</span></td>
+      <td><span class="tg gb">${productUnitLabel(unit)}</span></td>
+      <td style="font-size:11px;color:var(--t2);line-height:1.45">
+        <div><strong>SKU:</strong> ${sku}</div>
+        <div><strong>QR:</strong> ${qr}</div>
+      </td>
+      <td><strong style="color:var(--green)">₱${price.toFixed(2)}</strong></td>
+      <td>${stock<=min&&stock>0?'⚠️ ':''}${stock<=0?'<span style="color:var(--red)">0</span>':stock}</td>
+      <td style="white-space:nowrap">
+        ${active?'<span class="tg gg">Active</span>':'<span class="tg gr">Inactive</span>'}
+        ${hidden?'<span class="tg go">Hidden</span>':'<span class="tg gb">Visible</span>'}
+      </td>
+      <td style="white-space:nowrap">
+        ${perm('canManageProducts')?`<button class="btn bw bsm" onclick="editProd(${p.id})" style="margin-right:4px">Edit</button><button class="btn br bsm" onclick="delProd(${p.id})">Delete</button>`:''}
+      </td>
+    </tr>`;
+  }).join('');
 }
 
 // ─────── IMAGE UPLOAD ───────
