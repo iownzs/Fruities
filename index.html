@@ -5431,6 +5431,40 @@ function rProds(){
 
 let currentProductLabelId = null;
 
+
+function generateProductSkuBarcode(id){
+  const product = (S.products || []).find(p=>String(p.id)===String(id));
+  if(!product){ toast('Product not found','err'); return; }
+
+  const name = product.n || product.name || 'PRODUCT';
+  const suffix = String(product.id || Date.now()).slice(-4);
+  const base = makeProductCode(name);
+  const code = (base + '-' + suffix).toUpperCase();
+
+  product.sku = product.sku || code;
+  product.barcode = product.barcode || product.sku || code;
+  product.qrCode = product.qrCode || product.barcode; // legacy compatibility
+  product.updatedBy = S.cur && S.cur.user ? S.cur.user : 'admin';
+  product.updatedAt = Date.now();
+
+  sv();
+
+  if(typeof saveProductToFirebase === 'function'){
+    saveProductToFirebase(product).then(function(ok){
+      if(ok) toast('SKU / Barcode generated ✅');
+      if(typeof rAdmProds === 'function') rAdmProds();
+      if(typeof rProds === 'function') rProds();
+      if(typeof rPOS === 'function') rPOS();
+    });
+  }else{
+    toast('SKU / Barcode generated locally ✅');
+    if(typeof rAdmProds === 'function') rAdmProds();
+    if(typeof rProds === 'function') rProds();
+    if(typeof rPOS === 'function') rPOS();
+  }
+}
+
+
 function openProductLabel(id){
   const product = (S.products || []).find(p=>String(p.id)===String(id));
   if(!product){ toast('Product not found','err'); return; }
@@ -6126,6 +6160,7 @@ function rAdmProds(){
           ${perm('canManageProducts')?`<button class="btn bw bsm" onclick="editProd(${p.id})">✏️ Edit</button>`:''}
           ${perm('canAdjustStock')?`<button class="btn bw bsm" onclick="openStockFor(${p.id})">📦 Stock</button>`:''}
           ${perm('canManageProducts')?`<button class="btn bw bsm" onclick="openProductLabel(${p.id})">🏷️ Label</button>`:''}
+          ${perm('canManageProducts') && !(p.sku||p.barcode)?`<button class="btn bw bsm" onclick="generateProductSkuBarcode(${p.id})">🔢 Code</button>`:''}
           ${perm('canManageProducts')?`<button class="btn br bsm" onclick="delProd(${p.id})" title="Delete">🗑️</button>`:''}
         </div>
       </div>
