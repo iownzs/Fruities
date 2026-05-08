@@ -2484,15 +2484,7 @@ body.dark #chat-minimize-channels-btn.is-collapsed{background:#14281e!important;
                 <div class="cartx-sec-title">📝 Order Notes</div>
                 <textarea class="fi" id="cnotes" placeholder="Special instructions, allergies, preferences…"></textarea>
               </div>
-              <div class="cartx-sec">
-                <div class="cartx-sec-title">🚚 Fulfillment</div>
-                <div class="cartx-priority-grid" id="cart-fulfillment-grid">
-                  <button class="cartx-prio-btn normal on" type="button" data-fulfillment="pickup" onclick="setFulfillmentType('pickup')">🛍️ Pickup</button>
-                  <button class="cartx-prio-btn rush" type="button" data-fulfillment="delivery" onclick="setFulfillmentType('delivery')">🚚 Delivery</button>
-                </div>
-              </div>
-
-              <div class="cartx-sec">
+<div class="cartx-sec">
                 <div class="cartx-sec-title">📣 Order Source</div>
                 <div class="cartx-priority-grid" id="cart-source-grid">
                   <button class="cartx-prio-btn normal on" type="button" data-source="fb" onclick="setOrderSource('fb')">FB</button>
@@ -4302,13 +4294,18 @@ function fulfillmentLabel(type){
 }
 function setFulfillmentType(type){
   fulfillmentType = type === 'delivery' ? 'delivery' : 'pickup';
+  try{ window.cartFulfillmentMode = fulfillmentType; }catch(e){}
   syncFulfillmentUI();
+  try{ if(typeof applyCartModeUI === 'function') applyCartModeUI(); }catch(e){}
   rCart();
   toast('Fulfillment set to '+fulfillmentLabel(fulfillmentType));
 }
 function syncFulfillmentUI(){
   document.querySelectorAll('#cart-fulfillment-grid [data-fulfillment]').forEach(btn=>{
     btn.classList.toggle('on', btn.dataset.fulfillment===fulfillmentType);
+  });
+  document.querySelectorAll('[data-cart-mode-v1]').forEach(btn=>{
+    btn.classList.toggle('on', btn.getAttribute('data-cart-mode-v1')===fulfillmentType);
   });
 }
 function setOrderSource(src){
@@ -10301,14 +10298,16 @@ window.addEventListener('load',function(){
 </style>
 <script id="cart-pickup-delivery-option-v1">
 (function(){
-  window.cartFulfillmentMode = window.cartFulfillmentMode || 'delivery';
+  window.cartFulfillmentMode = window.cartFulfillmentMode || (typeof fulfillmentType !== 'undefined' ? fulfillmentType : 'pickup');
 
   function byId(id){ return document.getElementById(id); }
-  function getMode(){ return window.cartFulfillmentMode || 'delivery'; }
+  function getMode(){ return window.cartFulfillmentMode || (typeof fulfillmentType !== 'undefined' ? fulfillmentType : 'pickup'); }
 
   window.setCartFulfillmentMode = function(mode){
-    window.cartFulfillmentMode = mode === 'pickup' ? 'pickup' : 'delivery';
+    window.cartFulfillmentMode = mode === 'delivery' ? 'delivery' : 'pickup';
+    try{ fulfillmentType = window.cartFulfillmentMode; }catch(e){}
     applyModeUI();
+    try{ if(typeof rCart === 'function') rCart(); }catch(e){}
   };
 
   function findCartHost(){
@@ -10324,7 +10323,7 @@ window.addEventListener('load',function(){
     card.id = 'cart-mode-card-v1';
     card.className = 'cart-mode-card-v1';
     card.innerHTML =
-      '<div class="cart-mode-label-v1">Order option</div>' +
+      '<div class="cart-mode-label-v1">Fulfillment</div>' +
       '<div class="cart-mode-grid-v1">' +
         '<button type="button" class="cart-mode-btn-v1" data-cart-mode-v1="pickup">' +
           '<span class="ico">🛍️</span><span class="txt"><span class="main">Pick up</span><span class="sub">Customer will pick up</span></span>' +
@@ -10358,6 +10357,7 @@ window.addEventListener('load',function(){
   }
 
   function applyModeUI(){
+    try{ window.applyCartModeUI = applyModeUI; }catch(e){}
     insertModeCard();
     var mode = getMode();
 
@@ -10432,7 +10432,7 @@ window.addEventListener('load',function(){
   if(typeof oldClearCart === 'function' && !oldClearCart.__cartModeV1){
     window.clearCart = function(){
       var result = oldClearCart.apply(this, arguments);
-      window.cartFulfillmentMode = 'delivery';
+      window.cartFulfillmentMode = 'pickup';
       setTimeout(applyModeUI, 0);
       return result;
     };
@@ -10466,7 +10466,7 @@ window.addEventListener('load',function(){
 <script id="pickup-same-delivery-design-v3">
 (function(){
   function byId(id){ return document.getElementById(id); }
-  function mode(){ return window.cartFulfillmentMode === 'pickup' ? 'pickup' : 'delivery'; }
+  function mode(){ return window.cartFulfillmentMode === 'delivery' ? 'delivery' : 'pickup'; }
 
   function ensureDeliveryScheduleFields(){
     var grid = document.querySelector('#view-pos .cartx-sec .cartx-field-grid');
@@ -10691,7 +10691,7 @@ window.addEventListener('load',function(){
   var oldConfirmPay = window.confirmPay || (typeof confirmPay === 'function' ? confirmPay : null);
   if(typeof oldConfirmPay === 'function' && !oldConfirmPay.__pickupKitchenReadyFixV1){
     window.confirmPay = function(){
-      var mode = window.cartFulfillmentMode === 'pickup' ? 'pickup' : 'delivery';
+      var mode = window.cartFulfillmentMode === 'delivery' ? 'delivery' : 'pickup';
       var beforeLen = (S.orders || []).length;
       var result = oldConfirmPay.apply(this, arguments);
 
@@ -10943,7 +10943,7 @@ window.addEventListener('load',function(){
 
     try{ cart = []; }catch(e){}
     try{ cartPriority = 'normal'; }catch(e){}
-    try{ window.cartFulfillmentMode = 'delivery'; }catch(e){}
+    try{ window.cartFulfillmentMode = 'pickup'; }catch(e){}
 
     try{ if(typeof syncCartPriorityUI === 'function') syncCartPriorityUI(); }catch(e){}
     try{ if(typeof rCart === 'function') rCart(); }catch(e){}
@@ -11174,7 +11174,7 @@ window.addEventListener('load',function(){
   var oldConfirmPay = window.confirmPay || (typeof confirmPay === 'function' ? confirmPay : null);
   if(typeof oldConfirmPay === 'function' && !oldConfirmPay.__kReadyNoPickupDeliveryV1){
     window.confirmPay = function(){
-      var mode = window.cartFulfillmentMode === 'pickup' ? 'pickup' : 'delivery';
+      var mode = window.cartFulfillmentMode === 'delivery' ? 'delivery' : 'pickup';
       var beforeLen = (S.orders || []).length;
       var result = oldConfirmPay.apply(this, arguments);
 
