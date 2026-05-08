@@ -15362,6 +15362,25 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
       msg.textContent = 'The POS is currently disabled.';
     }
 
+    var byEl = document.getElementById('firebase-pos-lock-by');
+    if(byEl){
+      var by = billing.updatedBy || billing.lockedBy || 'superadmin';
+      byEl.textContent = by;
+    }
+
+    var atEl = document.getElementById('firebase-pos-lock-at');
+    if(atEl){
+      var t = billing.updatedAt || billing.lockedAt || billing.lastPaymentAt || '';
+      var d = null;
+
+      if(t){
+        var n = Number(t);
+        d = isNaN(n) ? new Date(t) : new Date(n);
+      }
+
+      atEl.textContent = d && !isNaN(d.getTime()) ? d.toLocaleString() : 'Just now';
+    }
+
     overlay.style.display = 'flex';
   }
 
