@@ -2458,7 +2458,7 @@ body.dark #chat-minimize-channels-btn.is-collapsed{background:#14281e!important;
               </div>
               <div class="cartx-sub">
                 <div class="cartx-customer">
-                  <div class="cartx-customer-main" id="cart-customer-label">👤 Walk-in</div>
+                  <div class="cartx-customer-main" id="cart-customer-label">👤 Pickup</div>
                   <div class="cartx-customer-meta" id="cart-customer-meta">Add customer details below</div>
                 </div>
                 <div class="cartx-total-mini" id="cart-total-mini">₱0.00</div>
@@ -2484,6 +2484,26 @@ body.dark #chat-minimize-channels-btn.is-collapsed{background:#14281e!important;
                 <div class="cartx-sec-title">📝 Order Notes</div>
                 <textarea class="fi" id="cnotes" placeholder="Special instructions, allergies, preferences…"></textarea>
               </div>
+              <div class="cartx-sec">
+                <div class="cartx-sec-title">🚚 Fulfillment</div>
+                <div class="cartx-priority-grid" id="cart-fulfillment-grid">
+                  <button class="cartx-prio-btn normal on" type="button" data-fulfillment="pickup" onclick="setFulfillmentType('pickup')">🛍️ Pickup</button>
+                  <button class="cartx-prio-btn rush" type="button" data-fulfillment="delivery" onclick="setFulfillmentType('delivery')">🚚 Delivery</button>
+                </div>
+              </div>
+
+              <div class="cartx-sec">
+                <div class="cartx-sec-title">📣 Order Source</div>
+                <div class="cartx-priority-grid" id="cart-source-grid">
+                  <button class="cartx-prio-btn normal on" type="button" data-source="fb" onclick="setOrderSource('fb')">FB</button>
+                  <button class="cartx-prio-btn normal" type="button" data-source="ig" onclick="setOrderSource('ig')">IG</button>
+                  <button class="cartx-prio-btn normal" type="button" data-source="tiktok" onclick="setOrderSource('tiktok')">TikTok</button>
+                  <button class="cartx-prio-btn normal" type="button" data-source="viber" onclick="setOrderSource('viber')">Viber</button>
+                  <button class="cartx-prio-btn normal" type="button" data-source="website" onclick="setOrderSource('website')">Website</button>
+                  <button class="cartx-prio-btn normal" type="button" data-source="other" onclick="setOrderSource('other')">Other</button>
+                </div>
+              </div>
+
               <div class="cartx-sec">
                 <div class="cartx-sec-title">🚦 Order Priority</div>
                 <div class="cartx-priority-grid" id="cart-priority-grid">
@@ -2536,7 +2556,7 @@ body.dark #chat-minimize-channels-btn.is-collapsed{background:#14281e!important;
             <option value="">Type</option>
             <option value="delivery">🚚 Delivery</option>
             <option value="pickup">🛍️ Pickup</option>
-            <option value="walkin">🏪 Walk-in</option>
+            
           </select>
           <select class="mini-filter" id="opriorityfilter" onchange="rOrds()" title="Priority">
             <option value="">Priority</option>
@@ -3086,7 +3106,7 @@ body.dark #chat-minimize-channels-btn.is-collapsed{background:#14281e!important;
           <div class="fg"><label>Recipient Phone</label><input class="fi" id="scan-recipient-phone"></div>
           <div class="fg"><label>Delivery Date</label><input class="fi" type="date" id="scan-delivery-date"></div>
           <div class="fg"><label>Delivery Time</label><input class="fi" type="time" id="scan-delivery-time"></div>
-          <div class="fg"><label>Order Type</label><select class="fs" id="scan-order-type"><option value="delivery">🚚 Delivery</option><option value="pickup">🛍️ Pickup</option><option value="walkin">🏪 Walk-in</option></select></div>
+          <div class="fg"><label>Order Type</label><select class="fs" id="scan-order-type"><option value="delivery">🚚 Delivery</option><option value="pickup">🛍️ Pickup</option></select></div>
           <div class="fg"><label>Priority</label><select class="fs" id="scan-priority"><option value="normal">🟡 Normal</option><option value="rush">🔥 Rush</option><option value="low">🔵 Low</option></select></div>
         </div>
         <div class="fg" style="margin-top:10px"><label>Address</label><input class="fi" id="scan-address"></div>
@@ -3605,7 +3625,7 @@ function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;'
 function sv(){try{localStorage.setItem('fs',JSON.stringify(S));}catch(e){toast('⚠️ Storage full — image may be too large. Try a URL instead.','warn');}}
 
 // ─────── STATE ───────
-let cart=[],payCh='Cash',payOS='paid',actCat='All',jTab='daily',curV='dashboard';
+let cart=[],payCh='Cash',payOS='paid',actCat='All',jTab='daily',curV='dashboard',fulfillmentType='pickup',orderSource='fb';
 let delTimerInterval=null, kitTimerInterval=null, systemTimerInterval=null;
 let lockDismissedForSystem=false;
 
@@ -4273,6 +4293,36 @@ function rmItem(id){
   if(window.innerWidth<=768&&!cart.length&&$('pr')) $('pr').classList.remove('on');
 }
 
+
+function orderSourceLabel(src){
+  return ({fb:'FB',ig:'IG',tiktok:'TikTok',viber:'Viber',website:'Website',other:'Other'})[src] || 'FB';
+}
+function fulfillmentLabel(type){
+  return type === 'delivery' ? 'Delivery' : 'Pickup';
+}
+function setFulfillmentType(type){
+  fulfillmentType = type === 'delivery' ? 'delivery' : 'pickup';
+  syncFulfillmentUI();
+  rCart();
+  toast('Fulfillment set to '+fulfillmentLabel(fulfillmentType));
+}
+function syncFulfillmentUI(){
+  document.querySelectorAll('#cart-fulfillment-grid [data-fulfillment]').forEach(btn=>{
+    btn.classList.toggle('on', btn.dataset.fulfillment===fulfillmentType);
+  });
+}
+function setOrderSource(src){
+  orderSource = ({fb:1,ig:1,tiktok:1,viber:1,website:1,other:1})[src] ? src : 'fb';
+  syncOrderSourceUI();
+  rCart();
+  toast('Source set to '+orderSourceLabel(orderSource));
+}
+function syncOrderSourceUI(){
+  document.querySelectorAll('#cart-source-grid [data-source]').forEach(btn=>{
+    btn.classList.toggle('on', btn.dataset.source===orderSource);
+  });
+}
+
 function setCartPriority(priority){
   cartPriority=normalizePriority(priority);
   document.querySelectorAll('.cartx-prio-btn').forEach(btn=>{
@@ -4286,7 +4336,7 @@ function syncCartPriorityUI(){
   });
 }
 function clearCart(){
-  cart=[];cartPriority='normal';$('din').value='';$('cin').value='';$('cphone').value='';$('crecipient').value='';$('crecipientphone').value='';$('caddr').value='';$('cnotes').value='';syncCartPriorityUI();
+  cart=[];cartPriority='normal';fulfillmentType='pickup';orderSource='fb';$('din').value='';$('cin').value='';$('cphone').value='';$('crecipient').value='';$('crecipientphone').value='';$('caddr').value='';$('cnotes').value='';syncCartPriorityUI();syncFulfillmentUI();syncOrderSourceUI();
   $('pr').classList.remove('on');
   rCart();
 }
@@ -4301,7 +4351,7 @@ function updT(){
   if($('pbtn')) $('pbtn').innerHTML=cart.length?'✅ Proceed to Payment • ₱'+total.toFixed(2):'✅ Proceed to Payment';
 }
 function rCart(){
-  syncCartPriorityUI();
+  syncCartPriorityUI();syncFulfillmentUI();syncOrderSourceUI();
   const cnt=cart.reduce((a,c)=>a+c.q,0);
   if($('cct')) $('cct').textContent=cnt+' item'+(cnt!==1?'s':'');
   if($('cfabb')) $('cfabb').textContent=cnt;
@@ -4310,13 +4360,15 @@ function rCart(){
   const recipient=($('crecipient')?.value||'').trim();
   const recipientPhone=($('crecipientphone')?.value||'').trim();
   const addr=($('caddr')?.value||'').trim();
-  if($('cart-customer-label')) $('cart-customer-label').textContent='👤 '+(cust||'Walk-in');
+  if($('cart-customer-label')) $('cart-customer-label').textContent='👤 '+(cust||fulfillmentLabel(fulfillmentType));
   if($('cart-customer-meta')){
     const meta=[];
     if(phone) meta.push('📞 '+phone);
     if(recipient) meta.push('🎁 '+recipient);
     if(recipientPhone) meta.push('📱 '+recipientPhone);
     if(addr) meta.push('📍 '+addr);
+    meta.push((fulfillmentType==='delivery'?'🚚 Delivery':'🛍️ Pickup'));
+    meta.push('📣 '+orderSourceLabel(orderSource));
     $('cart-customer-meta').textContent=meta.length?meta.join(' • '):'Add customer/recipient details below';
   }
   if(!cart.length){
@@ -4372,7 +4424,7 @@ function calcChg(){
 function confirmPay(){
   const tot=getTotal();
   if(payCh==='Cash'&&payOS==='paid'){const rec=parseFloat($('cashin').value)||0;if(rec<tot){toast('Insufficient cash','err');return;}}
-  const cust=$('cin').value||'Walk-in';
+  const cust=$('cin').value||fulfillmentLabel(fulfillmentType);
   const phone=$('cphone').value.trim()||'';
   const recipient=($('crecipient')?.value||'').trim();
   const recipientPhone=($('crecipientphone')?.value||'').trim();
@@ -4381,7 +4433,7 @@ function confirmPay(){
   const disc=parseFloat($('din').value)||0,sub=cart.reduce((a,c)=>a+c.p*c.q,0);
   const oid='ORD-'+String(S.orders.length+1).padStart(4,'0');
   const status=payOS==='paid'?'completed':payOS;
-  const order={id:oid,cust,phone,recipient,recipientPhone,addr,notes,items:cart.map(c=>({...c})),sub,disc,total:tot,ch:payCh,payOS,status,priority:cartPriority,time:new Date().toISOString(),cashier:S.cur.name,createdByName:S.cur.name,createdByUser:S.cur.user||'',createdByRole:S.cur.role||'',createdByAt:new Date().toISOString()};
+  const order={id:oid,cust,phone,recipient,recipientPhone,addr,notes,items:cart.map(c=>({...c})),sub,disc,total:tot,ch:payCh,payOS,status,priority:cartPriority,fulfillmentType,orderType:fulfillmentType,orderSource,orderSourceLabel:orderSourceLabel(orderSource),time:new Date().toISOString(),cashier:S.cur.name,createdByName:S.cur.name,createdByUser:S.cur.user||'',createdByRole:S.cur.role||'',createdByAt:new Date().toISOString()};
   cart.forEach(c=>{const p=(S.products||[]).find(x=>productId(x)===String(c.id));if(p){const ns=Math.max(0,productStock(p)-c.q);setProductStock(p,ns);}});
   S.orders.push(order);addAct('🧾','Order Placed',`${oid} — ${cust} — ₱${tot.toFixed(2)}`,'var(--gl)');
   sv();closeM('mpay');showReceipt(order);rGrid();updBadge();updTrackData();
@@ -4434,10 +4486,13 @@ function orderCreatedByKey(o){
   return String(o.createdByUser || o.createdByName || o.cashier || (typeof o.createdBy==='string'?o.createdBy:'') || '').trim();
 }
 function orderTypeKey(o){
+  if(o && (o.fulfillmentType || o.orderType)){
+    const t = String(o.fulfillmentType || o.orderType).toLowerCase();
+    return t === 'delivery' ? 'delivery' : 'pickup';
+  }
   const hasDelivery = S.deliveries && S.deliveries.find(d=>d.oid===o.id || d.orderId===o.id);
   if(hasDelivery) return 'delivery';
-  if(o.kitForPickup || o.kitPickup) return 'pickup';
-  return 'walkin';
+  return 'pickup';
 }
 function populateOrderUserFilter(){
   const el=$('ouserfilter'); if(!el) return;
@@ -10901,7 +10956,7 @@ window.addEventListener('load',function(){
     if(meta) meta.textContent = 'Add customer details below';
 
     var label = byId('cart-customer-label');
-    if(label) label.textContent = '👤 Walk-in';
+    if(label) label.textContent = '👤 Pickup';
   }
 
   // Keep Clear button strong too.
