@@ -15925,5 +15925,76 @@ font-size:14px">Okay</button>'
 })();
 </script>
 
+
+<script id="billing-gate-watchdog-v1">
+(function(){
+  var DB_URL = 'https://fruities-pos-default-rtdb.asia-southeast1.firebasedatabase.app';
+  var STORE_ID = 'fruit-story-main';
+
+  function releaseGate(){
+    document.documentElement.classList.remove('firebase-billing-checking');
+    document.documentElement.classList.add('firebase-billing-ready');
+    document.body.classList.remove('firebase-billing-checking');
+    document.body.classList.add('firebase-billing-ready');
+  }
+
+  function isLocked(b){
+    b = b || {};
+    return b.posAccessEnabled === false ||
+      b.manualDisabled === true ||
+      b.status === 'disabled' ||
+      b.status === 'locked';
+  }
+
+  function showSimpleLocked(b){
+    releaseGate();
+
+    if(document.getElementById('firebase-pos-lock-overlay')){
+      document.getElementById('firebase-pos-lock-overlay').style.display = 'flex';
+      return;
+    }
+
+    var overlay = document.createElement('div');
+    overlay.id = 'billing-watchdog-lock-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:999999;background:linear-gradient(135deg,#fff7f7,#f7f4ec);display:flex;align-items:center;justify-content:center;padding:22px;font-family:Inter,system-ui,sans-serif';
+    overlay.innerHTML =
+      '<div style="width:min(430px,100%);background:#fff;border:1px solid #fecdd3;border-radius:28px;padding:26px;text-align:center;box-shadow:0 18px 50px rgba(122,30,30,.15)">' +
+      '<div style="font-size:52px;margin-bottom:10px">🔒</div>' +
+      '<div style="font-size:25px;font-weight:1000;color:#7f1d1d;margin-bottom:8px">POS Access Locked</div>' +
+      '<div style="font-size:14px;color:#7b6b6b;line-height:1.6;margin-bottom:16px">This POS is currently disabled by ' + (b.updatedBy || 'superadmin') + '.</div>' +
+      '<button onclick="location.reload()" style="width:100%;border:0;border-radius:14px;padding:13px;background:#1e8a52;color:#fff;font-weight:900;font-size:14px">Refresh Access</button>' +
+      '</div>';
+    document.body.appendChild(overlay);
+  }
+
+  function check(){
+    fetch(DB_URL + '/stores/' + STORE_ID + '/billing.json', {cache:'no-store'})
+      .then(function(res){ return res.json(); })
+      .then(function(billing){
+        if(isLocked(billing)){
+          showSimpleLocked(billing);
+        }else{
+          releaseGate();
+        }
+      })
+      .catch(function(){
+        releaseGate();
+      });
+  }
+
+  setTimeout(function(){
+    if(document.documentElement.classList.contains('firebase-billing-checking')){
+      check();
+    }
+  }, 2500);
+
+  setTimeout(function(){
+    if(document.documentElement.classList.contains('firebase-billing-checking')){
+      releaseGate();
+    }
+  }, 6000);
+})();
+</script>
+
 </body>
 </html>
