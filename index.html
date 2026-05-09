@@ -2522,6 +2522,14 @@ body.dark #chat-minimize-channels-btn.is-collapsed{background:#14281e!important;
               </div>
 
               <div class="cartx-sec">
+                <div class="cartx-sec-title">🚚 Del Fee</div>
+                <div class="cartx-priority-grid" id="cart-delivery-fee-grid">
+                  <button class="cartx-prio-btn normal on" type="button" data-delivery-fee="BFC" onclick="setDeliveryFeeCode('BFC')">BFC</button>
+                  <button class="cartx-prio-btn normal" type="button" data-delivery-fee="INH" onclick="setDeliveryFeeCode('INH')">INH</button>
+                </div>
+              </div>
+
+              <div class="cartx-sec">
                 <div class="cartx-sec-title">🚦 Order Priority</div>
                 <div class="cartx-priority-grid" id="cart-priority-grid">
                   <button class="cartx-prio-btn rush" type="button" data-priority="rush" onclick="setCartPriority('rush')">🔥 Rush</button>
@@ -3642,7 +3650,7 @@ function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;'
 function sv(){try{localStorage.setItem('fs',JSON.stringify(S));}catch(e){toast('⚠️ Storage full — image may be too large. Try a URL instead.','warn');}}
 
 // ─────── STATE ───────
-let cart=[],payCh='Cash',payOS='paid',actCat='All',jTab='daily',curV='dashboard',fulfillmentType='pickup',orderSource='fb';
+let cart=[],payCh='Cash',payOS='paid',actCat='All',jTab='daily',curV='dashboard',fulfillmentType='pickup',orderSource='fb',deliveryFeeCode='BFC';
 let delTimerInterval=null, kitTimerInterval=null, systemTimerInterval=null;
 let lockDismissedForSystem=false;
 
@@ -4311,6 +4319,30 @@ function rmItem(id){
 }
 
 
+
+function deliveryFeeLabel(code){
+  return String(code||'BFC').toUpperCase()==='INH' ? 'INH' : 'BFC';
+}
+function setDeliveryFeeCode(code){
+  deliveryFeeCode = String(code||'BFC').toUpperCase()==='INH' ? 'INH' : 'BFC';
+  syncDeliveryFeeUI();
+  rCart();
+}
+function syncDeliveryFeeUI(){
+  document.querySelectorAll('#cart-delivery-fee-grid [data-delivery-fee]').forEach(btn=>{
+    btn.classList.toggle('on', btn.dataset.deliveryFee===deliveryFeeCode);
+  });
+}
+function orderDeliveryFeeText(o){
+  const code = String((o && (o.deliveryFeeCode || o.delFeeCode || o.delivery_fee_code)) || '').toUpperCase();
+  if(!code) return '';
+  return code === 'INH' ? 'INH' : 'BFC';
+}
+function orderDeliveryFeeMini(o){
+  const code = orderDeliveryFeeText(o);
+  return code ? '<span class="tg go" style="margin-left:4px">🚚 Del Fee: '+esc(code)+'</span>' : '';
+}
+
 function orderSourceLabel(src){
   return ({fb:'FB',ig:'IG',tiktok:'TikTok',viber:'Viber',whatsapp:'WhatsApp',website:'Website',other:'Other'})[src] || 'FB';
 }
@@ -4358,7 +4390,7 @@ function syncCartPriorityUI(){
   });
 }
 function clearCart(){
-  cart=[];cartPriority='normal';fulfillmentType='pickup';orderSource='fb';$('din').value='';$('cin').value='';$('cphone').value='';$('crecipient').value='';$('crecipientphone').value='';$('caddr').value='';$('cnotes').value='';if($('csourceDetail'))$('csourceDetail').value='';syncCartPriorityUI();syncFulfillmentUI();syncOrderSourceUI();
+  cart=[];cartPriority='normal';fulfillmentType='pickup';orderSource='fb';deliveryFeeCode='BFC';$('din').value='';$('cin').value='';$('cphone').value='';$('crecipient').value='';$('crecipientphone').value='';$('caddr').value='';$('cnotes').value='';if($('csourceDetail'))$('csourceDetail').value='';syncCartPriorityUI();syncFulfillmentUI();syncOrderSourceUI();syncDeliveryFeeUI();
   $('pr').classList.remove('on');
   rCart();
 }
@@ -4373,7 +4405,7 @@ function updT(){
   if($('pbtn')) $('pbtn').innerHTML=cart.length?'✅ Proceed to Payment • ₱'+total.toFixed(2):'✅ Proceed to Payment';
 }
 function rCart(){
-  syncCartPriorityUI();syncFulfillmentUI();syncOrderSourceUI();
+  syncCartPriorityUI();syncFulfillmentUI();syncOrderSourceUI();syncDeliveryFeeUI();
   const cnt=cart.reduce((a,c)=>a+c.q,0);
   if($('cct')) $('cct').textContent=cnt+' item'+(cnt!==1?'s':'');
   if($('cfabb')) $('cfabb').textContent=cnt;
@@ -4392,6 +4424,7 @@ function rCart(){
     meta.push((fulfillmentType==='delivery'?'🚚 Delivery':'🛍️ Pickup'));
     const sourceDetail=($('csourceDetail')?.value||'').trim();
     meta.push('📣 '+orderSourceLabel(orderSource)+(sourceDetail?' · '+sourceDetail:''));
+    if(fulfillmentType==='delivery') meta.push('🚚 Del Fee: '+deliveryFeeCode);
     $('cart-customer-meta').textContent=meta.length?meta.join(' • '):'Add customer/recipient details below';
   }
   if(!cart.length){
@@ -4457,7 +4490,7 @@ function confirmPay(){
   const disc=parseFloat($('din').value)||0,sub=cart.reduce((a,c)=>a+c.p*c.q,0);
   const oid='ORD-'+String(S.orders.length+1).padStart(4,'0');
   const status=payOS==='paid'?'completed':payOS;
-  const order={id:oid,cust,phone,recipient,recipientPhone,addr,notes,items:cart.map(c=>({...c})),sub,disc,total:tot,ch:payCh,payOS,status,priority:cartPriority,fulfillmentType,orderType:fulfillmentType,orderSource,orderSourceLabel:orderSourceLabel(orderSource),orderSourceDetail,time:new Date().toISOString(),cashier:S.cur.name,createdByName:S.cur.name,createdByUser:S.cur.user||'',createdByRole:S.cur.role||'',createdByAt:new Date().toISOString()};
+  const order={id:oid,cust,phone,recipient,recipientPhone,addr,notes,items:cart.map(c=>({...c})),sub,disc,total:tot,ch:payCh,payOS,status,priority:cartPriority,fulfillmentType,orderType:fulfillmentType,orderSource,orderSourceLabel:orderSourceLabel(orderSource),orderSourceDetail,deliveryFeeCode,deliveryFeeLabel:deliveryFeeLabel(deliveryFeeCode),time:new Date().toISOString(),cashier:S.cur.name,createdByName:S.cur.name,createdByUser:S.cur.user||'',createdByRole:S.cur.role||'',createdByAt:new Date().toISOString()};
   cart.forEach(c=>{const p=(S.products||[]).find(x=>productId(x)===String(c.id));if(p){const ns=Math.max(0,productStock(p)-c.q);setProductStock(p,ns);}});
   S.orders.push(order);addAct('🧾','Order Placed',`${oid} — ${cust} — ₱${tot.toFixed(2)}`,'var(--gl)');
   sv();closeM('mpay');showReceipt(order);rGrid();updBadge();updTrackData();
@@ -4728,7 +4761,7 @@ function rOrds(){
     <td><strong>₱${o.total.toFixed(2)}</strong></td>
     <td><span class="tg gb">${o.ch||'—'}</span></td>
     <td>${orderSourceChip(o)}</td>
-    <td>${stTag(o.status)}${fulfillTag(o)}</td>
+    <td>${stTag(o.status)}${fulfillTag(o)}${orderDeliveryFeeMini(o)}</td>
     <td style="font-size:11px;color:var(--t3)">${ordersExactCreatedCell(o)}</td>
     <td style="white-space:nowrap">
       <button class="btn bw bsm" onclick="openBQR('${o.id}')" title="QR &amp; Barcode" style="padding:5px 8px;margin-right:3px">&#x1F516;</button>
@@ -5376,7 +5409,7 @@ function rDel(){
         <div style="margin-top:3px"><span class="prio-badge ${orderPriority(o)}">${getPriorityLabel(orderPriority(o))}</span></div>
       </div>
       <div class="dtc-mid">
-        <div class="dtc-cust">${d.cust || 'Pickup'}</div>${orderSourceMini(o)}
+        <div class="dtc-cust">${d.cust || 'Pickup'}</div>${orderSourceMini(o)}${orderDeliveryFeeMini(o)}
         <div class="dtc-sub" style="color:var(--green);font-weight:700">👤 Created by: ${orderCreatorLabel(o)}</div>
         ${d.recipient?`<div class="dtc-sub">🎁 ${d.recipient}${d.recipientPhone?' · '+d.recipientPhone:''}</div>`:''}
         <div class="dtc-sub">🏍️ ${d.rider || 'No rider yet'}</div>
