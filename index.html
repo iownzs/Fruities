@@ -16639,5 +16639,73 @@ font-size:14px">Okay</button>'
 })();
 </script>
 
+
+<script id="cart-header-fulfillment-sync-final-v1">
+(function(){
+  function byId(id){ return document.getElementById(id); }
+
+  function selectedMode(){
+    var active = document.querySelector('[data-cart-mode-v1].on');
+    if(active){
+      return active.getAttribute('data-cart-mode-v1') === 'delivery' ? 'delivery' : 'pickup';
+    }
+    if(window.cartFulfillmentMode === 'delivery') return 'delivery';
+    return 'pickup';
+  }
+
+  function syncHeader(){
+    try{
+      var mode = selectedMode();
+      window.cartFulfillmentMode = mode;
+      if(typeof fulfillmentType !== 'undefined') fulfillmentType = mode;
+
+      var label = byId('cart-customer-label');
+      var input = byId('cin');
+      var cust = input ? String(input.value || '').trim() : '';
+
+      if(label){
+        label.textContent = '👤 ' + (cust || (mode === 'delivery' ? 'Delivery' : 'Pickup'));
+      }
+    }catch(e){}
+  }
+
+  document.addEventListener('click', function(e){
+    if(e.target && e.target.closest && e.target.closest('[data-cart-mode-v1]')){
+      setTimeout(syncHeader, 0);
+      setTimeout(syncHeader, 80);
+    }
+  }, true);
+
+  document.addEventListener('input', function(e){
+    if(e.target && e.target.id === 'cin'){
+      syncHeader();
+    }
+  }, true);
+
+  var oldRCart = window.rCart || (typeof rCart === 'function' ? rCart : null);
+  if(typeof oldRCart === 'function' && !oldRCart.__cartHeaderFulfillmentSyncFinalV1){
+    window.rCart = function(){
+      var result = oldRCart.apply(this, arguments);
+      setTimeout(syncHeader, 0);
+      return result;
+    };
+    window.rCart.__cartHeaderFulfillmentSyncFinalV1 = true;
+    try{ rCart = window.rCart; }catch(e){}
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){
+      setTimeout(syncHeader, 300);
+      setTimeout(syncHeader, 1200);
+    });
+  }else{
+    setTimeout(syncHeader, 300);
+    setTimeout(syncHeader, 1200);
+  }
+
+  window.syncCartHeaderFulfillmentFinal = syncHeader;
+})();
+</script>
+
 </body>
 </html>
