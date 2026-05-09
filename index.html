@@ -16946,5 +16946,70 @@ font-size:14px">Okay</button>'
 })();
 </script>
 
+
+<script id="delivery-fee-visibility-final-v1">
+(function(){
+  function byId(id){ return document.getElementById(id); }
+
+  function currentFulfillment(){
+    var active = document.querySelector('[data-cart-mode-v1].on');
+    if(active){
+      return active.getAttribute('data-cart-mode-v1') === 'delivery' ? 'delivery' : 'pickup';
+    }
+
+    try{
+      if(typeof fulfillmentType !== 'undefined' && fulfillmentType === 'delivery') return 'delivery';
+    }catch(e){}
+
+    try{
+      if(window.cartFulfillmentMode === 'delivery') return 'delivery';
+    }catch(e){}
+
+    return 'pickup';
+  }
+
+  function syncDelFeeVisibility(){
+    try{
+      var section = byId('cart-delivery-fee-section');
+      if(!section) return;
+
+      var mode = currentFulfillment();
+      section.style.display = mode === 'delivery' ? '' : 'none';
+    }catch(e){}
+  }
+
+  document.addEventListener('click', function(e){
+    if(e.target && e.target.closest && e.target.closest('[data-cart-mode-v1]')){
+      setTimeout(syncDelFeeVisibility, 0);
+      setTimeout(syncDelFeeVisibility, 100);
+      setTimeout(syncDelFeeVisibility, 350);
+    }
+  }, true);
+
+  var oldRCart = window.rCart || (typeof rCart === 'function' ? rCart : null);
+  if(typeof oldRCart === 'function' && !oldRCart.__deliveryFeeVisibilityFinalV1){
+    window.rCart = function(){
+      var result = oldRCart.apply(this, arguments);
+      setTimeout(syncDelFeeVisibility, 0);
+      return result;
+    };
+    window.rCart.__deliveryFeeVisibilityFinalV1 = true;
+    try{ rCart = window.rCart; }catch(e){}
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){
+      setTimeout(syncDelFeeVisibility, 300);
+      setTimeout(syncDelFeeVisibility, 1200);
+    });
+  }else{
+    setTimeout(syncDelFeeVisibility, 300);
+    setTimeout(syncDelFeeVisibility, 1200);
+  }
+
+  window.syncDelFeeVisibilityFinal = syncDelFeeVisibility;
+})();
+</script>
+
 </body>
 </html>
