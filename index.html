@@ -2494,6 +2494,7 @@ body.dark #chat-minimize-channels-btn.is-collapsed{background:#14281e!important;
                   <button class="cartx-prio-btn normal" type="button" data-source="website" onclick="setOrderSource('website')">Website</button>
                   <button class="cartx-prio-btn normal" type="button" data-source="other" onclick="setOrderSource('other')">Other</button>
                 </div>
+                <input class="fi" type="text" id="csourceDetail" placeholder="Detail e.g. Juan Dela Cruz / @juan" style="margin-top:7px" oninput="rCart()">
               </div>
 
               <div class="cartx-sec">
@@ -4333,7 +4334,7 @@ function syncCartPriorityUI(){
   });
 }
 function clearCart(){
-  cart=[];cartPriority='normal';fulfillmentType='pickup';orderSource='fb';$('din').value='';$('cin').value='';$('cphone').value='';$('crecipient').value='';$('crecipientphone').value='';$('caddr').value='';$('cnotes').value='';syncCartPriorityUI();syncFulfillmentUI();syncOrderSourceUI();
+  cart=[];cartPriority='normal';fulfillmentType='pickup';orderSource='fb';$('din').value='';$('cin').value='';$('cphone').value='';$('crecipient').value='';$('crecipientphone').value='';$('caddr').value='';$('cnotes').value='';if($('csourceDetail'))$('csourceDetail').value='';syncCartPriorityUI();syncFulfillmentUI();syncOrderSourceUI();
   $('pr').classList.remove('on');
   rCart();
 }
@@ -4365,7 +4366,8 @@ function rCart(){
     if(recipientPhone) meta.push('📱 '+recipientPhone);
     if(addr) meta.push('📍 '+addr);
     meta.push((fulfillmentType==='delivery'?'🚚 Delivery':'🛍️ Pickup'));
-    meta.push('📣 '+orderSourceLabel(orderSource));
+    const sourceDetail=($('csourceDetail')?.value||'').trim();
+    meta.push('📣 '+orderSourceLabel(orderSource)+(sourceDetail?' · '+sourceDetail:''));
     $('cart-customer-meta').textContent=meta.length?meta.join(' • '):'Add customer/recipient details below';
   }
   if(!cart.length){
@@ -4427,10 +4429,11 @@ function confirmPay(){
   const recipientPhone=($('crecipientphone')?.value||'').trim();
   const addr=$('caddr').value.trim()||'';
   const notes=$('cnotes').value.trim()||'';
+  const orderSourceDetail=($('csourceDetail')?.value||'').trim();
   const disc=parseFloat($('din').value)||0,sub=cart.reduce((a,c)=>a+c.p*c.q,0);
   const oid='ORD-'+String(S.orders.length+1).padStart(4,'0');
   const status=payOS==='paid'?'completed':payOS;
-  const order={id:oid,cust,phone,recipient,recipientPhone,addr,notes,items:cart.map(c=>({...c})),sub,disc,total:tot,ch:payCh,payOS,status,priority:cartPriority,fulfillmentType,orderType:fulfillmentType,orderSource,orderSourceLabel:orderSourceLabel(orderSource),time:new Date().toISOString(),cashier:S.cur.name,createdByName:S.cur.name,createdByUser:S.cur.user||'',createdByRole:S.cur.role||'',createdByAt:new Date().toISOString()};
+  const order={id:oid,cust,phone,recipient,recipientPhone,addr,notes,items:cart.map(c=>({...c})),sub,disc,total:tot,ch:payCh,payOS,status,priority:cartPriority,fulfillmentType,orderType:fulfillmentType,orderSource,orderSourceLabel:orderSourceLabel(orderSource),orderSourceDetail,time:new Date().toISOString(),cashier:S.cur.name,createdByName:S.cur.name,createdByUser:S.cur.user||'',createdByRole:S.cur.role||'',createdByAt:new Date().toISOString()};
   cart.forEach(c=>{const p=(S.products||[]).find(x=>productId(x)===String(c.id));if(p){const ns=Math.max(0,productStock(p)-c.q);setProductStock(p,ns);}});
   S.orders.push(order);addAct('🧾','Order Placed',`${oid} — ${cust} — ₱${tot.toFixed(2)}`,'var(--gl)');
   sv();closeM('mpay');showReceipt(order);rGrid();updBadge();updTrackData();
