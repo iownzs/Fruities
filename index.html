@@ -2521,7 +2521,7 @@ body.dark #chat-minimize-channels-btn.is-collapsed{background:#14281e!important;
                 <input class="fi" type="text" id="csourceDetail" placeholder="Detail e.g. Juan Dela Cruz / @juan" style="margin-top:7px" oninput="rCart()">
               </div>
 
-              <div class="cartx-sec">
+              <div class="cartx-sec" id="cart-delivery-fee-section">
                 <div class="cartx-sec-title">🚚 Del Fee</div>
                 <div class="cartx-priority-grid" id="cart-delivery-fee-grid">
                   <button class="cartx-prio-btn normal on" type="button" data-delivery-fee="BFC" onclick="setDeliveryFeeCode('BFC')">BFC</button>
@@ -4329,6 +4329,9 @@ function setDeliveryFeeCode(code){
   rCart();
 }
 function syncDeliveryFeeUI(){
+  const section = $('cart-delivery-fee-section');
+  if(section) section.style.display = fulfillmentType === 'delivery' ? '' : 'none';
+
   document.querySelectorAll('#cart-delivery-fee-grid [data-delivery-fee]').forEach(btn=>{
     btn.classList.toggle('on', btn.dataset.deliveryFee===deliveryFeeCode);
   });
@@ -4353,6 +4356,7 @@ function setFulfillmentType(type){
   fulfillmentType = type === 'delivery' ? 'delivery' : 'pickup';
   try{ window.cartFulfillmentMode = fulfillmentType; }catch(e){}
   syncFulfillmentUI();
+  syncDeliveryFeeUI();
   try{ if(typeof applyCartModeUI === 'function') applyCartModeUI(); }catch(e){}
   rCart();
   toast('Fulfillment set to '+fulfillmentLabel(fulfillmentType));
