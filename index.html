@@ -16805,5 +16805,78 @@ font-size:14px">Okay</button>'
 })();
 </script>
 
+
+<script id="receipt-source-detail-final-v1">
+(function(){
+  function byId(id){ return document.getElementById(id); }
+
+  function fallbackSourceLabel(src){
+    return ({fb:'FB',ig:'IG',tiktok:'TikTok',viber:'Viber',whatsapp:'WhatsApp',website:'Website',other:'Other'})[src] || 'FB';
+  }
+
+  function currentSource(){
+    try{
+      if(typeof orderSource !== 'undefined' && orderSource) return orderSource;
+    }catch(e){}
+
+    var active = document.querySelector('#cart-source-grid [data-source].on');
+    if(active) return active.getAttribute('data-source') || 'fb';
+
+    return 'fb';
+  }
+
+  function currentSourceLabel(src){
+    try{
+      if(typeof orderSourceLabel === 'function') return orderSourceLabel(src);
+    }catch(e){}
+    return fallbackSourceLabel(src);
+  }
+
+  function currentDetail(){
+    var el = byId('csourceDetail');
+    return el ? String(el.value || '').trim() : '';
+  }
+
+  function hydrateOrderSource(o){
+    if(!o) return o;
+
+    var src = o.orderSource || currentSource();
+    var detail = o.orderSourceDetail;
+    if(detail == null || detail === '') detail = currentDetail();
+
+    o.orderSource = src;
+    o.orderSourceLabel = o.orderSourceLabel || currentSourceLabel(src);
+    o.orderSourceDetail = String(detail || '').trim();
+
+    return o;
+  }
+
+  var oldShowReceipt = window.showReceipt || (typeof showReceipt === 'function' ? showReceipt : null);
+
+  if(typeof oldShowReceipt === 'function' && !oldShowReceipt.__receiptSourceDetailFinalV1){
+    window.showReceipt = function(order){
+      hydrateOrderSource(order);
+
+      try{
+        if(window.S && Array.isArray(S.orders) && order && order.id){
+          var saved = S.orders.find(function(o){ return String(o.id) === String(order.id); });
+          if(saved){
+            saved.orderSource = order.orderSource;
+            saved.orderSourceLabel = order.orderSourceLabel;
+            saved.orderSourceDetail = order.orderSourceDetail;
+            if(typeof sv === 'function') sv();
+          }
+        }
+      }catch(e){}
+
+      return oldShowReceipt.apply(this, arguments);
+    };
+
+    window.showReceipt.__receiptSourceDetailFinalV1 = true;
+    try{ showReceipt = window.showReceipt; }catch(e){}
+  }
+})();
+</script>
+
 </body>
 </html>
