@@ -2275,6 +2275,29 @@ body.dark #chat-minimize-channels-btn.is-collapsed{background:#14281e!important;
   }
 </style>
 
+
+<style id="order-source-card-badges-v1">
+  .order-source-mini{
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    max-width:100%;
+    margin-top:5px;
+    padding:4px 7px;
+    border-radius:999px;
+    background:var(--bl);
+    color:var(--bd);
+    font-size:10px;
+    font-weight:900;
+    line-height:1.2;
+    white-space:normal;
+  }
+  body.dark .order-source-mini{
+    background:rgba(59,130,246,.16);
+    color:#bfdbfe;
+  }
+</style>
+
 </head>
 <body>
 
@@ -4492,6 +4515,14 @@ function orderSourceText(o){
   if(!label && !detail) return '—';
   return label + (detail ? ' · ' + detail : '');
 }
+
+function orderSourceMini(o){
+  if(typeof orderSourceText !== 'function') return '';
+  const txt = orderSourceText(o);
+  if(!txt || txt === '—') return '';
+  return '<div class="order-source-mini">📣 '+esc(txt)+'</div>';
+}
+
 function orderSourceChip(o){
   const txt = orderSourceText(o);
   if(!txt || txt === '—') return '<span style="color:var(--t3)">—</span>';
@@ -4799,7 +4830,7 @@ function rKitchen(){
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
           <div>
             <div class="k-card-id">${o.id}</div>
-            <div class="k-card-cust">${o.cust||'Pickup'}</div>
+            <div class="k-card-cust">${o.cust||'Pickup'}</div>${orderSourceMini(o)}
             <div class="k-prio-row"><span class="k-prio-badge ${orderPriority(o)}">${getPriorityLabel(orderPriority(o))}</span></div>
           </div>
           <div style="text-align:right">
@@ -4934,7 +4965,7 @@ function rPickup(){
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
         <div>
           <div class="k-card-id">${o.id}</div>
-          <div class="k-card-cust">${o.cust||'Pickup'}</div>
+          <div class="k-card-cust">${o.cust||'Pickup'}</div>${orderSourceMini(o)}
           ${o.phone?`<div style="font-size:12px;color:var(--t2);margin-top:2px">📞 ${o.phone}</div>`:''}
         </div>
         <div style="text-align:right">
@@ -5345,7 +5376,7 @@ function rDel(){
         <div style="margin-top:3px"><span class="prio-badge ${orderPriority(o)}">${getPriorityLabel(orderPriority(o))}</span></div>
       </div>
       <div class="dtc-mid">
-        <div class="dtc-cust">${d.cust || 'Pickup'}</div>
+        <div class="dtc-cust">${d.cust || 'Pickup'}</div>${orderSourceMini(o)}
         <div class="dtc-sub" style="color:var(--green);font-weight:700">👤 Created by: ${orderCreatorLabel(o)}</div>
         ${d.recipient?`<div class="dtc-sub">🎁 ${d.recipient}${d.recipientPhone?' · '+d.recipientPhone:''}</div>`:''}
         <div class="dtc-sub">🏍️ ${d.rider || 'No rider yet'}</div>
@@ -10038,7 +10069,7 @@ window.addEventListener('load',function(){
         '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">'+
           '<div style="min-width:0">'+
             '<div class="k-card-id">'+escV(o.id)+'</div>'+
-            '<div class="k-card-cust">'+escV(o.cust||'Pickup')+'</div>'+
+            '<div class="k-card-cust">'+escV(o.cust||'Pickup')+'</div>'+orderSourceMini(o)+
             '<div class="k-prio-row"><span class="k-prio-badge '+escV(orderPriority(o))+'">'+escV(getPriorityLabel(orderPriority(o)))+'</span></div>'+
           '</div>'+
           '<div style="text-align:right;flex-shrink:0">'+
@@ -10233,7 +10264,7 @@ window.addEventListener('load',function(){
         '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">'+
           '<div style="min-width:0">'+
             '<div class="k-card-id">'+escV(o.id)+'</div>'+
-            '<div class="k-card-cust">'+escV(o.cust||'Pickup')+'</div>'+
+            '<div class="k-card-cust">'+escV(o.cust||'Pickup')+'</div>'+orderSourceMini(o)+
             '<div class="k-prio-row"><span class="k-prio-badge '+escV(orderPriority(o))+'">'+escV(getPriorityLabel(orderPriority(o)))+'</span></div>'+
           '</div>'+
           '<div style="text-align:right;flex-shrink:0">'+
@@ -10894,7 +10925,7 @@ window.addEventListener('load',function(){
         '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">'+
           '<div style="min-width:0">'+
             '<div class="k-card-id">'+escV(o.id)+'</div>'+
-            '<div class="k-card-cust">'+escV(o.cust||'Pickup')+'</div>'+
+            '<div class="k-card-cust">'+escV(o.cust||'Pickup')+'</div>'+orderSourceMini(o)+
             '<div class="k-prio-row"><span class="k-prio-badge '+escV(orderPriority(o))+'">'+escV(getPriorityLabel(orderPriority(o)))+'</span></div>'+
             pickupBadge+
           '</div>'+
@@ -11378,7 +11409,7 @@ window.addEventListener('load',function(){
         '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">'+
           '<div style="min-width:0">'+
             '<div class="k-card-id">'+escV(o.id)+'</div>'+
-            '<div class="k-card-cust">'+escV(o.cust||'Pickup')+'</div>'+
+            '<div class="k-card-cust">'+escV(o.cust||'Pickup')+'</div>'+orderSourceMini(o)+
             '<div class="k-prio-row"><span class="k-prio-badge '+escV(orderPriority(o))+'">'+escV(getPriorityLabel(orderPriority(o)))+'</span></div>'+
             typeBadge+
           '</div>'+
