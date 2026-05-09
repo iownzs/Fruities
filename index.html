@@ -2491,6 +2491,7 @@ body.dark #chat-minimize-channels-btn.is-collapsed{background:#14281e!important;
                   <button class="cartx-prio-btn normal" type="button" data-source="ig" onclick="setOrderSource('ig')">IG</button>
                   <button class="cartx-prio-btn normal" type="button" data-source="tiktok" onclick="setOrderSource('tiktok')">TikTok</button>
                   <button class="cartx-prio-btn normal" type="button" data-source="viber" onclick="setOrderSource('viber')">Viber</button>
+                  <button class="cartx-prio-btn normal" type="button" data-source="whatsapp" onclick="setOrderSource('whatsapp')">WhatsApp</button>
                   <button class="cartx-prio-btn normal" type="button" data-source="website" onclick="setOrderSource('website')">Website</button>
                   <button class="cartx-prio-btn normal" type="button" data-source="other" onclick="setOrderSource('other')">Other</button>
                 </div>
@@ -4288,7 +4289,7 @@ function rmItem(id){
 
 
 function orderSourceLabel(src){
-  return ({fb:'FB',ig:'IG',tiktok:'TikTok',viber:'Viber',website:'Website',other:'Other'})[src] || 'FB';
+  return ({fb:'FB',ig:'IG',tiktok:'TikTok',viber:'Viber',whatsapp:'WhatsApp',website:'Website',other:'Other'})[src] || 'FB';
 }
 function fulfillmentLabel(type){
   return type === 'delivery' ? 'Delivery' : 'Pickup';
@@ -4310,7 +4311,7 @@ function syncFulfillmentUI(){
   });
 }
 function setOrderSource(src){
-  orderSource = ({fb:1,ig:1,tiktok:1,viber:1,website:1,other:1})[src] ? src : 'fb';
+  orderSource = ({fb:1,ig:1,tiktok:1,viber:1,whatsapp:1,website:1,other:1})[src] ? src : 'fb';
   syncOrderSourceUI();
   rCart();
   toast('Source set to '+orderSourceLabel(orderSource));
