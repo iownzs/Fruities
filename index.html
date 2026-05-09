@@ -2567,7 +2567,7 @@ body.dark #chat-minimize-channels-btn.is-collapsed{background:#14281e!important;
         </div>
       </div>
 
-      <div class="card"><div class="tw"><table><thead><tr><th>Order#</th><th>Customer</th><th>Contact</th><th>Address</th><th>Delivery Date/Time</th><th>Items</th><th>Total</th><th>Channel</th><th>Status</th><th>Order Created</th><th></th></tr></thead><tbody id="otbl"></tbody></table></div></div>
+      <div class="card"><div class="tw"><table><thead><tr><th>Order#</th><th>Customer</th><th>Contact</th><th>Address</th><th>Delivery Date/Time</th><th>Items</th><th>Total</th><th>Channel</th><th>Source</th><th>Status</th><th>Order Created</th><th></th></tr></thead><tbody id="otbl"></tbody></table></div></div>
     </div>
 
     <!-- KITCHEN -->
@@ -4449,6 +4449,7 @@ function showReceipt(o){
   $('rchtml').innerHTML=`${receiptLogoHtml}<div class="rct">${esc(receiptStoreName).toUpperCase()}</div><div class="rcs">Fresh Fruits &amp; More</div><hr>
     <div class="rcr"><span>Order:</span><span>${o.id}</span></div>
     <div class="rcr"><span>Priority:</span><span>${getPriorityLabel(orderPriority(o))}</span></div>
+    <div class="rcr"><span>Source:</span><span style="max-width:55%;text-align:right">${esc(orderSourceText(o))}</span></div>
     <div class="rcr"><span>Customer:</span><span>${o.cust}</span></div>
     ${o.phone?`<div class="rcr"><span>Customer Contact:</span><span>${o.phone}</span></div>`:''}
     ${o.recipient?`<div class="rcr"><span>Recipient:</span><span>${o.recipient}</span></div>`:''}
@@ -4483,6 +4484,20 @@ function showReceipt(o){
 }
 
 // ─────── ORDERS ───────
+
+function orderSourceText(o){
+  if(!o) return '—';
+  const label = o.orderSourceLabel || (typeof orderSourceLabel === 'function' ? orderSourceLabel(o.orderSource || '') : '') || o.orderSource || '';
+  const detail = String(o.orderSourceDetail || '').trim();
+  if(!label && !detail) return '—';
+  return label + (detail ? ' · ' + detail : '');
+}
+function orderSourceChip(o){
+  const txt = orderSourceText(o);
+  if(!txt || txt === '—') return '<span style="color:var(--t3)">—</span>';
+  return '<span class="tg gb" style="white-space:normal;line-height:1.25">📣 '+esc(txt)+'</span>';
+}
+
 function orderCreatedByKey(o){
   return String(o.createdByUser || o.createdByName || o.cashier || (typeof o.createdBy==='string'?o.createdBy:'') || '').trim();
 }
@@ -4681,6 +4696,7 @@ function rOrds(){
     <td style="vertical-align:top">${orderItemsSummaryCell(o)}</td>
     <td><strong>₱${o.total.toFixed(2)}</strong></td>
     <td><span class="tg gb">${o.ch||'—'}</span></td>
+    <td>${orderSourceChip(o)}</td>
     <td>${stTag(o.status)}${fulfillTag(o)}</td>
     <td style="font-size:11px;color:var(--t3)">${ordersExactCreatedCell(o)}</td>
     <td style="white-space:nowrap">
@@ -4688,7 +4704,7 @@ function rOrds(){
       ${perm('canRefund')&&(o.status==='completed'||o.status==='cod')?`<button class="btn br bsm" onclick="refund('${o.id}')">Refund</button> `:''}
       ${perm('canMarkPaid')&&(o.status==='pending'||o.status==='cod')?`<button class="btn bg bsm" onclick="markPaid('${o.id}')">Mark Paid</button>`:''}
     </td>
-  </tr>`).join(''):'<tr><td colspan="11" style="text-align:center;color:var(--t3);padding:22px">No orders found</td></tr>';
+  </tr>`).join(''):'<tr><td colspan="12" style="text-align:center;color:var(--t3);padding:22px">No orders found</td></tr>';
   updBadge();
 }
 function refund(id){
