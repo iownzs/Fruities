@@ -4379,13 +4379,13 @@ function syncOrderSourceUI(){
 
 function setCartPriority(priority){
   cartPriority=normalizePriority(priority);
-  document.querySelectorAll('.cartx-prio-btn').forEach(btn=>{
+  document.querySelectorAll('#cart-priority-grid [data-priority]').forEach(btn=>{
     btn.classList.toggle('on', btn.dataset.priority===cartPriority);
   });
   toast('Priority set to '+getPriorityLabel(cartPriority));
 }
 function syncCartPriorityUI(){
-  document.querySelectorAll('.cartx-prio-btn').forEach(btn=>{
+  document.querySelectorAll('#cart-priority-grid [data-priority]').forEach(btn=>{
     btn.classList.toggle('on', btn.dataset.priority===cartPriority);
   });
 }
