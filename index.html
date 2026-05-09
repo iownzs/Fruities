@@ -16727,5 +16727,83 @@ font-size:14px">Okay</button>'
 })();
 </script>
 
+
+<script id="order-source-detail-save-final-v1">
+(function(){
+  function byId(id){ return document.getElementById(id); }
+
+  function fallbackSourceLabel(src){
+    return ({fb:'FB',ig:'IG',tiktok:'TikTok',viber:'Viber',whatsapp:'WhatsApp',website:'Website',other:'Other'})[src] || 'FB';
+  }
+
+  function currentSource(){
+    try{
+      if(typeof orderSource !== 'undefined' && orderSource) return orderSource;
+    }catch(e){}
+
+    var active = document.querySelector('#cart-source-grid [data-source].on');
+    if(active) return active.getAttribute('data-source') || 'fb';
+
+    return 'fb';
+  }
+
+  function currentSourceLabel(src){
+    try{
+      if(typeof orderSourceLabel === 'function') return orderSourceLabel(src);
+    }catch(e){}
+    return fallbackSourceLabel(src);
+  }
+
+  function currentDetail(){
+    var el = byId('csourceDetail');
+    return el ? String(el.value || '').trim() : '';
+  }
+
+  function applyToLatestOrder(beforeLen){
+    try{
+      if(!window.S || !Array.isArray(S.orders)) return;
+
+      var afterLen = S.orders.length;
+      if(afterLen <= beforeLen) return;
+
+      var o = S.orders[afterLen - 1];
+      if(!o) return;
+
+      var src = currentSource();
+      var detail = currentDetail();
+
+      o.orderSource = o.orderSource || src;
+      o.orderSourceLabel = o.orderSourceLabel || currentSourceLabel(o.orderSource);
+      o.orderSourceDetail = detail;
+
+      if(typeof sv === 'function') sv();
+      if(typeof rOrds === 'function' && window.curV === 'orders') rOrds();
+
+      console.log('[Order Source Detail] saved', o.id, o.orderSourceLabel, o.orderSourceDetail);
+    }catch(e){
+      console.warn('[Order Source Detail] save failed', e);
+    }
+  }
+
+  var oldConfirmPay = window.confirmPay || (typeof confirmPay === 'function' ? confirmPay : null);
+
+  if(typeof oldConfirmPay === 'function' && !oldConfirmPay.__orderSourceDetailSaveFinalV1){
+    window.confirmPay = function(){
+      var beforeLen = (window.S && Array.isArray(S.orders)) ? S.orders.length : 0;
+      var result = oldConfirmPay.apply(this, arguments);
+
+      setTimeout(function(){ applyToLatestOrder(beforeLen); }, 0);
+      setTimeout(function(){ applyToLatestOrder(beforeLen); }, 120);
+      setTimeout(function(){ applyToLatestOrder(beforeLen); }, 500);
+
+      return result;
+    };
+
+    window.confirmPay.__orderSourceDetailSaveFinalV1 = true;
+    try{ confirmPay = window.confirmPay; }catch(e){}
+  }
+})();
+</script>
+
 </body>
 </html>
