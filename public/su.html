@@ -162,7 +162,30 @@
       .cards{grid-template-columns:1fr}
       .hero h2{font-size:28px}
     }
-  </style>
+  
+.password-wrap{
+  position:relative;
+  display:flex;
+  align-items:center;
+}
+
+.password-wrap input{
+  width:100%;
+  padding-right:58px;
+}
+
+.eye-btn{
+  position:absolute;
+  right:16px;
+  top:50%;
+  transform:translateY(-50%);
+  border:0;
+  background:transparent;
+  font-size:22px;
+  cursor:pointer;
+  color:#0f7a43;
+}
+</style>
 </head>
 <body>
   <div id="login" class="login">
@@ -172,10 +195,17 @@
       <div class="sub">Platform controls for Fruities POS. Use the dedicated superadmin account.</div>
 
       <label>Username</label>
-      <input id="user" value="superadmin" autocomplete="username">
+      <input id="user" placeholder="Enter Firebase email" autocomplete="username">
 
       <label>Password</label>
-      <input id="pass" type="password" autocomplete="current-password" placeholder="Leave blank if not set">
+      
+
+<div class="password-wrap">
+  <input id="pass" type="password" autocomplete="current-password" placeholder="Enter Firebase password">
+  <button type="button" id="togglePass" class="eye-btn" aria-label="Show password">👁️</button>
+</div>
+
+
 
       <button class="btn-main" onclick="login()">Login Superadmin</button>
       <div id="loginMsg" class="sub" style="color:var(--red);display:none"></div>
@@ -318,22 +348,34 @@
       $('loginMsg').style.display = 'none';
 
       try{
-        const user = await getJson('/stores/' + STORE_ID + '/users/' + username);
+        
+const authRes = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyAq7mXoVMsBKGHzzh6JaRQTVy1Aqq41XbQ', {
+  method: 'POST',
+  headers: {'Content-Type': 'application/json'},
+  body: JSON.stringify({
+    email: username,
+    password: password,
+    returnSecureToken: true
+  })
+});
+
+if(!authRes.ok){
+  throw new Error('Invalid Firebase login');
+}
+
+const authData = await authRes.json();
+const user = await getJson('/stores/' + STORE_ID + '/users/' + authData.localId);
+
 
         if(!user || user.active === false || user.status === 'inactive'){
           throw new Error('Superadmin account not active');
         }
 
-        if(String(user.roleKey || '').toLowerCase() !== 'superadmin'){
+        if(String(user.role || user.roleKey || '').toLowerCase() !== 'superadmin'){
           throw new Error('This account is not Superadmin');
         }
-
-        if((user.pass || '') !== password){
-          throw new Error('Invalid password');
-        }
-
         currentUser = user;
-        sessionStorage.setItem('fruities_superadmin_session', JSON.stringify({username, time:Date.now()}));
+        sessionStorage.setItem('fruities_superadmin_session', JSON.stringify({username, uid: authData.localId, time:Date.now()}));
 
         $('login').classList.add('hidden');
         $('app').classList.remove('hidden');
@@ -453,8 +495,14 @@
           return;
         }
 
-        const user = await getJson('/stores/' + STORE_ID + '/users/' + session.username);
-        if(user && String(user.roleKey || '').toLowerCase() === 'superadmin'){
+        
+if(!session.uid){
+  sessionStorage.removeItem('fruities_superadmin_session');
+  return;
+}
+const user = await getJson('/stores/' + STORE_ID + '/users/' + session.uid);
+
+        if(user && String(user.role || user.roleKey || '').toLowerCase() === 'superadmin'){
           currentUser = user;
           $('login').classList.add('hidden');
           $('app').classList.remove('hidden');
@@ -465,5 +513,25 @@
 
     boot();
   </script>
+<script type="module" src="/src/su-auth.js"></script>
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const pass = document.getElementById("pass");
+  const togglePass = document.getElementById("togglePass");
+
+  if(pass && togglePass){
+    togglePass.addEventListener("click", () => {
+      const showing = pass.type === "text";
+      pass.type = showing ? "password" : "text";
+      togglePass.textContent = showing ? "👁️" : "🙈";
+      togglePass.setAttribute("aria-label", showing ? "Show password" : "Hide password");
+    });
+  }
+});
+</script>
 </body>
+
 </html>
