@@ -68,7 +68,25 @@ h1{
 </head>
 <body>
 
+
+<div style="text-align:center;margin-bottom:20px;">
+  <button onclick="generateTestQR()" style="
+    background:#1f8f4d;
+    color:white;
+    border:none;
+    padding:12px 18px;
+    border-radius:14px;
+    font-weight:700;
+    cursor:pointer;
+  ">
+    Generate Test QR
+  </button>
+
+  <div id="qrBox" style="margin-top:20px;"></div>
+</div>
+
 <div id="app" class="loading">Loading order...</div>
+
 
 <script>
 const DB_URL = 'https://fruit-story-pos-default-rtdb.asia-southeast1.firebasedatabase.app';
@@ -202,6 +220,23 @@ async function loadOrder(){
 }
 
 loadOrder();
+
+function generateTestQR(){
+
+  const url =
+    'https://fruities-six.vercel.app/track.html?order=TEST123';
+
+  document.getElementById('qrBox').innerHTML = `
+    <img
+      src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(url)}"
+      style="border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.12);"
+    />
+
+    <div style="margin-top:12px;font-size:14px;">
+      Scan this QR using your phone camera
+    </div>
+  `;
+}
 </script>
 
 </body>
