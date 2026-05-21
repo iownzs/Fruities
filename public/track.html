@@ -176,8 +176,8 @@ async function loadOrder(){
 
           ${(order.items || []).map(item => `
             <div class="item">
-              <strong>${item.name}</strong><br>
-              Qty: ${item.qty} × ${peso(item.price)}
+              <strong>${item.name || item.n}</strong><br>
+              Qty: ${item.qty || item.q} × ${peso(item.price || item.p)}
             </div>
           `).join('')}
         </div>
