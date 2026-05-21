@@ -16852,6 +16852,11 @@ font-size:14px">Okay</button>'
       o.orderSourceLabel = o.orderSourceLabel || currentSourceLabel(o.orderSource);
       o.orderSourceDetail = detail;
 
+      var feeCode = (typeof deliveryFeeCode !== 'undefined' && deliveryFeeCode) ? deliveryFeeCode : '';
+      o.deliveryFeeCode = o.deliveryFeeCode || feeCode;
+      o.deliveryFeeType = o.deliveryFeeType || feeCode;
+      o.deliveryFeeLabel = o.deliveryFeeLabel || feeCode;
+
       if(typeof sv === 'function') sv();
       if(typeof rOrds === 'function' && window.curV === 'orders') rOrds();
 
