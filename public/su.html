@@ -185,6 +185,29 @@
   cursor:pointer;
   color:#0f7a43;
 }
+
+#loginBtn.loading{
+  opacity:.92;
+  pointer-events:none;
+}
+
+.btn-spinner{
+  width:16px;
+  height:16px;
+  border:2px solid rgba(255,255,255,.35);
+  border-top-color:#fff;
+  border-radius:50%;
+  display:inline-block;
+  margin-right:8px;
+  vertical-align:middle;
+  animation:spin .7s linear infinite;
+}
+
+@keyframes spin{
+  to{
+    transform:rotate(360deg);
+  }
+}
 </style>
 </head>
 <body>
@@ -207,7 +230,7 @@
 
 
 
-      <button class="btn-main" onclick="login()">Login Superadmin</button>
+      <button id="loginBtn" class="btn-main" onclick="login()">Login Superadmin</button>
       <div id="loginMsg" class="sub" style="color:var(--red);display:none"></div>
     </div>
   </div>
@@ -322,7 +345,14 @@
 
     function dateText(v){
       if(!v) return '—';
-      try{ return new Date(v).toLocaleDateString(); }catch(e){ return String(v); }
+      try{ return new Date(v).toLocaleDateString(); }catch(e){
+
+        if(loginBtn){
+          loginBtn.disabled = false;
+          loginBtn.classList.remove('loading');
+          loginBtn.innerHTML = originalLoginText;
+        }
+ return String(v); }
     }
 
     async function getJson(path){
@@ -342,6 +372,16 @@
     }
 
     async function login(){
+
+      const loginBtn = $('loginBtn');
+      const originalLoginText = loginBtn ? loginBtn.innerHTML : '';
+
+      if(loginBtn){
+        loginBtn.disabled = true;
+        loginBtn.classList.add('loading');
+        loginBtn.innerHTML = '<span class="btn-spinner"></span>Signing in...';
+      }
+
       const username = $('user').value.trim().toLowerCase();
       const password = $('pass').value;
 
