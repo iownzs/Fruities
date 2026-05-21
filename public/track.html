@@ -181,8 +181,7 @@ async function loadOrder(){
 
         <div class="section">
           <div class="label">Delivery Fee</div>
-          <div class="value">INH: ${peso(order.deliveryFee?.inh)}</div>
-          <div class="value">BFC: ${peso(order.deliveryFee?.bfc)}</div>
+          <div class="value">${order.deliveryFeeType || '-'}</div>
         </div>
 
         <div class="section">
