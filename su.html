@@ -428,6 +428,13 @@ const user = await getJson('/stores/' + STORE_ID + '/users/' + authData.localId)
     }
 
     function logout(){
+      const loginBtn = $('loginBtn');
+      if(loginBtn){
+        loginBtn.disabled = false;
+        loginBtn.classList.remove('loading');
+        loginBtn.innerHTML = 'Login Superadmin';
+      }
+
       sessionStorage.removeItem('fruities_superadmin_session');
       currentUser = null;
       currentStore = null;
