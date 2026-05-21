@@ -9546,7 +9546,7 @@ window.addEventListener('load',function(){
   function orderQrPayload(o){
     if(!o) return '';
     // Single shared payload for both printed receipt QR and Orders > Order Code QR.
-    return String(o.id || '') + '|' + String(o.cust || 'Pickup') + '|' + money(o.total || 0);
+    return 'https://fruities-six.vercel.app/track.html?order=' + encodeURIComponent(String(o.id || ''));
   }
 
   function drawBlackWhiteQR(target, order, size){
