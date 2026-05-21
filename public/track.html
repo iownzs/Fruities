@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Fruities Order Tracker</title>
+
+<style>
+*{
+  box-sizing:border-box;
+  font-family:Inter,system-ui,sans-serif;
+}
+
+body{
+  margin:0;
+  background:#f4f7f5;
+  color:#132218;
+  padding:20px;
+}
+
+.card{
+  max-width:700px;
+  margin:0 auto;
+  background:#fff;
+  border-radius:24px;
+  padding:24px;
+  box-shadow:0 10px 40px rgba(0,0,0,.08);
+}
+
+h1{
+  margin-top:0;
+  font-size:28px;
+}
+
+.section{
+  margin-top:24px;
+}
+
+.label{
+  font-size:13px;
+  opacity:.7;
+  margin-bottom:4px;
+}
+
+.value{
+  font-size:16px;
+  font-weight:600;
+}
+
+.item{
+  padding:12px 0;
+  border-bottom:1px solid #eee;
+}
+
+.total{
+  font-size:24px;
+  font-weight:800;
+  color:#1f8f4d;
+}
+
+.loading,
+.error{
+  text-align:center;
+  margin-top:60px;
+  font-size:18px;
+}
+</style>
+</head>
+<body>
+
+<div id="app" class="loading">Loading order...</div>
+
+<script>
+const DB_URL = 'https://fruit-story-pos-default-rtdb.asia-southeast1.firebasedatabase.app';
+const STORE_ID = 'fruit-story-main';
+
+function peso(n){
+  return '₱' + Number(n || 0).toFixed(2);
+}
+
+async function loadOrder(){
+
+  const params = new URLSearchParams(location.search);
+  const orderId = params.get('order');
+
+  if(!orderId){
+    document.getElementById('app').innerHTML =
+      '<div class="error">Missing order ID</div>';
+    return;
+  }
+
+  try{
+
+    const res = await fetch(
+      DB_URL +
+      '/stores/' +
+      STORE_ID +
+      '/orders/' +
+      orderId +
+      '.json'
+    );
+
+    const order = await res.json();
+
+    if(!order){
+      document.getElementById('app').innerHTML =
+        '<div class="error">Order not found</div>';
+      return;
+    }
+
+    document.getElementById('app').innerHTML = `
+      <div class="card">
+
+        <h1>🍓 Fruities Order Details</h1>
+
+        <div class="section">
+          <div class="label">Order ID</div>
+          <div class="value">${order.orderId || '-'}</div>
+        </div>
+
+        <div class="section">
+          <div class="label">Order Date</div>
+          <div class="value">${order.orderDate || '-'}</div>
+        </div>
+
+        <div class="section">
+          <div class="label">Source</div>
+          <div class="value">${order.source || '-'}</div>
+        </div>
+
+        <div class="section">
+          <div class="label">Customer Name</div>
+          <div class="value">${order.customerName || '-'}</div>
+        </div>
+
+        <div class="section">
+          <div class="label">Customer Number</div>
+          <div class="value">${order.customerNumber || '-'}</div>
+        </div>
+
+        <div class="section">
+          <div class="label">Recipient Name</div>
+          <div class="value">${order.recipientName || '-'}</div>
+        </div>
+
+        <div class="section">
+          <div class="label">Recipient Number</div>
+          <div class="value">${order.recipientNumber || '-'}</div>
+        </div>
+
+        <div class="section">
+          <div class="label">Address</div>
+          <div class="value">${order.address || '-'}</div>
+        </div>
+
+        <div class="section">
+          <div class="label">Items</div>
+
+          ${(order.items || []).map(item => `
+            <div class="item">
+              <strong>${item.name}</strong><br>
+              Qty: ${item.qty} × ${peso(item.price)}
+            </div>
+          `).join('')}
+        </div>
+
+        <div class="section">
+          <div class="label">Payment Method</div>
+          <div class="value">${order.paymentMethod || '-'}</div>
+        </div>
+
+        <div class="section">
+          <div class="label">Delivery Type</div>
+          <div class="value">${order.deliveryType || '-'}</div>
+        </div>
+
+        <div class="section">
+          <div class="label">Date / Pick up</div>
+          <div class="value">${order.deliveryDate || '-'}</div>
+        </div>
+
+        <div class="section">
+          <div class="label">Delivery Fee</div>
+          <div class="value">INH: ${peso(order.deliveryFee?.inh)}</div>
+          <div class="value">BFC: ${peso(order.deliveryFee?.bfc)}</div>
+        </div>
+
+        <div class="section">
+          <div class="label">Total</div>
+          <div class="total">${peso(order.total)}</div>
+        </div>
+
+      </div>
+    `;
+
+  }catch(err){
+
+    document.getElementById('app').innerHTML =
+      '<div class="error">Failed to load order</div>';
+
+    console.error(err);
+  }
+}
+
+loadOrder();
+</script>
+
+</body>
+</html>
