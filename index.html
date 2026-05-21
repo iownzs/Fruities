@@ -4494,6 +4494,10 @@ function confirmPay(){
   const disc=parseFloat($('din').value)||0,sub=cart.reduce((a,c)=>a+c.p*c.q,0);
   const oid='ORD-'+String(S.orders.length+1).padStart(4,'0');
   const status=payOS==='paid'?'completed':payOS;
+
+  try{
+    toast('Del Fee: ' + (deliveryFeeCode || 'blank'));
+  }catch(e){}
   const order={id:oid,cust,phone,recipient,recipientPhone,addr,notes,items:cart.map(c=>({...c})),sub,disc,total:tot,ch:payCh,payOS,status,priority:cartPriority,fulfillmentType,orderType:fulfillmentType,orderSource,orderSourceLabel:orderSourceLabel(orderSource),orderSourceDetail,deliveryFeeCode,deliveryFeeType:deliveryFeeCode,deliveryFeeLabel:deliveryFeeLabel(deliveryFeeCode),time:new Date().toISOString(),cashier:S.cur.name,createdByName:S.cur.name,createdByUser:S.cur.user||'',createdByRole:S.cur.role||'',createdByAt:new Date().toISOString()};
   cart.forEach(c=>{const p=(S.products||[]).find(x=>productId(x)===String(c.id));if(p){const ns=Math.max(0,productStock(p)-c.q);setProductStock(p,ns);}});
   
