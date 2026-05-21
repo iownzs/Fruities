@@ -415,6 +415,7 @@ const user = await getJson('/stores/' + STORE_ID + '/users/' + authData.localId)
           throw new Error('This account is not Superadmin');
         }
         currentUser = user;
+        toast('✅ Login successful');
         sessionStorage.setItem('fruities_superadmin_session', JSON.stringify({username, uid: authData.localId, time:Date.now()}));
 
         $('login').classList.add('hidden');
@@ -428,6 +429,7 @@ const user = await getJson('/stores/' + STORE_ID + '/users/' + authData.localId)
     }
 
     function logout(){
+      toast('👋 Logged out');
       const loginBtn = $('loginBtn');
       if(loginBtn){
         loginBtn.disabled = false;
