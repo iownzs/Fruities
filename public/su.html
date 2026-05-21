@@ -185,6 +185,32 @@
   cursor:pointer;
   color:#0f7a43;
 }
+
+#loginBtn{
+  transition:.2s ease;
+}
+
+#loginBtn.loading{
+  opacity:.9;
+  pointer-events:none;
+}
+
+.btn-spinner{
+  width:18px;
+  height:18px;
+  border:2px solid rgba(255,255,255,.35);
+  border-top-color:#fff;
+  border-radius:50%;
+  display:inline-block;
+  animation:spin .7s linear infinite;
+  vertical-align:middle;
+}
+
+@keyframes spin{
+  to{
+    transform:rotate(360deg);
+  }
+}
 </style>
 </head>
 <body>
@@ -322,7 +348,15 @@
 
     function dateText(v){
       if(!v) return '—';
-      try{ return new Date(v).toLocaleDateString(); }catch(e){ return String(v); }
+      try{ return new Date(v).toLocaleDateString(); 
+      if(loginBtn){
+        loginBtn.disabled = false;
+        loginBtn.classList.remove("loading");
+        loginBtn.innerHTML = originalBtn;
+      }
+
+    }catch(e){
+ return String(v); }
     }
 
     async function getJson(path){
@@ -341,7 +375,18 @@
       return await res.json();
     }
 
-    async function login(){
+    
+async function login(){
+
+  const loginBtn = document.getElementById("loginBtn");
+  const originalBtn = loginBtn ? loginBtn.innerHTML : "";
+
+  if(loginBtn){
+    loginBtn.disabled = true;
+    loginBtn.classList.add("loading");
+    loginBtn.innerHTML = '<span class="btn-spinner"></span> Signing in...';
+  }
+
       const username = $('user').value.trim().toLowerCase();
       const password = $('pass').value;
 
@@ -438,9 +483,25 @@ const user = await getJson('/stores/' + STORE_ID + '/users/' + authData.localId)
       });
 
       if(enabled){
-        try{ localStorage.setItem('fruities_pos_recent_unlock_at', String(Date.now())); }catch(e){}
+        try{ localStorage.setItem('fruities_pos_recent_unlock_at', String(Date.now())); 
+      if(loginBtn){
+        loginBtn.disabled = false;
+        loginBtn.classList.remove("loading");
+        loginBtn.innerHTML = originalBtn;
+      }
+
+    }catch(e){
+}
       }else{
-        try{ localStorage.removeItem('fruities_pos_recent_unlock_at'); }catch(e){}
+        try{ localStorage.removeItem('fruities_pos_recent_unlock_at'); 
+      if(loginBtn){
+        loginBtn.disabled = false;
+        loginBtn.classList.remove("loading");
+        loginBtn.innerHTML = originalBtn;
+      }
+
+    }catch(e){
+}
       }
 
       toast(enabled ? 'POS unlocked ✅' : 'POS locked ⛔');
@@ -508,7 +569,15 @@ const user = await getJson('/stores/' + STORE_ID + '/users/' + session.uid);
           $('app').classList.remove('hidden');
           await refresh();
         }
-      }catch(e){}
+      
+      if(loginBtn){
+        loginBtn.disabled = false;
+        loginBtn.classList.remove("loading");
+        loginBtn.innerHTML = originalBtn;
+      }
+
+    }catch(e){
+}
     }
 
     boot();
