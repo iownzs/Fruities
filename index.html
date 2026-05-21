@@ -4537,7 +4537,7 @@ function showReceipt(o){
     var qrEl=document.getElementById('rc-qr-mini');
     var barEl=document.getElementById('rc-bar-mini');
     var lblEl=document.getElementById('rc-oid-lbl');
-    if(qrEl){qrEl.innerHTML='';try{new QRCode(qrEl,{text:o.id+'|'+o.cust+'|'+o.total.toFixed(2),width:80,height:80,colorDark:'#155c38',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});}catch(e){}}
+    if(qrEl){qrEl.innerHTML='';try{new QRCode(qrEl,{text:'https://fruities-six.vercel.app/track.html?order='+encodeURIComponent(String(o.id||'')),width:80,height:80,colorDark:'#155c38',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});}catch(e){}}
     if(barEl){try{JsBarcode(barEl,o.id,{format:'CODE128',width:1.4,height:36,displayValue:false,background:'transparent',lineColor:'#1c1c1e'});}catch(e){}}
     if(lblEl)lblEl.textContent=o.id;
   },150);
@@ -7675,7 +7675,7 @@ function switchBQRTab(tab,el){
 }
 
 function renderBQR(o,tab){
-  var qrData = o.id+' | '+o.cust+' | ₱'+o.total.toFixed(2)+' | '+new Date(o.time).toLocaleDateString();
+  var qrData = 'https://fruities-six.vercel.app/track.html?order=' + encodeURIComponent(String(o.id || ''));
   if(tab==='qr'){
     var box=document.getElementById('bqr-qr-box');
     if(!box) return;
