@@ -133,12 +133,12 @@ async function loadOrder(){
 
         <div class="section">
           <div class="label">Order ID</div>
-          <div class="value">${order.orderId || '-'}</div>
+          <div class="value">${order.orderId || order.id || '-'}</div>
         </div>
 
         <div class="section">
           <div class="label">Order Date</div>
-          <div class="value">${order.orderDate || '-'}</div>
+          <div class="value">${order.orderDate || order.createdAt || '-'}</div>
         </div>
 
         <div class="section">
