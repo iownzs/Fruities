@@ -148,27 +148,27 @@ async function loadOrder(){
 
         <div class="section">
           <div class="label">Customer Name</div>
-          <div class="value">${order.customerName || '-'}</div>
+          <div class="value">${order.customerName || order.cust || '-'}</div>
         </div>
 
         <div class="section">
           <div class="label">Customer Number</div>
-          <div class="value">${order.customerNumber || '-'}</div>
+          <div class="value">${order.customerNumber || order.cp || '-'}</div>
         </div>
 
         <div class="section">
           <div class="label">Recipient Name</div>
-          <div class="value">${order.recipientName || '-'}</div>
+          <div class="value">${order.recipientName || order.rname || '-'}</div>
         </div>
 
         <div class="section">
           <div class="label">Recipient Number</div>
-          <div class="value">${order.recipientNumber || '-'}</div>
+          <div class="value">${order.recipientNumber || order.rp || '-'}</div>
         </div>
 
         <div class="section">
           <div class="label">Address</div>
-          <div class="value">${order.address || '-'}</div>
+          <div class="value">${order.address || order.addr || order.deliveryAddress || '-'}</div>
         </div>
 
         <div class="section">
@@ -184,17 +184,17 @@ async function loadOrder(){
 
         <div class="section">
           <div class="label">Payment Method</div>
-          <div class="value">${order.paymentMethod || '-'}</div>
+          <div class="value">${order.paymentMethod || order.ch || '-'}</div>
         </div>
 
         <div class="section">
           <div class="label">Delivery Type</div>
-          <div class="value">${order.deliveryType || '-'}</div>
+          <div class="value">${order.deliveryType || order.fulfillmentType || '-'}</div>
         </div>
 
         <div class="section">
           <div class="label">Date / Pick up</div>
-          <div class="value">${order.deliveryDate || '-'}</div>
+          <div class="value">${order.deliveryDate || order.delivery_date || '-'}</div>
         </div>
 
         <div class="section">
@@ -204,7 +204,7 @@ async function loadOrder(){
 
         <div class="section">
           <div class="label">Total</div>
-          <div class="total">${peso(order.total)}</div>
+          <div class="total">${peso(order.total || 0)}</div>
         </div>
 
       </div>
