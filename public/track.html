@@ -143,7 +143,7 @@ async function loadOrder(){
 
         <div class="section">
           <div class="label">Source</div>
-          <div class="value">${order.source || '-'}</div>
+          <div class="value">${order.orderSourceLabel || order.orderSource || order.source || '-'}</div>
         </div>
 
         <div class="section">
@@ -153,17 +153,17 @@ async function loadOrder(){
 
         <div class="section">
           <div class="label">Customer Number</div>
-          <div class="value">${order.customerNumber || order.cp || '-'}</div>
+          <div class="value">${order.customerNumber || order.phone || order.cp || '-'}</div>
         </div>
 
         <div class="section">
           <div class="label">Recipient Name</div>
-          <div class="value">${order.recipientName || order.rname || '-'}</div>
+          <div class="value">${order.recipientName || order.recipient || order.rname || '-'}</div>
         </div>
 
         <div class="section">
           <div class="label">Recipient Number</div>
-          <div class="value">${order.recipientNumber || order.rp || '-'}</div>
+          <div class="value">${order.recipientNumber || order.recipientPhone || order.rp || '-'}</div>
         </div>
 
         <div class="section">
