@@ -425,7 +425,7 @@ body{
     </div>
 
     <div class="timeline">
-      <div class="step done">
+      <div class="step" data-step="placed">
         <div class="icon">🧾</div>
         <div class="info">
           <h3>Order Placed</h3>
@@ -434,7 +434,7 @@ body{
         </div>
       </div>
 
-      <div class="step done">
+      <div class="step" data-step="preparing">
         <div class="icon">👨‍🍳</div>
         <div class="info">
           <h3>Preparing</h3>
@@ -443,7 +443,7 @@ body{
         </div>
       </div>
 
-      <div class="step active">
+      <div class="step" data-step="out">
         <div class="icon">🏍️</div>
         <div class="info">
           <div class="active-box">
@@ -456,7 +456,7 @@ body{
         </div>
       </div>
 
-      <div class="step pending">
+      <div class="step" data-step="delivered">
         <div class="icon">📦</div>
         <div class="info">
           <h3>Delivered</h3>
@@ -468,6 +468,31 @@ body{
     <div class="footer">✅ We're handling your order with care. Thank you for choosing Fruities!</div>
   </div>
 </div>
+
+<script>
+function setLiveStep(currentStep){
+  const steps = ['placed','preparing','out','delivered'];
+  const currentIndex = steps.indexOf(currentStep);
+
+  document.querySelectorAll('[data-step]').forEach(el=>{
+    const stepIndex = steps.indexOf(el.dataset.step);
+
+    el.classList.remove('done','active','pending');
+
+    if(stepIndex < currentIndex){
+      el.classList.add('done');
+    }else if(stepIndex === currentIndex){
+      el.classList.add('active');
+    }else{
+      el.classList.add('pending');
+    }
+  });
+}
+
+const params = new URLSearchParams(location.search);
+setLiveStep(params.get('step') || 'out');
+</script>
+
 </body>
 </html>
 
