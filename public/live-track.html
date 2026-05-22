@@ -388,6 +388,27 @@ body{
   }
 }
 
+
+
+/* FORCE SMOOTH RIDER MOVEMENT */
+.rider-img{
+  animation: riderSmoothMove 2.8s ease-in-out infinite !important;
+  transform-origin:center center;
+  will-change:transform;
+}
+
+@keyframes riderSmoothMove{
+  0%{
+    transform:translateX(-6px) translateY(0);
+  }
+  50%{
+    transform:translateX(8px) translateY(-2px);
+  }
+  100%{
+    transform:translateX(-6px) translateY(0);
+  }
+}
+
 </style>
 </head>
 <body>
@@ -551,6 +572,27 @@ body{
     right:16px !important;
     bottom:12px !important;
     width:95px !important;
+  }
+}
+
+
+
+/* FORCE SMOOTH RIDER MOVEMENT */
+.rider-img{
+  animation: riderSmoothMove 2.8s ease-in-out infinite !important;
+  transform-origin:center center;
+  will-change:transform;
+}
+
+@keyframes riderSmoothMove{
+  0%{
+    transform:translateX(-6px) translateY(0);
+  }
+  50%{
+    transform:translateX(8px) translateY(-2px);
+  }
+  100%{
+    transform:translateX(-6px) translateY(0);
   }
 }
 
