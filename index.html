@@ -5520,12 +5520,33 @@ function assignRider(){
 }
 
 function updDel(id, st){
-  const d = S.deliveries.find(x=>x.id===id);
+  const d = S.deliveries.find(x=>String(x.id)===String(id));
   if(!d) return;
+
   d.status = st;
-  if(st === 'out'){ if(!d.outAt)d.outAt=Date.now(); if(!d.timerStart){ d.timerStart=Date.now(); d.timerEnd=null; toast('🏃 Timer started!'); } }
-  if(st === 'delivered'){ if(!d.deliveredAt)d.deliveredAt=Date.now(); if(d.timerStart && !d.timerEnd){ d.timerEnd=Date.now(); toast('✅ Delivered in '+fmtElapsed(d.timerEnd-d.timerStart)); } }
-  sv(); rDel();
+
+  if(st === 'out'){
+    if(!d.outAt) d.outAt = Date.now();
+    if(!d.timerStart) d.timerStart = Date.now();
+    d.timerEnd = null;
+    toast('🏃 Timer started!');
+  }
+
+  if(st === 'delivered'){
+    const now = Date.now();
+
+    if(!d.deliveredAt) d.deliveredAt = now;
+    if(!d.timerStart) d.timerStart = d.outAt || now;
+
+    d.timerEnd = now;
+    d.status = 'delivered';
+    d.deliveryStatus = 'delivered';
+
+    toast('✅ Delivered in '+fmtElapsed(d.timerEnd-d.timerStart));
+  }
+
+  sv();
+  rDel();
 }
 
 // ─────── STOCKS ───────
