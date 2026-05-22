@@ -5406,7 +5406,7 @@ function rDel(){
         ? `<span class="tg gg" style="font-size:11px">✅ Done</span>`
         : d.status === 'out'
           ? `<button type="button" class="btn bg bsm" onclick="event.stopPropagation();updDel('${d.id}','delivered')">✅ Done</button>`
-          : `<button type="button" class="btn bg bsm" onclick="event.stopPropagation();openAssignRiderModal('${d.id}')">🏍️ ${d.rider?'Re-assign':'Assign Rider'}</button>`
+          : `<button type="button" class="btn bg bsm" onclick="event.preventDefault();event.stopPropagation();quickAssignRider('${d.id}')">🏍️ ${d.rider?'Re-assign':'Assign Rider'}</button>`
       }
     </td>
   </tr>`}).join('') : `<tr><td colspan="9" style="text-align:center;color:var(--t3);padding:36px">
