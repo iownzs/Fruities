@@ -4342,8 +4342,15 @@ function orderDeliveryFeeText(o){
   return code === 'INH' ? 'INH' : 'BFC';
 }
 function orderDeliveryFeeMini(o){
+  const type = String((o && (o.fulfillmentType || o.orderType || o.deliveryType)) || '').toLowerCase();
+
+  if(type === 'pickup') return '';
+
   const code = orderDeliveryFeeText(o);
-  return code ? '<span class="tg go" style="margin-left:4px">🚚 Del Fee: '+esc(code)+'</span>' : '';
+
+  return code
+    ? '<span class="tg go" style="margin-left:4px">🚚 Del Fee: '+esc(code)+'</span>'
+    : '';
 }
 
 function orderSourceLabel(src){
