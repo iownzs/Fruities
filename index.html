@@ -5408,7 +5408,7 @@ function rDel(){
         ? `<button class="btn br bsm" onclick="stopTimer('${d.id}')">⏹</button>`
         : ''}
       ${d.status!=='delivered'
-        ? `<select class="fi" style="padding:4px 7px;font-size:12px" onchange="updDel('${d.id}',this.value)">
+        ? `<select class="fi" style="padding:4px 7px;font-size:12px" onchange="alert('Delivery status changed: ${d.id} → '+this.value);updDel('${d.id}',this.value)">
             <option${d.status==='waiting'?' selected':''} value="waiting">⏳ Waiting</option>
             <option${d.status==='out'?' selected':''} value="out">🚚 Out</option>
             <option value="delivered">✅ Delivered</option>
