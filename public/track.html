@@ -143,7 +143,15 @@ async function loadOrder(){
 
         <div class="section">
           <div class="label">Source</div>
-          <div class="value">${order.orderSourceLabel || order.orderSource || order.source || '-'}</div>
+          <div class="value">
+  ${
+    order.orderSourceLabel || order.orderSource || order.source || '-'
+  }${
+    order.orderSourceDetail
+      ? ' - ' + order.orderSourceDetail
+      : ''
+  }
+</div>
         </div>
 
         <div class="section">
