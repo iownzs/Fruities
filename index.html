@@ -5402,7 +5402,7 @@ function rDel(){
     <td>${delTag(d.status)}${deliveryTimeline(d)}</td>
     <td style="white-space:nowrap;display:flex;gap:5px;flex-wrap:wrap;align-items:center;padding:8px 10px">
       ${d.status!=='delivered'
-        ? `<button type="button" class="btn bg bsm assign-rider-btn" data-assign-rider-id="${d.id}">🏍️ ${d.rider?'Re-assign':'Assign Rider'}</button>`
+        ? `<button class="btn bg bsm" onclick="openAssignRiderModal('${d.id}')">🏍️ ${d.rider?'Re-assign':'Assign Rider'}</button>`
         : ''}
       ${d.timerStart && !d.timerEnd && d.status!=='delivered'
         ? `<button class="btn br bsm" onclick="stopTimer('${d.id}')">⏹</button>`
@@ -5686,57 +5686,7 @@ function printProductLabel(){
       <body>
         <div class="label">${area.innerHTML}</div>
         <script>window.onload=function(){setTimeout(function(){window.print();},200)}<\/script>
-      
-<script id="delivery-assign-rider-safe-click-v1">
-(function(){
-  window.openAssignRiderModal = function(delId){
-    try{
-      var d = (window.S && Array.isArray(S.deliveries))
-        ? S.deliveries.find(function(x){ return String(x.id) === String(delId); })
-        : null;
-
-      if(!d){
-        alert('Delivery not found: ' + delId);
-        return;
-      }
-
-      var hidden = document.getElementById('dord-hidden');
-      var info = document.getElementById('mdel-order-info');
-      var riderInput = document.getElementById('drider');
-      var modal = document.getElementById('mdel');
-
-      if(hidden) hidden.value = delId;
-
-      if(info){
-        info.innerHTML =
-          '<span style="color:var(--gd)">' + (d.id || '') + '</span>' +
-          ' &nbsp;·&nbsp; ' + (d.cust || 'Customer') +
-          (d.phone ? '&nbsp; 📞 ' + d.phone : '') +
-          '&nbsp;·&nbsp; ₱' + Number(d.total || 0).toFixed(2);
-      }
-
-      if(riderInput) riderInput.value = d.rider || d.riderName || '';
-
-      if(modal) modal.classList.add('on');
-
-    }catch(e){
-      alert('Assign Rider error: ' + e.message);
-    }
-  };
-
-  document.addEventListener('click', function(e){
-    var btn = e.target.closest('.assign-rider-btn[data-assign-rider-id]');
-    if(!btn) return;
-
-    e.preventDefault();
-    e.stopPropagation();
-
-    window.openAssignRiderModal(btn.getAttribute('data-assign-rider-id'));
-  }, true);
-})();
-</script>
-
-</body>
+      </body>
     </html>
   `;
 
@@ -7874,57 +7824,7 @@ function printCode(){
     +codeHtml
     +'<div style="font-size:11px;color:#888;margin-top:12px">'+(o?'₱'+o.total.toFixed(2)+' · '+new Date(o.time).toLocaleDateString():'')+'</div>'
     +'<scr'+'ipt>window.onload=function(){window.print();window.close();}<\/scr'+'ipt>'
-    +'
-<script id="delivery-assign-rider-safe-click-v1">
-(function(){
-  window.openAssignRiderModal = function(delId){
-    try{
-      var d = (window.S && Array.isArray(S.deliveries))
-        ? S.deliveries.find(function(x){ return String(x.id) === String(delId); })
-        : null;
-
-      if(!d){
-        alert('Delivery not found: ' + delId);
-        return;
-      }
-
-      var hidden = document.getElementById('dord-hidden');
-      var info = document.getElementById('mdel-order-info');
-      var riderInput = document.getElementById('drider');
-      var modal = document.getElementById('mdel');
-
-      if(hidden) hidden.value = delId;
-
-      if(info){
-        info.innerHTML =
-          '<span style="color:var(--gd)">' + (d.id || '') + '</span>' +
-          ' &nbsp;·&nbsp; ' + (d.cust || 'Customer') +
-          (d.phone ? '&nbsp; 📞 ' + d.phone : '') +
-          '&nbsp;·&nbsp; ₱' + Number(d.total || 0).toFixed(2);
-      }
-
-      if(riderInput) riderInput.value = d.rider || d.riderName || '';
-
-      if(modal) modal.classList.add('on');
-
-    }catch(e){
-      alert('Assign Rider error: ' + e.message);
-    }
-  };
-
-  document.addEventListener('click', function(e){
-    var btn = e.target.closest('.assign-rider-btn[data-assign-rider-id]');
-    if(!btn) return;
-
-    e.preventDefault();
-    e.stopPropagation();
-
-    window.openAssignRiderModal(btn.getAttribute('data-assign-rider-id'));
-  }, true);
-})();
-</script>
-
-</body></html>');
+    +'</body></html>');
   win.document.close();
 }
 
@@ -9887,57 +9787,7 @@ window.addEventListener('load',function(){
       + codeHtml
       + '<div style="font-size:11px;color:#555;margin-top:12px">₱' + money(order.total) + ' · ' + new Date(order.time).toLocaleDateString() + '</div>'
       + '<scr'+'ipt>window.onload=function(){window.print();window.close();}<\/scr'+'ipt>'
-      + '
-<script id="delivery-assign-rider-safe-click-v1">
-(function(){
-  window.openAssignRiderModal = function(delId){
-    try{
-      var d = (window.S && Array.isArray(S.deliveries))
-        ? S.deliveries.find(function(x){ return String(x.id) === String(delId); })
-        : null;
-
-      if(!d){
-        alert('Delivery not found: ' + delId);
-        return;
-      }
-
-      var hidden = document.getElementById('dord-hidden');
-      var info = document.getElementById('mdel-order-info');
-      var riderInput = document.getElementById('drider');
-      var modal = document.getElementById('mdel');
-
-      if(hidden) hidden.value = delId;
-
-      if(info){
-        info.innerHTML =
-          '<span style="color:var(--gd)">' + (d.id || '') + '</span>' +
-          ' &nbsp;·&nbsp; ' + (d.cust || 'Customer') +
-          (d.phone ? '&nbsp; 📞 ' + d.phone : '') +
-          '&nbsp;·&nbsp; ₱' + Number(d.total || 0).toFixed(2);
-      }
-
-      if(riderInput) riderInput.value = d.rider || d.riderName || '';
-
-      if(modal) modal.classList.add('on');
-
-    }catch(e){
-      alert('Assign Rider error: ' + e.message);
-    }
-  };
-
-  document.addEventListener('click', function(e){
-    var btn = e.target.closest('.assign-rider-btn[data-assign-rider-id]');
-    if(!btn) return;
-
-    e.preventDefault();
-    e.stopPropagation();
-
-    window.openAssignRiderModal(btn.getAttribute('data-assign-rider-id'));
-  }, true);
-})();
-</script>
-
-</body></html>');
+      + '</body></html>');
     win.document.close();
   };
 })();
@@ -17266,56 +17116,6 @@ font-size:14px">Okay</button>'
   }
 
   window.syncDelFeeVisibilityFinal = syncDelFeeVisibility;
-})();
-</script>
-
-
-<script id="delivery-assign-rider-safe-click-v1">
-(function(){
-  window.openAssignRiderModal = function(delId){
-    try{
-      var d = (window.S && Array.isArray(S.deliveries))
-        ? S.deliveries.find(function(x){ return String(x.id) === String(delId); })
-        : null;
-
-      if(!d){
-        alert('Delivery not found: ' + delId);
-        return;
-      }
-
-      var hidden = document.getElementById('dord-hidden');
-      var info = document.getElementById('mdel-order-info');
-      var riderInput = document.getElementById('drider');
-      var modal = document.getElementById('mdel');
-
-      if(hidden) hidden.value = delId;
-
-      if(info){
-        info.innerHTML =
-          '<span style="color:var(--gd)">' + (d.id || '') + '</span>' +
-          ' &nbsp;·&nbsp; ' + (d.cust || 'Customer') +
-          (d.phone ? '&nbsp; 📞 ' + d.phone : '') +
-          '&nbsp;·&nbsp; ₱' + Number(d.total || 0).toFixed(2);
-      }
-
-      if(riderInput) riderInput.value = d.rider || d.riderName || '';
-
-      if(modal) modal.classList.add('on');
-
-    }catch(e){
-      alert('Assign Rider error: ' + e.message);
-    }
-  };
-
-  document.addEventListener('click', function(e){
-    var btn = e.target.closest('.assign-rider-btn[data-assign-rider-id]');
-    if(!btn) return;
-
-    e.preventDefault();
-    e.stopPropagation();
-
-    window.openAssignRiderModal(btn.getAttribute('data-assign-rider-id'));
-  }, true);
 })();
 </script>
 
