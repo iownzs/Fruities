@@ -10551,7 +10551,7 @@ window.addEventListener('load',function(){
 
     var addr = byId('caddr');
     if(addr){
-      addr.required = mode === 'delivery';
+      addr.required = false;
       addr.placeholder = mode === 'delivery' ? 'Delivery address' : 'Hidden for pick up';
       if(mode === 'pickup') addr.value = '';
     }
@@ -10741,7 +10741,7 @@ window.addEventListener('load',function(){
 
     ['cpickupname','cpickupphone','cpickupdate','cpickuptime'].forEach(function(id){
       var el = byId(id);
-      if(el) el.required = pickup;
+      if(el) el.required = false;
     });
 
     if(pickup) window.syncPickupDetailsV3();
