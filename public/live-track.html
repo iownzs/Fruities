@@ -489,8 +489,59 @@ function setLiveStep(currentStep){
   });
 }
 
-const params = new URLSearchParams(location.search);
-setLiveStep(params.get('step') || 'out');
+const DB_URL = 'https://fruities-pos-default-rtdb.asia-southeast1.firebasedatabase.app';
+const STORE_ID = 'fruit-story-main';
+
+function detectStep(order){
+  const status = String(order.status || '').toLowerCase();
+  const kit = String(order.kitStatus || order.kitchenStatus || '').toLowerCase();
+  const delivery = String(order.deliveryStatus || '').toLowerCase();
+
+  if(status === 'delivered' || delivery === 'delivered'){
+    return 'delivered';
+  }
+
+  if(kit === 'out' || delivery === 'out' || delivery === 'out_for_delivery'){
+    return 'out';
+  }
+
+  if(kit === 'preparing' || kit === 'ready'){
+    return 'preparing';
+  }
+
+  return 'placed';
+}
+
+async function loadLiveOrder(){
+  const params = new URLSearchParams(location.search);
+  const orderId = params.get('id') || params.get('order');
+
+  if(!orderId){
+    setLiveStep(params.get('step') || 'out');
+    return;
+  }
+
+  try{
+    const res = await fetch(
+      DB_URL + '/stores/' + STORE_ID + '/orders/' + encodeURIComponent(orderId) + '.json',
+      {cache:'no-store'}
+    );
+
+    const order = await res.json();
+
+    if(!order){
+      setLiveStep('placed');
+      return;
+    }
+
+    setLiveStep(detectStep(order));
+
+  }catch(e){
+    setLiveStep(params.get('step') || 'out');
+  }
+}
+
+loadLiveOrder();
 </script>
 
 </body>
