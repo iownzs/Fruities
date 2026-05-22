@@ -12411,7 +12411,13 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
     copy.updatedAt = now;
     copy.syncedAt = now;
     copy.source = copy.source || 'pos';
+    
+    copy.deliveryFeeCode = copy.deliveryFeeCode || copy.delFeeCode || copy.delivery_fee_code || '';
+    copy.deliveryFeeType = copy.deliveryFeeType || copy.deliveryFeeCode || '';
+    copy.deliveryFeeLabel = copy.deliveryFeeLabel || copy.deliveryFeeType || '';
+
     copy.createdBy = copy.createdBy || (S && S.cur && (S.cur.user || S.cur.name)) || 'local';
+
 
     return { key: key, payload: copy };
   }
