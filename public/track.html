@@ -138,7 +138,19 @@ async function loadOrder(){
 
         <div class="section">
           <div class="label">Order Date</div>
-          <div class="value">${order.orderDate || order.createdAt || '-'}</div>
+          <div class="value">
+  ${
+    order.time
+      ? new Date(order.time).toLocaleString('en-PH', {
+          year:'numeric',
+          month:'long',
+          day:'numeric',
+          hour:'numeric',
+          minute:'2-digit'
+        })
+      : (order.orderDate || order.createdAt || '-')
+  }
+</div>
         </div>
 
         <div class="section">
