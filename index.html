@@ -5507,10 +5507,21 @@ function assignRider(){
   if(!rider){toast('Enter a rider name','err');$('drider').focus();return;}
   const d=S.deliveries.find(x=>x.id===delId);if(!d)return;
   d.rider=rider;
+  d.riderName=rider;
   d.status='out';
   d.outAt=Date.now();
   d.timerStart=Date.now();
   d.timerEnd=null;
+
+  const oid = d.oid || d.orderId || d.order || d.id;
+  const o = (S.orders || []).find(x => String(x.id) === String(oid));
+  if(o){
+    o.rider = rider;
+    o.riderName = rider;
+    o.deliveryStatus = 'out_for_delivery';
+    o.outForDeliveryAt = Date.now();
+    o.deliveryOutAt = Date.now();
+  }
   addAct('🏍️','Rider Assigned',`${delId} → ${rider}`,'var(--ol)');
   sv();closeM('mdel');rDel();
   toast('🏍️ '+rider+' dispatched! Timer started.');
