@@ -5408,11 +5408,11 @@ function rDel(){
         ? `<button class="btn br bsm" onclick="stopTimer('${d.id}')">⏹</button>`
         : ''}
       ${d.status!=='delivered'
-        ? `<select class="fi" style="padding:4px 7px;font-size:12px" onchange="alert('Delivery status changed: ${d.id} → '+this.value);updDel('${d.id}',this.value)">
-            <option${d.status==='waiting'?' selected':''} value="waiting">⏳ Waiting</option>
-            <option${d.status==='out'?' selected':''} value="out">🚚 Out</option>
-            <option value="delivered">✅ Delivered</option>
-          </select>`
+        ? `
+          <button type="button" class="btn bw bsm" onclick="event.stopPropagation();updDel('${d.id}','waiting')">⏳ Waiting</button>
+          <button type="button" class="btn bg bsm" onclick="event.stopPropagation();updDel('${d.id}','out')">🚚 Out</button>
+          <button type="button" class="btn br bsm" onclick="event.stopPropagation();updDel('${d.id}','delivered')">✅ Delivered</button>
+        `
         : `<span class="tg gg" style="font-size:11px">✅ Done</span>`}
     </td>
   </tr>`}).join('') : `<tr><td colspan="9" style="text-align:center;color:var(--t3);padding:36px">
