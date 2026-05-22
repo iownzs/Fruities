@@ -5402,7 +5402,7 @@ function rDel(){
     <td>${delTag(d.status)}${deliveryTimeline(d)}</td>
     <td style="white-space:nowrap;display:flex;gap:5px;flex-wrap:wrap;align-items:center;padding:8px 10px">
       ${d.status!=='delivered'
-        ? `<button class="btn bg bsm" onclick="alert('Assign Rider clicked: ${d.id}');openAssignRiderModal('${d.id}')">🏍️ ${d.rider?'Re-assign':'Assign Rider'}</button>`
+        ? `<button class="btn bg bsm" onclick="openAssignRiderModal('${d.id}')">🏍️ ${d.rider?'Re-assign':'Assign Rider'}</button>`
         : ''}
       ${d.timerStart && !d.timerEnd && d.status!=='delivered'
         ? `<button class="btn br bsm" onclick="stopTimer('${d.id}')">⏹</button>`
@@ -5490,15 +5490,23 @@ function stopTimer(id){
 }
 
 function openAssignRiderModal(delId){
-  const d=S.deliveries.find(x=>x.id===delId);if(!d)return;
-  $('dord-hidden').value=delId;
-  $('mdel-order-info').innerHTML=`
-    <span style="color:var(--gd)">${d.id}</span> &nbsp;·&nbsp; ${d.cust}
-    ${d.phone?'&nbsp; 📞 '+d.phone:''}
-    &nbsp;·&nbsp; ₱${Number(d.total||0).toFixed(2)}`;
-  $('drider').value=d.rider||'';
+  const d = (S.deliveries || []).find(x => String(x.id) === String(delId));
+
+  if(!d){
+    alert('Delivery not found in S.deliveries: ' + delId);
+    return;
+  }
+
+  $('dord-hidden').value = delId;
+
+  $('mdel-order-info').innerHTML = `
+    <span style="color:var(--gd)">${d.id}</span> &nbsp;·&nbsp; ${d.cust || 'Customer'}
+    ${d.phone ? '&nbsp; 📞 ' + d.phone : ''}
+    &nbsp;·&nbsp; ₱${Number(d.total || 0).toFixed(2)}`;
+
+  $('drider').value = d.rider || d.riderName || '';
+
   openM('mdel');
-  
 }
 
 function assignRider(){
