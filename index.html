@@ -5402,7 +5402,7 @@ function rDel(){
     <td>${delTag(d.status)}${deliveryTimeline(d)}</td>
     <td style="white-space:nowrap;display:flex;gap:5px;flex-wrap:wrap;align-items:center;padding:8px 10px">
       ${d.status!=='delivered'
-        ? `<button class="btn bg bsm" onclick="openAssignRiderModal('${d.id}')">🏍️ ${d.rider?'Re-assign':'Assign Rider'}</button>`
+        ? `<button class="btn bg bsm" onclick="openDel('${d.id}')">🏍️ ${d.rider?'Re-assign':'Assign Rider'}</button>`
         : ''}
       ${d.timerStart && !d.timerEnd && d.status!=='delivered'
         ? `<button class="btn br bsm" onclick="stopTimer('${d.id}')">⏹</button>`
