@@ -5498,7 +5498,7 @@ function openAssignRiderModal(delId){
     &nbsp;·&nbsp; ₱${Number(d.total||0).toFixed(2)}`;
   $('drider').value=d.rider||'';
   openM('mdel');
-  // removed auto keyboard focus
+  setTimeout(()=>$('drider').focus(),200);
 }
 
 function assignRider(){
