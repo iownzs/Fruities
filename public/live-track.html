@@ -62,11 +62,13 @@ body{
 .time{color:#0d9a2d;font-weight:800;margin-top:8px}
 .active-box{
   background:linear-gradient(90deg,#effff3,#f9fff7);
-  border:1px solid #d5f2dc;
+  border:1px solid #b7edc5;
   border-radius:24px;
   padding:20px;
   position:relative;
   overflow:hidden;
+  box-shadow:0 0 22px rgba(39,174,96,.18);
+  animation:activeGlow 2.4s infinite ease-in-out, fadeIn .45s ease;
 }
 .active-box h3{color:#0d8d29}
 .badge{
@@ -84,7 +86,7 @@ body{
   right:18px;
   bottom:10px;
   font-size:64px;
-  animation:ride 1s infinite alternate ease-in-out;
+  animation:ride 2.2s infinite ease-in-out;
 }
 .footer{
   margin-top:18px;background:#effaf0;
@@ -105,11 +107,26 @@ body{
   width:120px;
   max-width:38%;
   height:auto;
-  animation:ride 1s infinite alternate ease-in-out;
+  animation:ride 2.2s infinite ease-in-out;
 }
 
 @keyframes pulse{50%{transform:scale(1.35);opacity:.65}}
-@keyframes ride{from{transform:translateX(0)}to{transform:translateX(12px)}}
+@keyframes ride{
+  0%{transform:translateX(0) translateY(0)}
+  50%{transform:translateX(14px) translateY(-3px)}
+  100%{transform:translateX(0) translateY(0)}
+}
+
+@keyframes activeGlow{
+  0%{box-shadow:0 0 14px rgba(39,174,96,.12)}
+  50%{box-shadow:0 0 30px rgba(39,174,96,.30)}
+  100%{box-shadow:0 0 14px rgba(39,174,96,.12)}
+}
+
+@keyframes fadeIn{
+  from{opacity:0;transform:translateY(10px)}
+  to{opacity:1;transform:translateY(0)}
+}
 @media(max-width:600px){
   body{padding:12px}
   .logo h1{font-size:36px}
@@ -224,7 +241,7 @@ body{
 @media (min-width:1025px){
 
   body{
-    padding:32px;
+    padding:18px 32px;
   }
 
   .wrap{
@@ -244,7 +261,7 @@ body{
   }
 
   .rider-img{
-    width:160px;
+    width:190px;
   }
 }
 
