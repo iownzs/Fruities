@@ -5400,20 +5400,14 @@ function rDel(){
     <td><strong>₱${Number(d.total||0).toFixed(2)}</strong></td>
     <td id="tcell-${d.id}">${timerBadge(d)}</td>
     <td>${delTag(d.status)}${deliveryTimeline(d)}</td>
-    <td style="white-space:nowrap;display:flex;gap:5px;flex-wrap:wrap;align-items:center;padding:8px 10px">
-      ${d.status!=='delivered'
-        ? `<button class="btn bg bsm" onclick="openAssignRiderModal('${d.id}')">🏍️ ${d.rider?'Re-assign':'Assign Rider'}</button>`
-        : ''}
-      ${d.timerStart && !d.timerEnd && d.status!=='delivered'
-        ? `<button class="btn br bsm" onclick="stopTimer('${d.id}')">⏹</button>`
-        : ''}
-      ${d.status!=='delivered'
-        ? `
-          <button type="button" class="btn bw bsm" onclick="event.stopPropagation();updDel('${d.id}','waiting')">⏳ Waiting</button>
-          <button type="button" class="btn bg bsm" onclick="event.stopPropagation();updDel('${d.id}','out')">🚚 Out</button>
-          <button type="button" class="btn br bsm" onclick="event.stopPropagation();updDel('${d.id}','delivered')">✅ Delivered</button>
-        `
-        : `<span class="tg gg" style="font-size:11px">✅ Done</span>`}
+    <td style="white-space:nowrap;padding:8px 10px">
+      ${
+        d.status === 'delivered'
+        ? `<span class="tg gg" style="font-size:11px">✅ Done</span>`
+        : d.status === 'out'
+          ? `<button type="button" class="btn bg bsm" onclick="event.stopPropagation();updDel('${d.id}','delivered')">✅ Done</button>`
+          : `<button type="button" class="btn bg bsm" onclick="event.stopPropagation();openAssignRiderModal('${d.id}')">🏍️ ${d.rider?'Re-assign':'Assign Rider'}</button>`
+      }
     </td>
   </tr>`}).join('') : `<tr><td colspan="9" style="text-align:center;color:var(--t3);padding:36px">
     <div style="font-size:32px;margin-bottom:8px">🚚</div>
