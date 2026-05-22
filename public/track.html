@@ -221,10 +221,16 @@ async function loadOrder(){
           <div class="value">${(order.deliveryDate || order.delivery_date || '') + ((order.deliveryTime || order.delivery_time) ? ' • ' + (order.deliveryTime || order.delivery_time) : '')}</div>
         </div>
 
+        ${
+          ((order.deliveryType || order.fulfillmentType || '').toLowerCase()==='pickup')
+          ? ''
+          : `
         <div class="section">
           <div class="label">Delivery Fee</div>
           <div class="value">${order.deliveryFeeType || order.deliveryFeeCode || order.delivery_fee_code || '-'}</div>
         </div>
+        `
+        }
 
         <div class="section">
           <div class="label">Total</div>
