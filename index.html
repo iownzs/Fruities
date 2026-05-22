@@ -5513,8 +5513,13 @@ function assignRider(){
   d.timerStart=Date.now();
   d.timerEnd=null;
 
-  const oid = d.oid || d.orderId || d.order || d.id;
-  const o = (S.orders || []).find(x => String(x.id) === String(oid));
+  const oid = d.oid || d.orderId || d.order || d.orderNumber || d.id;
+  const o = (S.orders || []).find(x =>
+    String(x.id) === String(oid) ||
+    String(x.orderNumber) === String(oid) ||
+    String(x.id) === String(d.oid || '') ||
+    String(x.id) === String(d.orderId || '')
+  );
   if(o){
     o.rider = rider;
     o.riderName = rider;
