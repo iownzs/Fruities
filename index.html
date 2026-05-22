@@ -4232,7 +4232,7 @@ function rGrid(){
     const img=productImage(p);
     const hasImg = !!img;
     const visual = hasImg
-      ? `<img class="pc-img" src="${img}" alt="${esc(name)}" onerror="this.style.display='none'">`
+      ? `<img loading="lazy" class="pc-img" src="${img}" alt="${esc(name)}" onerror="this.style.display='none'">`
       : `<span class="pe">${esc(productEmoji(p))}</span>`;
     return `<div class="pc${stock<=0?' ns':''}${hasImg?' has-img':''}" data-pid="${esc(id)}" onclick="addProductCard(this,event)" ontouchend="addProductCard(this,event)" role="button" tabindex="0" aria-label="Add ${esc(name)} to cart">
       ${stock<=0?'<span class="ob">OUT</span>':''}
@@ -4438,7 +4438,7 @@ function rCart(){
   $('cbody').innerHTML=cart.map(c=>`<div class="cartx-item" data-cart-id="${String(c.id).replace(/&/g,'&amp;').replace(/"/g,'&quot;')}">
     <div class="cartx-item-main">
       <div class="cartx-thumb">
-        ${c.img ? `<img src="${c.img}" alt="${esc(c.n)}" onerror="this.parentElement.innerHTML='${esc(c.e||'🍎')}'">` : `${esc(c.e||'🍎')}`}
+        ${c.img ? `<img loading="lazy" src="${c.img}" alt="${esc(c.n)}" onerror="this.parentElement.innerHTML='${esc(c.e||'🍎')}'">` : `${esc(c.e||'🍎')}`}
       </div>
       <div class="cartx-info"><div class="cartx-name">${esc(c.n)}</div><div class="cartx-unit">₱${c.p.toFixed(2)} each</div></div>
       <div class="cartx-line-total">₱${(c.p*c.q).toFixed(2)}</div>
@@ -5539,7 +5539,7 @@ function saveStock(){
 // ─────── PRODUCTS ───────
 function prodThumb(p){
   // Returns img tag or emoji span for display
-  if(p.img) return `<img class="prod-thumb" src="${p.img}" alt="${p.n}" onerror="this.style.display='none'">`;
+  if(p.img) return `<img loading="lazy" class="prod-thumb" src="${p.img}" alt="${p.n}" onerror="this.style.display='none'">`;
   return `<span style="font-size:17px;margin-right:5px">${p.e||'🍎'}</span>`;
 }
 function rProds(){
@@ -6341,7 +6341,7 @@ function rAdmProds(){
   $('adm-prod-grid').innerHTML=prods.map(p=>`
     <div class="adm-pc">
       <div class="adm-pc-img" style="${p.img?'':'background:var(--bg)'}">
-        ${p.img?`<img src="${p.img}" alt="${p.n}" onerror="this.parentElement.innerHTML='<span style=font-size:44px>${p.e||'🍎'}</span>'">`
+        ${p.img?`<img loading="lazy" src="${p.img}" alt="${p.n}" onerror="this.parentElement.innerHTML='<span style=font-size:44px>${p.e||'🍎'}</span>'">`
           :`<span style="font-size:44px">${p.e||'🍎'}</span>`}
       </div>
       <div class="adm-pc-body">
