@@ -4,93 +4,26 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Fruities Live Delivery Tracking</title>
+
 <style>
 *{box-sizing:border-box}
+
 body{
   margin:0;
   font-family:Arial,sans-serif;
   background:linear-gradient(180deg,#effff4,#ffffff);
   color:#102016;
-  padding:18px;
+  padding:8px 18px 18px;
 }
-.wrap{max-width:720px;margin:auto}
-.logo{text-align:center;margin:8px 0 18px}
-.logo h1{margin:0;font-size:48px;color:#23a445;font-weight:900}
-.logo p{margin:4px 0 0;color:#168034;font-size:18px}
-.card{
-  background:#fff;
-  border-radius:28px;
-  padding:26px;
-  box-shadow:0 14px 35px rgba(0,0,0,.08);
+
+.wrap{
+  max-width:940px;
+  margin:auto;
 }
-.head{text-align:center;margin-bottom:26px}
-.head h2{margin:0;color:#064d17;font-size:42px;letter-spacing:1px}
-.head p{font-size:19px;color:#333}
-.timeline{position:relative}
-.step{
-  display:flex;
-  gap:18px;
-  position:relative;
-  padding-bottom:34px;
-  opacity:.35;
-}
-.step.done,.step.active{opacity:1}
-.step:after{
-  content:"";
-  position:absolute;
-  left:30px;
-  top:62px;
-  width:4px;
-  height:calc(100% - 45px);
-  background:#1faf3c;
-  border-radius:20px;
-}
-.step:last-child:after{display:none}
-.icon{
-  width:64px;height:64px;min-width:64px;
-  border-radius:50%;
-  background:#20ad3c;
-  display:grid;place-items:center;
-  color:white;font-size:30px;
-  box-shadow:0 8px 22px rgba(21,150,54,.25);
-  z-index:2;
-}
-.step.pending .icon{background:#bfc3c8;box-shadow:none}
-.info{flex:1;padding-top:4px}
-.info h3{margin:0;font-size:28px}
-.info p{margin:7px 0;color:#555;font-size:16px}
-.time{color:#0d9a2d;font-weight:800;margin-top:8px}
-.active-box{
-  background:linear-gradient(90deg,#effff3,#f9fff7);
-  border:1px solid #bdf3c9;
-  border-radius:24px;
-  padding:20px;
-  position:relative;
-  overflow:hidden;
-  box-shadow:0 0 0 1px rgba(34,197,94,.10),0 14px 36px rgba(34,197,94,.22);
-}
-.active-box h3{color:#0d8d29}
-.badge{
-  display:inline-flex;align-items:center;gap:8px;
-  background:#fff;border-radius:999px;
-  padding:10px 14px;margin-top:14px;
-  font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,.08)
-}
-.dot{
-  width:12px;height:12px;border-radius:50%;
-  background:#1fb63e;animation:pulse 1.2s infinite
-}
-.rider{
-  position:absolute;
-  right:18px;
-  bottom:10px;
-  font-size:64px;
-  animation:ride 2.2s infinite ease-in-out;
-}
-.footer{
-  margin-top:18px;background:#effaf0;
-  padding:18px;border-radius:20px;
-  font-weight:700;text-align:center;color:#174d24
+
+.logo{
+  text-align:center;
+  margin:0 0 8px;
 }
 
 .brand-logo{
@@ -99,66 +32,212 @@ body{
   height:auto;
 }
 
+.card{
+  background:#fff;
+  border-radius:28px;
+  padding:28px;
+  box-shadow:0 14px 40px rgba(0,0,0,.08);
+  animation:fadeUp .45s ease;
+}
+
+.head{
+  text-align:center;
+  margin-bottom:26px;
+}
+
+.head h2{
+  margin:0;
+  color:#064d17;
+  font-size:42px;
+  letter-spacing:1px;
+}
+
+.head p{
+  font-size:18px;
+  color:#333;
+}
+
+.timeline{
+  position:relative;
+}
+
+.step{
+  display:flex;
+  gap:18px;
+  position:relative;
+  padding-bottom:34px;
+  opacity:.35;
+  transition:.28s ease;
+}
+
+.step.done,
+.step.active{
+  opacity:1;
+}
+
+.step::after{
+  content:"";
+  position:absolute;
+  left:30px;
+  top:62px;
+  width:4px;
+  height:calc(100% - 45px);
+  background:#ddd;
+  border-radius:20px;
+}
+
+.step.done::after,
+.step.active::after{
+  background:#1faf3c;
+}
+
+.step:last-child::after{
+  display:none;
+}
+
+.icon{
+  width:64px;
+  height:64px;
+  min-width:64px;
+  border-radius:50%;
+  background:#bfc3c8;
+  display:grid;
+  place-items:center;
+  color:white;
+  font-size:30px;
+  box-shadow:none;
+  z-index:2;
+}
+
+.step.done .icon,
+.step.active .icon{
+  background:#20ad3c;
+  box-shadow:0 8px 22px rgba(21,150,54,.25);
+}
+
+.step.active .icon{
+  animation:pulse 1.4s infinite;
+}
+
+.info{
+  flex:1;
+  padding-top:4px;
+}
+
+.info h3{
+  margin:0;
+  font-size:28px;
+}
+
+.info p{
+  margin:7px 0;
+  color:#555;
+  font-size:16px;
+}
+
+.time{
+  color:#0d9a2d;
+  font-weight:800;
+  margin-top:8px;
+}
+
+.active-box{
+  background:linear-gradient(90deg,#effff3,#f9fff7);
+  border:1px solid #bdf3c9;
+  border-radius:24px;
+  padding:20px 145px 20px 20px;
+  position:relative;
+  overflow:visible;
+  min-height:120px;
+  box-shadow:
+    0 0 0 1px rgba(34,197,94,.14),
+    0 18px 46px rgba(34,197,94,.30);
+}
+
+.active-box h3{
+  color:#0d8d29;
+}
+
+.badge{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  background:#fff;
+  border-radius:999px;
+  padding:10px 14px;
+  margin-top:14px;
+  font-weight:700;
+  box-shadow:0 4px 12px rgba(0,0,0,.08);
+}
+
+.dot{
+  width:12px;
+  height:12px;
+  border-radius:50%;
+  background:#1fb63e;
+  animation:pulse 1.2s infinite;
+}
+
 .rider-img{
   position:absolute;
-  right:42px;
-  bottom:10px;
-  width:145px;
-  max-width:44%;
+  right:18px;
+  bottom:24px;
+  width:120px;
+  max-width:none;
   height:auto;
-  animation:ride 3s ease-in-out infinite;
+  z-index:5;
+  animation:riderSmoothMove 3.5s ease-in-out infinite;
+  transform-origin:center center;
+  will-change:transform;
 }
 
-@keyframes pulse{50%{transform:scale(1.35);opacity:.65}}
-@keyframes riderFloat{
-  0%{transform:translateX(0) translateY(0)}
-  50%{transform:translateX(14px) translateY(-3px)}
-  100%{transform:translateX(0) translateY(0)}
+.footer{
+  margin-top:18px;
+  background:#effaf0;
+  padding:18px;
+  border-radius:20px;
+  font-weight:700;
+  text-align:center;
+  color:#174d24;
 }
 
-@keyframes activeGlow{
-  0%{box-shadow:0 0 14px rgba(39,174,96,.12)}
-  50%{box-shadow:0 0 30px rgba(39,174,96,.30)}
-  100%{box-shadow:0 0 14px rgba(39,174,96,.12)}
+@keyframes pulse{
+  0%{transform:scale(1)}
+  50%{transform:scale(1.15);opacity:.75}
+  100%{transform:scale(1)}
 }
 
-@keyframes fadeIn{
-  from{opacity:0;transform:translateY(10px)}
+@keyframes riderSmoothMove{
+  0%{transform:translateX(-5px) translateY(0)}
+  50%{transform:translateX(8px) translateY(-2px)}
+  100%{transform:translateX(-5px) translateY(0)}
+}
+
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(12px)}
   to{opacity:1;transform:translateY(0)}
 }
+
 @media(max-width:600px){
-  body{padding:12px}
-  .logo h1{font-size:36px}
-  .head h2{font-size:31px}
-  .card{padding:20px;border-radius:24px}
-  .icon{width:56px;height:56px;min-width:56px;font-size:25px}
-  .step:after{left:26px;top:56px}
-  .info h3{font-size:23px}
-  .rider{font-size:48px;opacity:.9}
-}
-
-
-/* =========================
-   RESPONSIVE DESIGN
-========================= */
-
-@media (max-width:600px){
-
   body{
-    padding:12px;
+    padding:0 12px 12px;
   }
 
   .wrap{
     max-width:100%;
   }
 
-  .card{
-    padding:18px;
-    border-radius:22px;
+  .logo{
+    margin-bottom:6px;
   }
 
   .brand-logo{
     width:150px;
+  }
+
+  .card{
+    padding:18px;
+    border-radius:22px;
   }
 
   .head h2{
@@ -181,7 +260,7 @@ body{
     font-size:23px;
   }
 
-  .step:after{
+  .step::after{
     left:24px;
     top:52px;
   }
@@ -199,24 +278,16 @@ body{
   }
 
   .active-box{
-  background:linear-gradient(90deg,#effff3,#f9fff7);
-  border:1px solid #bdf3c9;
-  border-radius:24px;
-  padding:20px;
-  position:relative;
-  overflow:hidden;
-  box-shadow:0 0 0 1px rgba(34,197,94,.10),0 14px 36px rgba(34,197,94,.22);
-}
+    padding:16px 118px 16px 16px;
+    min-height:118px;
+    overflow:hidden;
+  }
 
   .rider-img{
-  position:absolute;
-  right:42px;
-  bottom:10px;
-  width:145px;
-  max-width:44%;
-  height:auto;
-  animation:ride 3s ease-in-out infinite;
-}
+    right:16px;
+    bottom:12px;
+    width:95px;
+  }
 
   .badge{
     font-size:12px;
@@ -224,8 +295,7 @@ body{
   }
 }
 
-@media (min-width:601px) and (max-width:1024px){
-
+@media(min-width:601px) and (max-width:1024px){
   .wrap{
     max-width:720px;
   }
@@ -243,20 +313,13 @@ body{
   }
 
   .rider-img{
-  position:absolute;
-  right:42px;
-  bottom:10px;
-  width:145px;
-  max-width:44%;
-  height:auto;
-  animation:ride 3s ease-in-out infinite;
-}
+    width:120px;
+  }
 }
 
-@media (min-width:1025px){
-
+@media(min-width:1025px){
   body{
-    padding:18px 32px;
+    padding:22px;
   }
 
   .wrap{
@@ -275,147 +338,25 @@ body{
     font-size:48px;
   }
 
-  .rider-img{
-  position:absolute;
-  right:42px;
-  bottom:10px;
-  width:145px;
-  max-width:44%;
-  height:auto;
-  animation:ride 3s ease-in-out infinite;
-}
-}
-
-
-
-
-/* FINAL POLISH OVERRIDES */
-
-.wrap{
-  max-width:940px !important;
-}
-
-.logo{
-  margin-top:0 !important;
-  margin-bottom:8px !important;
-}
-
-body{
-  padding-top:8px !important;
-}
-
-.active-box{
-  box-shadow:
-    0 0 0 1px rgba(34,197,94,.14),
-    0 18px 46px rgba(34,197,94,.30) !important;
-}
-
-.rider-img{
-  position:absolute !important;
-  right:18px !important;
-  bottom:2px !important;
-  width:170px !important;
-  max-width:none !important;
-  animation:ride 3.5s ease-in-out infinite !important;
-}
-
-@media(max-width:600px){
-
-  .wrap{
-    max-width:100% !important;
-  }
-
-  body{
-    padding-top:0 !important;
-  }
-
-  .rider-img{
-    right:10px !important;
-    bottom:0 !important;
-    width:120px !important;
-  }
-
-}
-
-
-
-/* DESKTOP RIDER FIX */
-@media(min-width:1025px){
   .active-box{
-    min-height:150px !important;
-    padding-right:210px !important;
+    padding-right:170px;
+    min-height:140px;
   }
 
   .rider-img{
-    right:38px !important;
-    bottom:18px !important;
-    width:155px !important;
-    max-width:none !important;
+    width:145px;
+    right:26px;
+    bottom:20px;
   }
 }
-
-
-
-/* FIX RIDER INSIDE ACTIVE CARD */
-.active-box{
-  overflow:visible !important;
-}
-
-@media(min-width:601px){
-  .active-box{
-    padding-right:145px !important;
-    min-height:120px !important;
-  }
-
-  .rider-img{
-    right:18px !important;
-    bottom:24px !important;
-    width:120px !important;
-    max-width:none !important;
-    z-index:5 !important;
-  }
-}
-
-@media(max-width:600px){
-  .active-box{
-    overflow:hidden !important;
-  }
-
-  .rider-img{
-    right:16px !important;
-    bottom:12px !important;
-    width:95px !important;
-  }
-}
-
-
-
-/* FORCE SMOOTH RIDER MOVEMENT */
-.rider-img{
-  animation: riderSmoothMove 2.8s ease-in-out infinite !important;
-  transform-origin:center center;
-  will-change:transform;
-}
-
-@keyframes riderSmoothMove{
-  0%{
-    transform:translateX(-6px) translateY(0);
-  }
-  50%{
-    transform:translateX(8px) translateY(-2px);
-  }
-  100%{
-    transform:translateX(-6px) translateY(0);
-  }
-}
-
 </style>
 </head>
+
 <body>
 <div class="wrap">
+
   <div class="logo">
     <img class="brand-logo" src="/assets/logo.png" alt="Fruities Logo">
-    <p>Fresh Fruits, Happy Life</p>
   </div>
 
   <div class="card">
@@ -425,12 +366,13 @@ body{
     </div>
 
     <div class="timeline">
+
       <div class="step" data-step="placed">
         <div class="icon">🧾</div>
         <div class="info">
           <h3>Order Placed</h3>
           <p>Your order has been placed successfully.</p>
-          <div class="time">May 22, 2026 • 2:15 PM</div>
+          <div class="time" id="time-placed"></div>
         </div>
       </div>
 
@@ -439,7 +381,7 @@ body{
         <div class="info">
           <h3>Preparing</h3>
           <p>We're preparing your fresh fruits.</p>
-          <div class="time">May 22, 2026 • 2:22 PM</div>
+          <div class="time" id="time-preparing"></div>
         </div>
       </div>
 
@@ -449,20 +391,22 @@ body{
           <div class="active-box">
             <h3>Out for Delivery</h3>
             <p>Your rider is on the way!</p>
-            <div class="time">May 22, 2026 • 2:40 PM</div>
+            <div class="time" id="time-out"></div>
             <div class="badge"><span class="dot"></span> Our rider is on the way</div>
-            <img class="rider-img" src="/assets/riderslogo.png" alt="Rider">
+            <img class="rider-img" src="/assets/riderslogo.png" alt="Delivery Rider">
           </div>
         </div>
       </div>
 
       <div class="step" data-step="delivered">
-        <div class="icon">📦</div>
+        <div class="icon">✅</div>
         <div class="info">
           <h3>Delivered</h3>
           <p>Your order has been delivered.</p>
+          <div class="time" id="time-delivered"></div>
         </div>
       </div>
+
     </div>
 
     <div class="footer">✅ We're handling your order with care. Thank you for choosing Fruities!</div>
@@ -470,9 +414,12 @@ body{
 </div>
 
 <script>
+const DB_URL = 'https://fruities-pos-default-rtdb.asia-southeast1.firebasedatabase.app';
+const STORE_ID = 'fruit-story-main';
+
 function setLiveStep(currentStep){
   const steps = ['placed','preparing','out','delivered'];
-  const currentIndex = steps.indexOf(currentStep);
+  const currentIndex = Math.max(0, steps.indexOf(currentStep));
 
   document.querySelectorAll('[data-step]').forEach(el=>{
     const stepIndex = steps.indexOf(el.dataset.step);
@@ -488,9 +435,6 @@ function setLiveStep(currentStep){
     }
   });
 }
-
-const DB_URL = 'https://fruities-pos-default-rtdb.asia-southeast1.firebasedatabase.app';
-const STORE_ID = 'fruit-story-main';
 
 function detectStep(order){
   const status = String(order.status || '').toLowerCase();
@@ -510,6 +454,36 @@ function detectStep(order){
   }
 
   return 'placed';
+}
+
+function fmtTime(v){
+  if(!v) return '';
+  try{
+    return new Date(v).toLocaleString('en-PH',{
+      year:'numeric',
+      month:'long',
+      day:'numeric',
+      hour:'numeric',
+      minute:'2-digit',
+      hour12:true
+    });
+  }catch(e){
+    return '';
+  }
+}
+
+function applyTimes(order){
+  document.getElementById('time-placed').textContent =
+    fmtTime(order.time || order.createdAt || order.createdByAt);
+
+  document.getElementById('time-preparing').textContent =
+    fmtTime(order.kitStart || order.preparingAt);
+
+  document.getElementById('time-out').textContent =
+    fmtTime(order.outForDeliveryAt || order.deliveryOutAt || order.kitOutAt);
+
+  document.getElementById('time-delivered').textContent =
+    fmtTime(order.deliveredAt || order.deliveryDeliveredAt);
 }
 
 async function loadLiveOrder(){
@@ -535,6 +509,7 @@ async function loadLiveOrder(){
     }
 
     setLiveStep(detectStep(order));
+    applyTimes(order);
 
   }catch(e){
     setLiveStep(params.get('step') || 'out');
@@ -546,130 +521,3 @@ loadLiveOrder();
 
 </body>
 </html>
-
-<style>
-
-
-
-
-/* FINAL POLISH OVERRIDES */
-
-.wrap{
-  max-width:940px !important;
-}
-
-.logo{
-  margin-top:0 !important;
-  margin-bottom:8px !important;
-}
-
-body{
-  padding-top:8px !important;
-}
-
-.active-box{
-  box-shadow:
-    0 0 0 1px rgba(34,197,94,.14),
-    0 18px 46px rgba(34,197,94,.30) !important;
-}
-
-.rider-img{
-  position:absolute !important;
-  right:18px !important;
-  bottom:2px !important;
-  width:170px !important;
-  max-width:none !important;
-  animation:ride 3.5s ease-in-out infinite !important;
-}
-
-@media(max-width:600px){
-
-  .wrap{
-    max-width:100% !important;
-  }
-
-  body{
-    padding-top:0 !important;
-  }
-
-  .rider-img{
-    right:10px !important;
-    bottom:0 !important;
-    width:120px !important;
-  }
-
-}
-
-
-
-/* DESKTOP RIDER FIX */
-@media(min-width:1025px){
-  .active-box{
-    min-height:150px !important;
-    padding-right:210px !important;
-  }
-
-  .rider-img{
-    right:38px !important;
-    bottom:18px !important;
-    width:155px !important;
-    max-width:none !important;
-  }
-}
-
-
-
-/* FIX RIDER INSIDE ACTIVE CARD */
-.active-box{
-  overflow:visible !important;
-}
-
-@media(min-width:601px){
-  .active-box{
-    padding-right:145px !important;
-    min-height:120px !important;
-  }
-
-  .rider-img{
-    right:18px !important;
-    bottom:24px !important;
-    width:120px !important;
-    max-width:none !important;
-    z-index:5 !important;
-  }
-}
-
-@media(max-width:600px){
-  .active-box{
-    overflow:hidden !important;
-  }
-
-  .rider-img{
-    right:16px !important;
-    bottom:12px !important;
-    width:95px !important;
-  }
-}
-
-
-
-/* FORCE SMOOTH RIDER MOVEMENT */
-.rider-img{
-  animation: riderSmoothMove 2.8s ease-in-out infinite !important;
-  transform-origin:center center;
-  will-change:transform;
-}
-
-@keyframes riderSmoothMove{
-  0%{
-    transform:translateX(-6px) translateY(0);
-  }
-  50%{
-    transform:translateX(8px) translateY(-2px);
-  }
-  100%{
-    transform:translateX(-6px) translateY(0);
-  }
-}
-
-</style>
