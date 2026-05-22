@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fruities Live Tracking</title>
+<style>
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:#f4fff7;
+  color:#123;
+  padding:20px;
+}
+.card{
+  max-width:520px;
+  margin:auto;
+  background:white;
+  border-radius:22px;
+  padding:22px;
+  box-shadow:0 12px 35px rgba(0,0,0,.08);
+}
+h1{margin-top:0}
+.step{
+  display:flex;
+  gap:14px;
+  align-items:center;
+  padding:14px 0;
+  opacity:.35;
+}
+.step.done,.step.active{opacity:1}
+.icon{
+  width:46px;
+  height:46px;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  background:#e8f8ee;
+  font-size:23px;
+}
+.active .icon{
+  animation:pulse 1.4s infinite;
+}
+.motor{
+  display:inline-block;
+  animation:ride 1s infinite alternate ease-in-out;
+}
+.line{
+  width:3px;
+  height:22px;
+  background:#d9eadf;
+  margin-left:22px;
+}
+@keyframes pulse{
+  50%{transform:scale(1.08)}
+}
+@keyframes ride{
+  from{transform:translateX(0)}
+  to{transform:translateX(8px)}
+}
+.small{color:#667;font-size:14px}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>🍓 Live Delivery Tracking</h1>
+  <p class="small">Track your Fruities delivery progress.</p>
+
+  <div class="step done">
+    <div class="icon">🧾</div>
+    <div><b>Order Placed</b></div>
+  </div>
+
+  <div class="line"></div>
+
+  <div class="step active">
+    <div class="icon">👨‍🍳</div>
+    <div><b>Preparing</b></div>
+  </div>
+
+  <div class="line"></div>
+
+  <div class="step">
+    <div class="icon"><span class="motor">🏍️</span></div>
+    <div><b>Out for Delivery</b></div>
+  </div>
+
+  <div class="line"></div>
+
+  <div class="step">
+    <div class="icon">✅</div>
+    <div><b>Delivered</b></div>
+  </div>
+</div>
+
+</body>
+</html>
