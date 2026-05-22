@@ -5398,7 +5398,10 @@ function rDel(){
     </td>
     <td style="font-size:11px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.items}</td>
     <td><strong>₱${Number(d.total||0).toFixed(2)}</strong></td>
-    <td id="tcell-${d.id}">${timerBadge(d)}</td>
+    <td id="tcell-${d.id}">
+      <div style="font-size:11px;color:var(--t3);font-weight:800">Order: ${d.oid || d.orderId || d.id}</div>
+      ${d.addr ? `<div style="font-size:11px;color:var(--t3);max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Address: ${d.addr}</div>` : ''}
+    </td>
     <td>${delTag(d.status)}${deliveryTimeline(d)}</td>
     <td style="white-space:nowrap;padding:8px 10px">
       ${
