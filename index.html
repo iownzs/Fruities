@@ -5504,6 +5504,51 @@ function openAssignRiderModal(delId){
   openM('mdel');
 }
 
+function quickAssignRider(delId){
+  const d = (S.deliveries || []).find(x => String(x.id) === String(delId));
+  if(!d){
+    toast('Delivery not found','err');
+    return;
+  }
+
+  const rider = prompt('Enter rider name:', d.rider || d.riderName || '');
+  if(rider === null) return;
+
+  const name = rider.trim();
+  if(!name){
+    toast('Enter a rider name','err');
+    return;
+  }
+
+  d.rider = name;
+  d.riderName = name;
+  d.status = 'out';
+  d.deliveryStatus = 'out_for_delivery';
+  d.outAt = Date.now();
+  d.timerStart = Date.now();
+  d.timerEnd = null;
+
+  const oid = d.oid || d.orderId || d.order || '';
+  const o = (S.orders || []).find(x =>
+    String(x.id) === String(oid) ||
+    String(x.id) === String(d.id) ||
+    String(x.orderNumber) === String(oid)
+  );
+
+  if(o){
+    o.rider = name;
+    o.riderName = name;
+    o.deliveryStatus = 'out_for_delivery';
+    o.outForDeliveryAt = Date.now();
+    o.deliveryOutAt = Date.now();
+  }
+
+  addAct('🏍️','Rider Assigned',`${delId} → ${name}`,'var(--ol)');
+  sv();
+  rDel();
+  toast('🏍️ ' + name + ' dispatched! Timer started.');
+}
+
 function assignRider(){
   const delId=$('dord-hidden').value;
   const rider=$('drider').value.trim();
