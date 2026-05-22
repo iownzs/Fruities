@@ -5484,7 +5484,7 @@ function stopTimer(id){
 }
 
 function openAssignRiderModal(delId){
-  alert('openAssignRiderModal running: ' + delId);
+  
   const d = (S.deliveries || []).find(x => String(x.id) === String(delId));
 
   if(!d){
