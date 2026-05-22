@@ -218,7 +218,20 @@ async function loadOrder(){
     ? 'Pickup Date'
     : 'Delivery Date'
 }</div>
-          <div class="value">${(order.deliveryDate || order.delivery_date || '') + ((order.deliveryTime || order.delivery_time) ? ' • ' + (order.deliveryTime || order.delivery_time) : '')}</div>
+          <div class="value">${
+(order.deliveryDate || order.delivery_date || '') +
+(
+  (order.deliveryTime || order.delivery_time)
+  ? ' • ' + new Date(
+      '2000-01-01T' + (order.deliveryTime || order.delivery_time)
+    ).toLocaleTimeString('en-PH',{
+      hour:'numeric',
+      minute:'2-digit',
+      hour12:true
+    })
+  : ''
+)
+}</div>
         </div>
 
         ${
