@@ -5720,12 +5720,46 @@ function readImgFile(file){
   if(!file || !file.type.startsWith('image/')){
     toast('Please select an image file','err'); return;
   }
+
   if(file.size > 5*1024*1024){
     toast('Image too large — max 5MB','warn'); return;
   }
+
   const reader = new FileReader();
-  reader.onload  = ev => { showImgPreview(ev.target.result); toast('Image loaded ✅'); };
-  reader.onerror = ()  => toast('Could not read file','err');
+  const img = new Image();
+
+  reader.onload = ev => {
+    img.onload = () => {
+      const maxSize = 420;
+      let w = img.width;
+      let h = img.height;
+
+      if(w > h && w > maxSize){
+        h = Math.round(h * maxSize / w);
+        w = maxSize;
+      }else if(h > maxSize){
+        w = Math.round(w * maxSize / h);
+        h = maxSize;
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+
+      const compressed = canvas.toDataURL('image/jpeg', 0.72);
+
+      showImgPreview(compressed);
+      toast('Image compressed ✅');
+    };
+
+    img.onerror = () => toast('Could not process image','err');
+    img.src = ev.target.result;
+  };
+
+  reader.onerror = () => toast('Could not read file','err');
   reader.readAsDataURL(file);
 }
 
