@@ -17122,27 +17122,3 @@ font-size:14px">Okay</button>'
 </body>
 </html>
 
-<script>
-window.openAssignRiderModal = window.openAssignRiderModal || function(delId){
-  try{
-    const d = (window.S && S.deliveries || []).find(x => String(x.id) === String(delId));
-    if(!d){
-      alert('Delivery not found: ' + delId);
-      return;
-    }
-
-    document.getElementById('dord-hidden').value = delId;
-    document.getElementById('mdel-order-info').innerHTML =
-      '<span style="color:var(--gd)">' + d.id + '</span> &nbsp;·&nbsp; ' +
-      (d.cust || '') +
-      (d.phone ? '&nbsp; 📞 ' + d.phone : '') +
-      '&nbsp;·&nbsp; ₱' + Number(d.total || 0).toFixed(2);
-
-    document.getElementById('drider').value = d.rider || '';
-
-    document.getElementById('mdel').classList.add('on');
-  }catch(e){
-    alert('Assign Rider error: ' + e.message);
-  }
-};
-</script>
