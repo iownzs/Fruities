@@ -102,12 +102,12 @@ body{
 
 .rider-img{
   position:absolute;
-  right:18px;
-  bottom:10px;
-  width:120px;
-  max-width:38%;
+  right:42px;
+  bottom:18px;
+  width:145px;
+  max-width:44%;
   height:auto;
-  animation:ride 2.2s infinite ease-in-out;
+  animation:ride 1.8s ease-in-out infinite;
 }
 
 @keyframes pulse{50%{transform:scale(1.35);opacity:.65}}
@@ -204,10 +204,14 @@ body{
   }
 
   .rider-img{
-    width:90px;
-    right:12px;
-    bottom:12px;
-  }
+  position:absolute;
+  right:42px;
+  bottom:18px;
+  width:145px;
+  max-width:44%;
+  height:auto;
+  animation:ride 1.8s ease-in-out infinite;
+}
 
   .badge{
     font-size:12px;
@@ -234,8 +238,14 @@ body{
   }
 
   .rider-img{
-    width:130px;
-  }
+  position:absolute;
+  right:42px;
+  bottom:18px;
+  width:145px;
+  max-width:44%;
+  height:auto;
+  animation:ride 1.8s ease-in-out infinite;
+}
 }
 
 @media (min-width:1025px){
@@ -261,8 +271,14 @@ body{
   }
 
   .rider-img{
-    width:190px;
-  }
+  position:absolute;
+  right:42px;
+  bottom:18px;
+  width:145px;
+  max-width:44%;
+  height:auto;
+  animation:ride 1.8s ease-in-out infinite;
+}
 }
 
 </style>
@@ -326,3 +342,14 @@ body{
 </div>
 </body>
 </html>
+
+<style>
+@media(max-width:600px){
+  .rider-img{
+    right:34px !important;
+    bottom:18px !important;
+    width:115px !important;
+    max-width:46% !important;
+  }
+}
+</style>
