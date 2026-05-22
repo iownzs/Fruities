@@ -10780,8 +10780,7 @@ window.addEventListener('load',function(){
 
         if(!name){ if(typeof toast === 'function') toast('Enter pickup customer name','err'); return; }
         if(!phone){ if(typeof toast === 'function') toast('Enter pickup customer number','err'); return; }
-        if(!date){ if(typeof toast === 'function') toast('Select pickup date','err'); return; }
-        if(!time){ if(typeof toast === 'function') toast('Select pickup time','err'); return; }
+        // Pickup date/time optional - leave blank if not set
 
         window.syncPickupDetailsV3();
 
