@@ -12429,6 +12429,22 @@ body.dark .chat-system-line{background:#14281e;border-color:#286b48;color:#bbf7d
     var key = normalized.key;
     var payload = normalized.payload;
 
+    var selectedFeeBtn = document.querySelector('#cart-delivery-fee-grid [data-delivery-fee].on');
+    var selectedFee = selectedFeeBtn ? selectedFeeBtn.dataset.deliveryFee : '';
+
+    var finalFee = String(
+      payload.deliveryFeeCode ||
+      payload.deliveryFeeType ||
+      selectedFee ||
+      'BFC'
+    ).toUpperCase();
+
+    finalFee = finalFee === 'INH' ? 'INH' : 'BFC';
+
+    payload.deliveryFeeCode = finalFee;
+    payload.deliveryFeeType = finalFee;
+    payload.deliveryFeeLabel = finalFee;
+
     var url = DB_URL + '/stores/' + STORE_ID + '/orders/' + encodeURIComponent(key) + '.json';
 
     return fetch(url, {
