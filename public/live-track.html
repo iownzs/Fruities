@@ -91,6 +91,23 @@ body{
   padding:18px;border-radius:20px;
   font-weight:700;text-align:center;color:#174d24
 }
+
+.brand-logo{
+  width:220px;
+  max-width:80%;
+  height:auto;
+}
+
+.rider-img{
+  position:absolute;
+  right:18px;
+  bottom:10px;
+  width:120px;
+  max-width:38%;
+  height:auto;
+  animation:ride 1s infinite alternate ease-in-out;
+}
+
 @keyframes pulse{50%{transform:scale(1.35);opacity:.65}}
 @keyframes ride{from{transform:translateX(0)}to{transform:translateX(12px)}}
 @media(max-width:600px){
@@ -108,7 +125,7 @@ body{
 <body>
 <div class="wrap">
   <div class="logo">
-    <h1>Fruities</h1>
+    <img class="brand-logo" src="/assets/logo.png" alt="Fruities Logo">
     <p>Fresh Fruits, Happy Life</p>
   </div>
 
@@ -145,7 +162,7 @@ body{
             <p>Your rider is on the way!</p>
             <div class="time">May 22, 2026 • 2:40 PM</div>
             <div class="badge"><span class="dot"></span> Our rider is on the way</div>
-            <div class="rider">🏍️</div>
+            <img class="rider-img" src="/assets/riderslogo.png" alt="Rider">
           </div>
         </div>
       </div>
