@@ -17852,6 +17852,60 @@ font-size:14px">Okay</button>'
 })();
 </script>
 
+
+<script id="delivery-excel-force-v2">
+(function(){
+  if(window.__deliveryExcelForceV2) return;
+  window.__deliveryExcelForceV2 = true;
+
+  function forceDeliveryExcel(){
+    try{
+      if(typeof window.renderDeliveryExcel === "function"){
+        window.renderDeliveryExcel();
+      }
+    }catch(e){
+      console.error("forceDeliveryExcel failed", e);
+    }
+  }
+
+  var oldGo = window.go;
+  if(typeof oldGo === "function" && !oldGo.__deliveryExcelForceV2){
+    window.go = function(view){
+      var res = oldGo.apply(this, arguments);
+
+      if(String(view) === "delivery"){
+        setTimeout(forceDeliveryExcel, 100);
+        setTimeout(forceDeliveryExcel, 500);
+        setTimeout(forceDeliveryExcel, 1200);
+      }
+
+      return res;
+    };
+    window.go.__deliveryExcelForceV2 = true;
+  }
+
+  document.addEventListener("click", function(e){
+    var nav = e.target.closest('[data-v="delivery"], .mni[data-v="delivery"]');
+    if(nav){
+      setTimeout(forceDeliveryExcel, 100);
+      setTimeout(forceDeliveryExcel, 500);
+      setTimeout(forceDeliveryExcel, 1200);
+    }
+  });
+
+  document.addEventListener("DOMContentLoaded", function(){
+    setTimeout(function(){
+      var isDelivery =
+        location.hash.includes("delivery") ||
+        document.querySelector('[data-v="delivery"].on') ||
+        document.querySelector('.mni[data-v="delivery"].on');
+
+      if(isDelivery) forceDeliveryExcel();
+    }, 1000);
+  });
+})();
+</script>
+
 </body>
 </html>
 
