@@ -17996,11 +17996,10 @@ font-size:14px">Okay</button>'
     setTimeout(runExcel, 2500);
   });
 
+  // Disabled: clicking inside delivery table should not re-render and reset horizontal scroll.
   document.addEventListener('click', function(e){
-    if(e.target.closest('[data-v="delivery"]') || e.target.closest('#view-delivery') || e.target.closest('[onclick*="renderDeliveryExcel"]')){
-      setTimeout(runExcel, 100);
-      setTimeout(runExcel, 600);
-      setTimeout(runExcel, 1500);
+    if(e.target.closest('[data-v="delivery"]')){
+      setTimeout(runExcel, 300);
     }
   });
 
@@ -18201,9 +18200,9 @@ font-size:14px">Okay</button>'
       '<td>'+esc(created(o,d))+'</td>' +
       '<td><div class="dx-name">'+esc(customer(o,d))+'</div><div class="dx-phone">'+esc(customerPhone(o,d))+'</div></td>' +
       '<td><div class="dx-name">'+esc(recipient(o,d))+'</div><div class="dx-phone">'+esc(recipientPhone(o,d))+'</div></td>' +
-      '<td style="min-width:180px">'+esc(shortAddr)+'<br><span class="dx-muted">'+esc(cityOf(o,d))+'</span></td>' +
+      '<td style="min-width:180px">'+esc(shortAddr)+'<br><span class="dx-muted">'+esc(cityOf(o,d))+'</span><br><button class="dx-link" onclick="event.stopPropagation();dxPreviewAddress(\\''+esc(id)+'\\')">[View]</button></td>' +
       '<td style="min-width:110px">'+deliveryDate(o,d)+'</td>' +
-      '<td style="min-width:110px">'+itemText(o,d)+'</td>' +
+      '<td style="min-width:110px">'+itemText(o,d)+'<br><button class="dx-link" onclick="event.stopPropagation();dxPreviewItems(\\''+esc(id)+'\\')">[View]</button></td>' +
       '<td style="min-width:115px">'+riderTimer(d,o,s)+'</td>' +
       '<td>'+action(d,o,s)+'</td>' +
     '</tr>';
@@ -18351,6 +18350,175 @@ font-size:14px">Okay</button>'
   document.addEventListener('DOMContentLoaded', function(){
     setTimeout(updateDeliveryLiveTimers, 500);
   });
+})();
+</script>
+
+
+<script id="delivery-preview-buttons-v9">
+(function(){
+  if(window.__deliveryPreviewButtonsV9) return;
+  window.__deliveryPreviewButtonsV9 = true;
+
+  function esc(v){
+    return String(v == null ? '' : v)
+      .replaceAll('&','&amp;')
+      .replaceAll('<','&lt;')
+      .replaceAll('>','&gt;')
+      .replaceAll('"','&quot;')
+      .replaceAll("'","&#039;");
+  }
+
+  function money(v){
+    var n = Number(v || 0);
+    return '₱' + n.toLocaleString('en-PH',{maximumFractionDigits:2});
+  }
+
+  function getOrders(){
+    return window.S && Array.isArray(S.orders) ? S.orders : [];
+  }
+
+  function getDeliveries(){
+    if(window.S && Array.isArray(S.deliveries)) return S.deliveries;
+    return [];
+  }
+
+  function findDelivery(id){
+    return getDeliveries().find(function(d){
+      return String(d.id || d.orderId || d.oid) === String(id);
+    }) || null;
+  }
+
+  function findOrder(id, d){
+    var orderId = (d && (d.orderId || d.oid || d.order)) || id;
+    return getOrders().find(function(o){
+      return String(o.id || o.orderNumber || o.orderId) === String(orderId);
+    }) || {};
+  }
+
+  function getAddress(o,d){
+    return o.deliveryAddress || o.addr || o.address || d.deliveryAddress || d.addr || d.address || '-';
+  }
+
+  function getCity(o,d){
+    return o.city || d.city || 'Other';
+  }
+
+  function getDateTime(o,d){
+    var date = o.deliveryDate || o.delivery_date || o.scheduledDate || d.deliveryDate || '';
+    var time = o.deliveryTime || o.delivery_time || o.scheduledTime || d.deliveryTime || '';
+    return (date || '-') + (time ? ' · ' + time : '');
+  }
+
+  function getItems(o,d){
+    return Array.isArray(o.items) ? o.items : (Array.isArray(d.items) ? d.items : []);
+  }
+
+  function openSheet(title, bodyHtml){
+    var old = document.getElementById('dxPreviewSheet');
+    if(old) old.remove();
+
+    var div = document.createElement('div');
+    div.id = 'dxPreviewSheet';
+    div.className = 'dx-modal-backdrop';
+    div.innerHTML =
+      '<div class="dx-modal">' +
+        '<h3>' + esc(title) + '</h3>' +
+        '<div style="font-size:14px;line-height:1.55">' + bodyHtml + '</div>' +
+        '<button onclick="document.getElementById(\\'dxPreviewSheet\\').remove()">Close</button>' +
+      '</div>';
+
+    document.body.appendChild(div);
+  }
+
+  window.dxPreviewAddress = function(id){
+    var d = findDelivery(id) || {};
+    var o = findOrder(id, d);
+
+    openSheet('Address Details',
+      '<b>Order:</b><br>' + esc(o.id || o.orderNumber || d.id || id) + '<br><br>' +
+      '<b>Full Address:</b><br>' + esc(getAddress(o,d)) + '<br><br>' +
+      '<b>City:</b><br>' + esc(getCity(o,d)) + '<br><br>' +
+      '<b>Delivery Date / Time:</b><br>' + esc(getDateTime(o,d))
+    );
+  };
+
+  window.dxPreviewItems = function(id){
+    var d = findDelivery(id) || {};
+    var o = findOrder(id, d);
+    var items = getItems(o,d);
+
+    var itemsHtml = items.length
+      ? items.map(function(it){
+          var q = it.q || it.qty || it.quantity || 1;
+          var name = it.n || it.name || it.productName || 'Item';
+          var price = Number(it.p || it.price || 0);
+          return '<div style="display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid #eee;padding:8px 0">' +
+            '<span>' + esc(q + 'x ' + name) + '</span>' +
+            '<b>' + esc(price ? money(price * q) : '') + '</b>' +
+          '</div>';
+        }).join('')
+      : '<span class="dx-muted">No item list found.</span>';
+
+    openSheet('Items / Total',
+      '<b>Order:</b><br>' + esc(o.id || o.orderNumber || d.id || id) + '<br><br>' +
+      itemsHtml +
+      '<div style="display:flex;justify-content:space-between;margin-top:12px;font-size:16px">' +
+        '<b>Total</b><b>' + esc(money(o.total || d.total || 0)) + '</b>' +
+      '</div>'
+    );
+  };
+})();
+</script>
+
+
+<script id="delivery-scroll-preserve-final-v8">
+(function(){
+  if(window.__deliveryScrollPreserveFinalV8) return;
+  window.__deliveryScrollPreserveFinalV8 = true;
+
+  function saveDxScroll(){
+    return Array.from(document.querySelectorAll('.dx-scroll')).map(function(el){
+      return { left: el.scrollLeft || 0, top: el.scrollTop || 0 };
+    });
+  }
+
+  function restoreDxScroll(pos){
+    requestAnimationFrame(function(){
+      document.querySelectorAll('.dx-scroll').forEach(function(el, i){
+        if(pos[i]){
+          el.scrollLeft = pos[i].left || 0;
+          el.scrollTop = pos[i].top || 0;
+        }
+      });
+    });
+  }
+
+  function wrapFinalRenderer(){
+    if(typeof window.renderDeliveryExcel !== 'function') return;
+    if(window.renderDeliveryExcel.__preserveScrollFinalV8) return;
+
+    var original = window.renderDeliveryExcel;
+
+    window.renderDeliveryExcel = function(){
+      var pos = saveDxScroll();
+      var result = original.apply(this, arguments);
+      restoreDxScroll(pos);
+      return result;
+    };
+
+    window.renderDeliveryExcel.__preserveScrollFinalV8 = true;
+  }
+
+  setTimeout(wrapFinalRenderer, 300);
+  setTimeout(wrapFinalRenderer, 1000);
+  setTimeout(wrapFinalRenderer, 2500);
+  setTimeout(wrapFinalRenderer, 5000);
+
+  document.addEventListener('click', function(e){
+    if(e.target.closest && e.target.closest('.dx-scroll')){
+      e.stopPropagation();
+    }
+  }, true);
 })();
 </script>
 
