@@ -18176,14 +18176,18 @@ font-size:14px">Okay</button>'
   }
 
   function action(d,o,s){
-    var id = esc(d.id || d.orderId || o.id || o.orderNumber || '');
+    var delId = esc(d.id || '');
+    var orderId = esc(o.id || o.orderNumber || d.orderId || d.oid || d.order || d.id || '');
+
     if(s === 'out'){
-      return '<button class="dx-action" onclick="dxSimpleDone(\''+id+'\')">Done</button>';
+      return '<button type="button" class="dx-action" data-dx-action="done" data-del-id="'+delId+'" data-order-id="'+orderId+'">Done</button>';
     }
+
     if(s === 'delivered'){
-      return '<button class="dx-action view">View</button>';
+      return '<button type="button" class="dx-action view" data-dx-action="view" data-del-id="'+delId+'" data-order-id="'+orderId+'">View</button>';
     }
-    return '<button class="dx-action assign" onclick="quickAssignRider(\''+id+'\')">Assign</button>';
+
+    return '<button type="button" class="dx-action assign" data-dx-action="assign" data-del-id="'+delId+'" data-order-id="'+orderId+'">Assign</button>';
   }
 
   function row(d){
@@ -18200,9 +18204,9 @@ font-size:14px">Okay</button>'
       '<td>'+esc(created(o,d))+'</td>' +
       '<td><div class="dx-name">'+esc(customer(o,d))+'</div><div class="dx-phone">'+esc(customerPhone(o,d))+'</div></td>' +
       '<td><div class="dx-name">'+esc(recipient(o,d))+'</div><div class="dx-phone">'+esc(recipientPhone(o,d))+'</div></td>' +
-      '<td style="min-width:180px">'+esc(shortAddr)+'<br><span class="dx-muted">'+esc(cityOf(o,d))+'</span><br><button class="dx-link" onclick="event.stopPropagation();dxPreviewAddress(\''+esc(id)+'\')">[View]</button></td>' +
+      '<td style="min-width:180px">'+esc(shortAddr)+'<br><span class="dx-muted">'+esc(cityOf(o,d))+'</span><br><button type="button" class="dx-link" data-dx-action="address" data-del-id="'+esc(d.id || '')+'" data-order-id="'+esc(o.id || o.orderNumber || d.orderId || d.oid || d.order || d.id || '')+'">[View]</button></td>' +
       '<td style="min-width:110px">'+deliveryDate(o,d)+'</td>' +
-      '<td style="min-width:110px">'+itemText(o,d)+'<br><button class="dx-link" onclick="event.stopPropagation();dxPreviewItems(\''+esc(id)+'\')">[View]</button></td>' +
+      '<td style="min-width:110px">'+itemText(o,d)+'<br><button type="button" class="dx-link" data-dx-action="items" data-del-id="'+esc(d.id || '')+'" data-order-id="'+esc(o.id || o.orderNumber || d.orderId || d.oid || d.order || d.id || '')+'">[View]</button></td>' +
       '<td style="min-width:115px">'+riderTimer(d,o,s)+'</td>' +
       '<td>'+action(d,o,s)+'</td>' +
     '</tr>';
@@ -18517,6 +18521,77 @@ font-size:14px">Okay</button>'
   document.addEventListener('click', function(e){
     if(e.target.closest && e.target.closest('.dx-scroll')){
       e.stopPropagation();
+    }
+  }, true);
+})();
+</script>
+
+
+<script id="delivery-button-actions-v10">
+(function(){
+  if(window.__deliveryButtonActionsV10) return;
+  window.__deliveryButtonActionsV10 = true;
+
+  function getBtn(e){
+    return e.target && e.target.closest ? e.target.closest('[data-dx-action]') : null;
+  }
+
+  document.addEventListener('click', function(e){
+    var btn = getBtn(e);
+    if(!btn) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    var action = btn.getAttribute('data-dx-action');
+    var delId = btn.getAttribute('data-del-id') || '';
+    var orderId = btn.getAttribute('data-order-id') || '';
+    var id = delId || orderId;
+
+    try{
+      if(action === 'assign'){
+        if(typeof quickAssignRider === 'function'){
+          quickAssignRider(delId || id);
+        }else{
+          alert('quickAssignRider() not found.');
+        }
+        return;
+      }
+
+      if(action === 'done'){
+        if(typeof dxSimpleDone === 'function'){
+          dxSimpleDone(delId || id);
+        }else if(typeof updDel === 'function'){
+          updDel(delId || id, 'delivered');
+        }else{
+          alert('Done function not found.');
+        }
+        return;
+      }
+
+      if(action === 'view'){
+        if(typeof dxPreviewItems === 'function'){
+          dxPreviewItems(delId || id);
+        }
+        return;
+      }
+
+      if(action === 'address'){
+        if(typeof dxPreviewAddress === 'function'){
+          dxPreviewAddress(delId || id);
+        }
+        return;
+      }
+
+      if(action === 'items'){
+        if(typeof dxPreviewItems === 'function'){
+          dxPreviewItems(delId || id);
+        }
+        return;
+      }
+    }catch(err){
+      console.error('Delivery button action failed:', err);
+      alert('Action failed. Check console.');
     }
   }, true);
 })();
