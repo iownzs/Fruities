@@ -18549,23 +18549,9 @@ font-size:14px">Okay</button>'
     var id = delId || orderId;
 
     try{
-      if(action === 'assign'){
-        if(typeof quickAssignRider === 'function'){
-          quickAssignRider(delId || id);
-        }else{
-          alert('quickAssignRider() not found.');
-        }
-        return;
-      }
-
-      if(action === 'done'){
-        if(typeof dxSimpleDone === 'function'){
-          dxSimpleDone(delId || id);
-        }else if(typeof updDel === 'function'){
-          updDel(delId || id, 'delivered');
-        }else{
-          alert('Done function not found.');
-        }
+      // Assign/Done are handled by delivery-assign-done-fix-v11.
+      // Do not run the old handler because it can fail before the new handler works.
+      if(action === 'assign' || action === 'done'){
         return;
       }
 
