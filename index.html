@@ -2639,38 +2639,19 @@ body.dark #chat-minimize-channels-btn.is-collapsed{background:#14281e!important;
       </div>
     </div>
 
+
     <!-- DELIVERY -->
     <div class="view" id="view-delivery">
       <div class="sh">
-        <h2>🚚 Delivery Tracker</h2>
-        <div style="font-size:12px;color:var(--t3);font-style:italic">Auto-populated when Kitchen sends out an order</div>
-      </div>
-
-      <!-- Active delivery timer cards -->
-      <div id="del-timer-cards" style="display:none;margin-bottom:18px">
-        <div style="font-family:'Fraunces',serif;font-size:15px;font-weight:700;margin-bottom:10px">⏱️ Active Timers</div>
-        <div id="del-timer-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px"></div>
-      </div>
-
-      <div class="card">
-        <div class="tw">
-          <table>
-            <thead>
-              <tr>
-                <th>Order#</th>
-                <th>Customer</th>
-                <th>Delivery Schedule</th>
-                <th>Rider</th>
-                <th>Items</th>
-                <th>Total</th>
-                <th>⏱️ Timer / Order#</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="dtbl"></tbody>
-          </table>
+        <div>
+          <h2>🚚 Delivery</h2>
+          <div style="font-size:12px;color:var(--t3);margin-top:2px">Excel-style delivery dispatch board</div>
         </div>
+        <button class="btn bg bsm" onclick="renderDeliveryExcel()">↻ Refresh</button>
+      </div>
+
+      <div id="deliveryExcelRoot" class="dx-wrap">
+        <div class="dx-empty">Loading delivery board...</div>
       </div>
     </div>
 
