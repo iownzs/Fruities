@@ -18200,9 +18200,9 @@ font-size:14px">Okay</button>'
       '<td>'+esc(created(o,d))+'</td>' +
       '<td><div class="dx-name">'+esc(customer(o,d))+'</div><div class="dx-phone">'+esc(customerPhone(o,d))+'</div></td>' +
       '<td><div class="dx-name">'+esc(recipient(o,d))+'</div><div class="dx-phone">'+esc(recipientPhone(o,d))+'</div></td>' +
-      '<td style="min-width:180px">'+esc(shortAddr)+'<br><span class="dx-muted">'+esc(cityOf(o,d))+'</span><br><button class="dx-link" onclick="event.stopPropagation();dxPreviewAddress(\\''+esc(id)+'\\')">[View]</button></td>' +
+      '<td style="min-width:180px">'+esc(shortAddr)+'<br><span class="dx-muted">'+esc(cityOf(o,d))+'</span><br><button class="dx-link" onclick="event.stopPropagation();dxPreviewAddress(\''+esc(id)+'\')">[View]</button></td>' +
       '<td style="min-width:110px">'+deliveryDate(o,d)+'</td>' +
-      '<td style="min-width:110px">'+itemText(o,d)+'<br><button class="dx-link" onclick="event.stopPropagation();dxPreviewItems(\\''+esc(id)+'\\')">[View]</button></td>' +
+      '<td style="min-width:110px">'+itemText(o,d)+'<br><button class="dx-link" onclick="event.stopPropagation();dxPreviewItems(\''+esc(id)+'\')">[View]</button></td>' +
       '<td style="min-width:115px">'+riderTimer(d,o,s)+'</td>' +
       '<td>'+action(d,o,s)+'</td>' +
     '</tr>';
@@ -18424,7 +18424,7 @@ font-size:14px">Okay</button>'
       '<div class="dx-modal">' +
         '<h3>' + esc(title) + '</h3>' +
         '<div style="font-size:14px;line-height:1.55">' + bodyHtml + '</div>' +
-        '<button onclick="document.getElementById(\\'dxPreviewSheet\\').remove()">Close</button>' +
+        '<button onclick="document.getElementById(\'dxPreviewSheet\').remove()">Close</button>' +
       '</div>';
 
     document.body.appendChild(div);
