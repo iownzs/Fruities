@@ -17708,21 +17708,20 @@ font-size:14px">Okay</button>'
     var existing = document.getElementById('deliveryExcelRoot');
     if(existing) return existing;
 
-    var headings = Array.from(document.querySelectorAll('h1,h2,h3'));
-    var h = headings.find(function(x){ return /delivery tracker|delivery/i.test(x.textContent || ''); });
-    var box = h ? (h.closest('.card') || h.parentElement) : null;
+    var view = document.getElementById('view-delivery');
+    var box = view || document.body;
 
-    if(!box){
-      box = document.querySelector('[data-v="delivery"]') || document.body;
-    }
+    box.innerHTML = `
+      <div class="sh">
+        <div>
+          <h2>🚚 Delivery</h2>
+          <div style="font-size:12px;color:var(--t3);margin-top:2px">Excel-style delivery dispatch board</div>
+        </div>
+      </div>
+      <div id="deliveryExcelRoot" class="dx-wrap"></div>
+    `;
 
-    var root = document.createElement('div');
-    root.id = 'deliveryExcelRoot';
-    root.className = 'dx-wrap';
-
-    box.innerHTML = '';
-    box.appendChild(root);
-    return root;
+    return document.getElementById('deliveryExcelRoot');
   }
 
   window.renderDeliveryExcel = function(){
