@@ -19945,13 +19945,10 @@ font-size:14px">Okay</button>'
 
   function isPickupOrder(o){
     var type = String(o.orderType || o.fulfillmentType || '').toLowerCase();
-    return (
-      type === 'pickup' ||
-      o.kitForPickup ||
-      o.kitPickup ||
-      o.pickupStatus === 'waiting' ||
-      o.pickupStatus === 'picked_up'
-    );
+
+    // For Send Delivery, only block clearly explicit pickup orders.
+    // Do not block because of old kitForPickup / pickupStatus fields.
+    return type === 'pickup';
   }
 
   function isDeliveryOrder(o){
