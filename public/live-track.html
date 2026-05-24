@@ -377,6 +377,71 @@ body{
   }
 }
 
+
+/* tracker-align-timeline-dots-v1 */
+
+/* Align green circles with center of cards */
+.rail{
+  padding-top:46px !important;
+}
+
+.rail::before,
+.rail-fill{
+  top:74px !important;
+}
+
+.dots{
+  gap:84px !important;
+}
+
+/* desktop/tablet card alignment */
+@media(min-width:701px){
+  .rail{
+    padding-top:46px !important;
+  }
+
+  .rail::before,
+  .rail-fill{
+    top:75px !important;
+  }
+
+  .dots{
+    gap:84px !important;
+  }
+}
+
+/* mobile alignment */
+@media(max-width:700px){
+  .rail{
+    padding-top:40px !important;
+  }
+
+  .rail::before,
+  .rail-fill{
+    top:63px !important;
+  }
+
+  .dots{
+    gap:70px !important;
+  }
+}
+
+/* small mobile */
+@media(max-width:390px){
+  .rail{
+    padding-top:38px !important;
+  }
+
+  .rail::before,
+  .rail-fill{
+    top:61px !important;
+  }
+
+  .dots{
+    gap:66px !important;
+  }
+}
+
 </style>
 </head>
 
