@@ -1225,6 +1225,115 @@ body{
   }
 }
 
+
+/* tracker-checkpoint-logo-animations-v1 */
+
+/* base image animation smoothing */
+.step-card .art img{
+  transform-origin:center;
+  will-change:transform, filter, opacity;
+}
+
+/* completed checkpoints: subtle success pop */
+.step-card.done[data-step="confirmed"] .art img{
+  animation:checkpointPop 2.6s ease-in-out infinite;
+}
+
+.step-card.done[data-step="preparing"] .art img{
+  animation:checkpointFloat 3.2s ease-in-out infinite;
+}
+
+/* active preparing */
+.step-card.active[data-step="preparing"] .art img{
+  animation:checkpointFloat 2.2s ease-in-out infinite;
+}
+
+/* active rider */
+.step-card.active[data-step="out"] .art img{
+  animation:riderDrive 2.8s ease-in-out infinite;
+}
+
+/* completed out step */
+.step-card.done[data-step="out"] .art img{
+  animation:riderTinyMove 3.4s ease-in-out infinite;
+}
+
+/* active delivered */
+.step-card.active[data-step="delivered"] .art img{
+  animation:deliveredGlow 2.2s ease-in-out infinite;
+}
+
+/* completed delivered */
+.step-card.done[data-step="delivered"] .art img{
+  animation:deliveredGlow 3s ease-in-out infinite;
+}
+
+/* pending icons stay quiet */
+.step-card.pending .art img{
+  animation:none !important;
+  filter:saturate(.8);
+}
+
+/* active card small breathing glow */
+.step-card.active{
+  animation:activeCardBreath 2.4s ease-in-out infinite;
+}
+
+@keyframes checkpointPop{
+  0%,100%{transform:scale(1)}
+  50%{transform:scale(1.045) rotate(-1deg)}
+}
+
+@keyframes checkpointFloat{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-7px)}
+}
+
+@keyframes riderDrive{
+  0%{transform:translateX(-5px) translateY(0)}
+  50%{transform:translateX(9px) translateY(-2px)}
+  100%{transform:translateX(-5px) translateY(0)}
+}
+
+@keyframes riderTinyMove{
+  0%,100%{transform:translateX(0)}
+  50%{transform:translateX(5px)}
+}
+
+@keyframes deliveredGlow{
+  0%,100%{
+    transform:scale(1);
+    filter:drop-shadow(0 0 0 rgba(34,197,94,0));
+  }
+  50%{
+    transform:scale(1.055);
+    filter:drop-shadow(0 8px 14px rgba(34,197,94,.22));
+  }
+}
+
+@keyframes activeCardBreath{
+  0%,100%{
+    box-shadow:
+      0 0 0 1px rgba(34,197,94,.13),
+      0 0 18px rgba(34,197,94,.18),
+      0 12px 30px rgba(19,80,34,.10);
+  }
+  50%{
+    box-shadow:
+      0 0 0 1px rgba(34,197,94,.18),
+      0 0 28px rgba(34,197,94,.28),
+      0 15px 36px rgba(19,80,34,.13);
+  }
+}
+
+/* Respect reduced motion */
+@media(prefers-reduced-motion:reduce){
+  .step-card,
+  .step-card .art img{
+    animation:none !important;
+  }
+}
+
 </style>
 </head>
 
