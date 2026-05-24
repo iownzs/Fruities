@@ -1942,6 +1942,93 @@ body{
   }
 }
 
+
+/* tracker-active-circle-bounce-v1 */
+
+/* Keep all card overflow visible so circle animation is not clipped */
+.cards,
+.step-card{
+  overflow:visible !important;
+}
+
+/* Completed circles: still */
+.step-card.done:not(.active)::before{
+  content:"✓" !important;
+  animation:none !important;
+  background:#0db83f !important;
+  color:#fff !important;
+  box-shadow:
+    0 0 0 3px rgba(13,184,63,.12),
+    0 6px 14px rgba(13,184,63,.24) !important;
+}
+
+/* Pending circles: still */
+.step-card.pending::before{
+  content:"" !important;
+  animation:none !important;
+  background:#edf1ee !important;
+  box-shadow:0 5px 12px rgba(0,0,0,.06) !important;
+}
+
+/* Active circle: clear bounce + pulse glow */
+.step-card.active::before{
+  content:"●" !important;
+  background:#0db83f !important;
+  color:#fff !important;
+  z-index:20 !important;
+  animation:activeCircleBounceGlow 1.25s ease-in-out infinite !important;
+  box-shadow:
+    0 0 0 5px rgba(13,184,63,.22),
+    0 0 20px rgba(13,184,63,.75),
+    0 0 40px rgba(13,184,63,.48) !important;
+}
+
+/* Active card glow stays strong */
+.step-card.active{
+  animation:activeCardStrongBreath 2.2s ease-in-out infinite !important;
+}
+
+@keyframes activeCircleBounceGlow{
+  0%,100%{
+    transform:translate(-50%,-50%) scale(1);
+    box-shadow:
+      0 0 0 5px rgba(13,184,63,.22),
+      0 0 18px rgba(13,184,63,.72),
+      0 0 36px rgba(13,184,63,.42);
+  }
+  50%{
+    transform:translate(-50%,-50%) scale(1.18);
+    box-shadow:
+      0 0 0 12px rgba(13,184,63,.18),
+      0 0 30px rgba(13,184,63,.95),
+      0 0 56px rgba(13,184,63,.62);
+  }
+}
+
+@keyframes activeCardStrongBreath{
+  0%,100%{
+    box-shadow:
+      0 0 0 2px rgba(34,197,94,.30),
+      0 0 22px rgba(34,197,94,.45),
+      0 0 48px rgba(34,197,94,.32),
+      0 16px 42px rgba(19,80,34,.18) !important;
+  }
+  50%{
+    box-shadow:
+      0 0 0 3px rgba(34,197,94,.46),
+      0 0 34px rgba(34,197,94,.70),
+      0 0 68px rgba(34,197,94,.52),
+      0 20px 52px rgba(19,80,34,.24) !important;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .step-card,
+  .step-card::before{
+    animation:none !important;
+  }
+}
+
 </style>
 </head>
 
