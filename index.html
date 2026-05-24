@@ -20322,66 +20322,6 @@ font-size:14px">Okay</button>'
   setTimeout(wrapKitSendToPickup, 2500);
 })();
 </script>
-
-
-<style id="delivery-sticky-columns-v1">
-/* Sticky Delivery Excel columns */
-.dx-table th:first-child,
-.dx-table td:first-child{
-  position:sticky;
-  left:0;
-  z-index:4;
-  background:var(--card,#fff);
-  box-shadow:2px 0 8px rgba(0,0,0,.06);
-}
-
-.dx-table th:first-child{
-  z-index:6;
-  background:#f8fafc;
-}
-
-.dx-table th:last-child,
-.dx-table td:last-child{
-  position:sticky;
-  right:0;
-  z-index:4;
-  background:var(--card,#fff);
-  box-shadow:-2px 0 8px rgba(0,0,0,.06);
-}
-
-.dx-table th:last-child{
-  z-index:6;
-  background:#f8fafc;
-}
-
-/* Keep action buttons readable while sticky */
-.dx-table td:last-child{
-  min-width:96px;
-}
-
-.dx-table th:first-child,
-.dx-table td:first-child{
-  min-width:112px;
-}
-
-@media(max-width:700px){
-  .dx-table th:first-child,
-  .dx-table td:first-child{
-    min-width:104px;
-  }
-
-  .dx-table td:last-child{
-    min-width:88px;
-  }
-
-  .dx-action{
-    padding:8px 10px !important;
-    min-width:70px !important;
-    font-size:12px !important;
-  }
-}
-</style>
-
 </body>
 </html>
 
