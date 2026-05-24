@@ -1628,6 +1628,148 @@ body{
   }
 }
 
+
+/* tracker-small-active-circle-glow-v1 */
+
+/* Desktop/tablet: smaller clean circles */
+.step-card::before{
+  width:46px !important;
+  height:46px !important;
+  font-size:22px !important;
+  border-width:4px !important;
+  left:-56px !important;
+}
+
+/* Desktop/tablet line follows smaller circles */
+.step-card:not(:last-child)::after{
+  left:-56px !important;
+  top:calc(50% + 23px) !important;
+  height:calc(100% + 26px - 46px) !important;
+  width:5px !important;
+}
+
+/* Completed circles: clean green, no animation */
+.step-card.done:not(.active)::before{
+  content:"✓" !important;
+  background:#0db83f !important;
+  color:#fff !important;
+  box-shadow:
+    0 0 0 3px rgba(13,184,63,.10),
+    0 6px 14px rgba(13,184,63,.22) !important;
+  animation:none !important;
+}
+
+/* Active circle: smaller but stronger animated glow */
+.step-card.active::before{
+  content:"•" !important;
+  background:#0db83f !important;
+  color:#fff !important;
+  font-size:26px !important;
+  box-shadow:
+    0 0 0 7px rgba(13,184,63,.20),
+    0 0 18px rgba(13,184,63,.55),
+    0 0 34px rgba(13,184,63,.35) !important;
+  animation:activeCircleStrongPulse 1.45s ease-in-out infinite !important;
+}
+
+/* Pending circles: smaller and quiet */
+.step-card.pending::before{
+  content:"" !important;
+  background:#edf1ee !important;
+  box-shadow:0 5px 12px rgba(0,0,0,.06) !important;
+  animation:none !important;
+}
+
+/* Mobile: compact circles */
+@media(max-width:700px){
+  .cards{
+    padding-left:58px !important;
+  }
+
+  .step-card::before{
+    width:36px !important;
+    height:36px !important;
+    font-size:18px !important;
+    border-width:3px !important;
+    left:-31px !important;
+  }
+
+  .step-card:not(:last-child)::after{
+    left:-31px !important;
+    top:calc(50% + 18px) !important;
+    height:calc(100% + 16px - 36px) !important;
+    width:4px !important;
+  }
+
+  .step-card.done:not(.active)::before{
+    box-shadow:
+      0 0 0 3px rgba(13,184,63,.09),
+      0 5px 12px rgba(13,184,63,.20) !important;
+  }
+
+  .step-card.active::before{
+    font-size:22px !important;
+    box-shadow:
+      0 0 0 6px rgba(13,184,63,.20),
+      0 0 16px rgba(13,184,63,.52),
+      0 0 28px rgba(13,184,63,.32) !important;
+  }
+}
+
+/* Small phones */
+@media(max-width:390px){
+  .cards{
+    padding-left:52px !important;
+  }
+
+  .step-card::before{
+    width:32px !important;
+    height:32px !important;
+    font-size:16px !important;
+    left:-27px !important;
+  }
+
+  .step-card:not(:last-child)::after{
+    left:-27px !important;
+    top:calc(50% + 16px) !important;
+    height:calc(100% + 14px - 32px) !important;
+    width:4px !important;
+  }
+
+  .step-card.active::before{
+    font-size:20px !important;
+    box-shadow:
+      0 0 0 5px rgba(13,184,63,.20),
+      0 0 14px rgba(13,184,63,.50),
+      0 0 24px rgba(13,184,63,.30) !important;
+  }
+}
+
+/* Strong active circle animation */
+@keyframes activeCircleStrongPulse{
+  0%,100%{
+    transform:translate(-50%,-50%) scale(1);
+    box-shadow:
+      0 0 0 6px rgba(13,184,63,.18),
+      0 0 16px rgba(13,184,63,.48),
+      0 0 30px rgba(13,184,63,.28);
+  }
+  50%{
+    transform:translate(-50%,-50%) scale(1.08);
+    box-shadow:
+      0 0 0 10px rgba(13,184,63,.22),
+      0 0 26px rgba(13,184,63,.70),
+      0 0 44px rgba(13,184,63,.45);
+  }
+}
+
+/* Respect reduced motion */
+@media(prefers-reduced-motion:reduce){
+  .step-card::before{
+    animation:none !important;
+  }
+}
+
 </style>
 </head>
 
