@@ -3,1107 +3,486 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Fruities Live Delivery Tracking</title>
+<title>Fruities Order Tracking</title>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <style>
 *{box-sizing:border-box}
 
-body{
-  margin:0;
-  font-family:Arial,sans-serif;
-  background:linear-gradient(180deg,#effff4,#ffffff);
-  color:#102016;
-  padding:8px 18px 18px;
+:root{
+  --green:#0db83f;
+  --green-dark:#08752a;
+  --text:#101820;
+  --muted:#5d6673;
+  --card:#fff;
+  --line:#12b83f;
+  --pending:#dcebdd;
 }
 
-.wrap{
-  max-width:940px;
-  margin:auto;
+body{
+  margin:0;
+  min-height:100vh;
+  font-family:Arial,Helvetica,sans-serif;
+  color:var(--text);
+  background:url("/assets/tracker/tracker-bg.png") center/cover no-repeat fixed,#faf7f2;
+}
+
+.page{
+  max-width:980px;
+  margin:0 auto;
+  padding:22px 16px 42px;
+}
+
+.topbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:4px;
+}
+
+.topbar button,
+.topbar a{
+  border:0;
+  background:transparent;
+  color:var(--green-dark);
+  font-size:18px;
+  font-weight:800;
+  text-decoration:none;
+  padding:8px;
 }
 
 .logo{
   text-align:center;
-  margin:0 0 8px;
+  margin:4px 0 26px;
 }
 
-.brand-logo{
-  width:220px;
-  max-width:80%;
+.logo img{
+  width:310px;
+  max-width:78%;
   height:auto;
 }
 
-.card{
-  background:#fff;
-  border-radius:28px;
-  padding:28px;
-  box-shadow:0 14px 40px rgba(0,0,0,.08);
-  animation:fadeUp .45s ease;
+.tracker{
+  display:grid;
+  grid-template-columns:76px 1fr;
+  gap:16px;
+  max-width:780px;
+  margin:0 auto;
 }
 
-.head{
-  text-align:center;
-  margin-bottom:26px;
-}
-
-.head h2{
-  margin:0;
-  color:#064d17;
-  font-size:42px;
-  letter-spacing:1px;
-}
-
-.head p{
-  font-size:18px;
-  color:#333;
-}
-
-.timeline{
+.rail{
   position:relative;
+  padding-top:38px;
 }
 
-.step{
-  display:flex;
-  gap:18px;
-  position:relative;
-  padding-bottom:34px;
-  opacity:.35;
-  transition:.28s ease;
-}
-
-.step.done,
-.step.active{
-  opacity:1;
-}
-
-.step::after{
+.rail::before{
   content:"";
   position:absolute;
-  left:30px;
-  top:62px;
-  width:4px;
-  height:calc(100% - 45px);
-  background:#ddd;
-  border-radius:20px;
+  left:35px;
+  top:50px;
+  bottom:54px;
+  width:6px;
+  background:var(--pending);
+  border-radius:99px;
 }
 
-.step.done::after,
-.step.active::after{
-  background:#1faf3c;
+.rail-fill{
+  position:absolute;
+  left:35px;
+  top:50px;
+  width:6px;
+  height:0;
+  background:var(--line);
+  border-radius:99px;
+  transition:.3s ease;
 }
 
-.step:last-child::after{
-  display:none;
-}
-
-.icon{
-  width:64px;
-  height:64px;
-  min-width:64px;
-  border-radius:50%;
-  background:#bfc3c8;
-  display:grid;
-  place-items:center;
-  color:white;
-  font-size:30px;
-  box-shadow:none;
-  z-index:2;
-}
-
-.step.done .icon,
-.step.active .icon{
-  background:#20ad3c;
-  box-shadow:0 8px 22px rgba(21,150,54,.25);
-}
-
-.step.active .icon{
-  animation:pulse 1.4s infinite;
-}
-
-.info{
-  flex:1;
-  padding-top:4px;
-}
-
-.info h3{
-  margin:0;
-  font-size:28px;
-}
-
-.info p{
-  margin:7px 0;
-  color:#555;
-  font-size:16px;
-}
-
-.time{
-  color:#0d9a2d;
-  font-weight:800;
-  margin-top:8px;
-}
-
-.active-box{
-  background:linear-gradient(90deg,#effff3,#f9fff7);
-  border:1px solid #bdf3c9;
-  border-radius:24px;
-  padding:20px 145px 20px 20px;
+.dots{
   position:relative;
-  overflow:visible;
-  min-height:120px;
-  box-shadow:
-    0 0 0 1px rgba(34,197,94,.14),
-    0 18px 46px rgba(34,197,94,.30);
-}
-
-.active-box h3{
-  color:#0d8d29;
-}
-
-.badge{
-  display:inline-flex;
+  z-index:2;
+  display:flex;
+  flex-direction:column;
   align-items:center;
-  gap:8px;
-  background:#fff;
-  border-radius:999px;
-  padding:10px 14px;
-  margin-top:14px;
-  font-weight:700;
-  box-shadow:0 4px 12px rgba(0,0,0,.08);
+  gap:54px;
 }
 
 .dot{
-  width:12px;
-  height:12px;
+  width:58px;
+  height:58px;
   border-radius:50%;
-  background:#1fb63e;
-  animation:pulse 1.2s infinite;
+  display:grid;
+  place-items:center;
+  background:#edf1ee;
+  border:5px solid #fff;
+  color:#fff;
+  font-size:26px;
+  font-weight:900;
+  box-shadow:0 8px 22px rgba(0,0,0,.08);
 }
 
-.rider-img{
-  position:absolute;
-  right:18px;
-  bottom:24px;
-  width:120px;
-  max-width:none;
-  height:auto;
-  z-index:5;
-  animation:riderSmoothMove 3.5s ease-in-out infinite;
-  transform-origin:center center;
-  will-change:transform;
+.dot.done,
+.dot.active{
+  background:var(--green);
 }
 
-.footer{
-  margin-top:18px;
-  background:#effaf0;
-  padding:18px;
-  border-radius:20px;
-  font-weight:700;
-  text-align:center;
-  color:#174d24;
+.dot.active{
+  box-shadow:0 0 0 8px rgba(13,184,63,.14),0 12px 24px rgba(13,184,63,.18);
 }
 
-@keyframes pulse{
-  0%{transform:scale(1)}
-  50%{transform:scale(1.15);opacity:.75}
-  100%{transform:scale(1)}
+.cards{
+  display:flex;
+  flex-direction:column;
+  gap:22px;
 }
 
-@keyframes riderSmoothMove{
-  0%{transform:translateX(-5px) translateY(0)}
-  50%{transform:translateX(8px) translateY(-2px)}
-  100%{transform:translateX(-5px) translateY(0)}
-}
-
-@keyframes fadeUp{
-  from{opacity:0;transform:translateY(12px)}
-  to{opacity:1;transform:translateY(0)}
-}
-
-@media(max-width:600px){
-  body{
-    padding:0 12px 12px;
-  }
-
-  .wrap{
-    max-width:100%;
-  }
-
-  .logo{
-    margin-bottom:6px;
-  }
-
-  .brand-logo{
-    width:150px;
-  }
-
-  .card{
-    padding:18px;
-    border-radius:22px;
-  }
-
-  .head h2{
-    font-size:28px;
-  }
-
-  .head p{
-    font-size:14px;
-  }
-
-  .step{
-    gap:12px;
-    padding-bottom:28px;
-  }
-
-  .icon{
-    width:52px;
-    height:52px;
-    min-width:52px;
-    font-size:23px;
-  }
-
-  .step::after{
-    left:24px;
-    top:52px;
-  }
-
-  .info h3{
-    font-size:21px;
-  }
-
-  .info p{
-    font-size:14px;
-  }
-
-  .time{
-    font-size:13px;
-  }
-
-  .active-box{
-    padding:16px 118px 16px 16px;
-    min-height:118px;
-    overflow:hidden;
-  }
-
-  .rider-img{
-    right:16px;
-    bottom:12px;
-    width:95px;
-  }
-
-  .badge{
-    font-size:12px;
-    padding:8px 10px;
-  }
-}
-
-@media(min-width:601px) and (max-width:1024px){
-  .wrap{
-    max-width:720px;
-  }
-
-  .card{
-    padding:28px;
-  }
-
-  .brand-logo{
-    width:210px;
-  }
-
-  .head h2{
-    font-size:40px;
-  }
-
-  .rider-img{
-    width:120px;
-  }
-}
-
-@media(min-width:1025px){
-  body{
-    padding:22px;
-  }
-
-  .wrap{
-    max-width:940px;
-  }
-
-  .card{
-    padding:34px;
-  }
-
-  .brand-logo{
-    width:240px;
-  }
-
-  .head h2{
-    font-size:48px;
-  }
-
-  .active-box{
-    padding-right:170px;
-    min-height:140px;
-  }
-
-  .rider-img{
-    width:145px;
-    right:26px;
-    bottom:20px;
-  }
-}
-
-/* dynamic-active-box-v1 */
-.step-box.active-box{
-  background:linear-gradient(90deg,#effff3,#f9fff7);
-  border:1px solid #bdf3c9;
+.step-card{
+  min-height:132px;
+  display:grid;
+  grid-template-columns:1fr 132px;
+  gap:16px;
+  align-items:center;
+  padding:22px 24px;
+  background:var(--card);
   border-radius:24px;
-  padding:20px 145px 20px 20px;
-  position:relative;
-  overflow:visible;
-  min-height:120px;
-  box-shadow:
-    0 0 0 1px rgba(34,197,94,.14),
-    0 18px 46px rgba(34,197,94,.30);
+  border:2px solid transparent;
+  box-shadow:0 12px 34px rgba(20,80,35,.09);
+  opacity:.42;
+  transition:.25s ease;
 }
 
-.step-box.active-box h3{
-  color:#0d8d29;
+.step-card.done,
+.step-card.active{
+  opacity:1;
 }
 
-.step-box:not(.active-box) .badge,
-.step-box:not(.active-box) .rider-img{
-  display:none;
+.step-card.active{
+  border-color:#63e079;
+  box-shadow:0 14px 38px rgba(13,184,63,.16);
 }
 
-
-/* live-tracker-minimal-responsive-v1 */
-
-/* Base minimalist style */
-body{
-  background:#f7fbf7 !important;
-  padding:0 14px 20px !important;
-  color:#122016 !important;
+.step-card h3{
+  margin:0 0 10px;
+  font-size:24px;
+  line-height:1.15;
+  font-weight:900;
 }
 
-.wrap{
-  max-width:860px !important;
-  margin:0 auto !important;
+.step-card p{
+  margin:0;
+  color:var(--muted);
+  font-size:16px;
+  line-height:1.45;
 }
 
-.logo{
-  margin:18px 0 22px !important;
-  text-align:center !important;
-}
-
-.brand-logo{
-  width:150px !important;
-  max-width:58% !important;
-}
-
-.card{
-  background:#fff !important;
-  border:1px solid rgba(22,101,52,.08) !important;
-  border-radius:24px !important;
-  padding:24px 18px !important;
-  box-shadow:0 10px 30px rgba(15,23,42,.06) !important;
-}
-
-.head{
-  margin-bottom:26px !important;
-  text-align:center !important;
-}
-
-.head h2{
-  font-size:28px !important;
-  letter-spacing:4px !important;
-  line-height:1.1 !important;
-  margin:0 !important;
-  color:#0b5d22 !important;
-}
-
-.head p{
-  font-size:15px !important;
-  margin:12px 0 0 !important;
-  color:#4b5563 !important;
-}
-
-.timeline{
-  max-width:620px !important;
-  margin:0 auto !important;
-}
-
-.step{
-  gap:14px !important;
-  padding-bottom:26px !important;
-}
-
-.step::after{
-  left:23px !important;
-  top:49px !important;
-  width:3px !important;
-  height:calc(100% - 38px) !important;
-  background:#e5e7eb !important;
-}
-
-.step.done::after,
-.step.active::after{
-  background:#1faf3c !important;
-}
-
-.icon{
-  width:48px !important;
-  height:48px !important;
-  min-width:48px !important;
-  font-size:22px !important;
-  box-shadow:none !important;
-}
-
-.info,
-.step-box{
-  padding-top:0 !important;
-}
-
-.info h3,
-.step-box h3{
-  font-size:21px !important;
-  line-height:1.2 !important;
-  margin:0 0 6px !important;
-  font-weight:850 !important;
-}
-
-.info p,
-.step-box p{
-  font-size:14px !important;
-  line-height:1.35 !important;
-  margin:0 !important;
-  color:#4b5563 !important;
+.step-card.active h3{
+  color:var(--green-dark);
 }
 
 .time{
-  font-size:13px !important;
-  margin-top:8px !important;
-  color:#14883a !important;
-  font-weight:800 !important;
+  margin-top:12px;
+  color:var(--green-dark);
+  font-size:14px;
+  font-weight:900;
 }
 
-.step.pending{
-  opacity:.32 !important;
+.art{
+  text-align:right;
 }
 
-.step.done,
-.step.active{
-  opacity:1 !important;
+.art img{
+  width:100%;
+  max-width:126px;
+  height:auto;
+  display:inline-block;
 }
 
-/* Remove heavy active card style */
-.step-box.active-box,
-.info.active-box{
-  background:transparent !important;
-  border:none !important;
-  border-radius:0 !important;
-  padding:0 !important;
-  min-height:0 !important;
-  box-shadow:none !important;
-}
-
-.step-box.active-box h3,
-.info.active-box h3,
-.step.active h3{
-  color:#0d8d29 !important;
-}
-
-.badge,
-.rider-img{
-  display:none !important;
+.step-card[data-step="delivered"].active{
+  background:linear-gradient(90deg,#fff,#f1fff3);
 }
 
 .footer{
-  max-width:620px !important;
-  margin:18px auto 0 !important;
-  background:#eef8ef !important;
-  border:1px solid rgba(22,101,52,.06) !important;
-  border-radius:18px !important;
-  padding:16px !important;
-  font-size:15px !important;
-  line-height:1.35 !important;
-  box-shadow:none !important;
+  max-width:780px;
+  margin:26px auto 0;
+  padding:18px 20px;
+  border-radius:22px;
+  background:rgba(235,249,237,.94);
+  color:#165b27;
+  font-size:17px;
+  line-height:1.35;
+  text-align:center;
+  font-weight:800;
+  box-shadow:0 8px 24px rgba(20,80,35,.06);
 }
 
-/* Desktop polish */
-@media(min-width:768px){
-  body{
-    padding:22px 24px 36px !important;
+@media(max-width:700px){
+  .page{padding:14px 12px 32px}
+  .logo{margin:4px 0 22px}
+  .logo img{width:250px}
+
+  .tracker{
+    grid-template-columns:58px 1fr;
+    gap:8px;
   }
 
-  .logo{
-    margin:8px 0 28px !important;
+  .rail{padding-top:30px}
+  .rail::before,
+  .rail-fill{
+    left:27px;
+    top:42px;
+    width:5px;
   }
 
-  .brand-logo{
-    width:175px !important;
+  .dots{gap:48px}
+
+  .dot{
+    width:48px;
+    height:48px;
+    font-size:21px;
+    border-width:4px;
   }
 
-  .card{
-    padding:34px 44px !important;
-    border-radius:28px !important;
+  .step-card{
+    min-height:122px;
+    grid-template-columns:1fr 92px;
+    gap:10px;
+    padding:18px 16px;
+    border-radius:20px;
   }
 
-  .head{
-    margin-bottom:34px !important;
+  .step-card h3{
+    font-size:20px;
+    margin-bottom:8px;
   }
 
-  .head h2{
-    font-size:36px !important;
-    letter-spacing:6px !important;
-  }
-
-  .head p{
-    font-size:17px !important;
-  }
-
-  .timeline{
-    max-width:660px !important;
-  }
-
-  .step{
-    gap:18px !important;
-    padding-bottom:30px !important;
-  }
-
-  .icon{
-    width:56px !important;
-    height:56px !important;
-    min-width:56px !important;
-    font-size:25px !important;
-  }
-
-  .step::after{
-    left:27px !important;
-    top:56px !important;
-  }
-
-  .info h3,
-  .step-box h3{
-    font-size:25px !important;
-  }
-
-  .info p,
-  .step-box p{
-    font-size:15px !important;
+  .step-card p{
+    font-size:14px;
   }
 
   .time{
-    font-size:14px !important;
+    font-size:12.5px;
+    margin-top:9px;
   }
+
+  .art img{max-width:86px}
 
   .footer{
-    max-width:660px !important;
-    font-size:16px !important;
-    padding:18px !important;
+    font-size:14px;
+    padding:15px;
+    border-radius:18px;
   }
 }
 
-/* Small mobile polish */
-@media(max-width:420px){
-  body{
-    padding:0 10px 16px !important;
+@media(max-width:390px){
+  .step-card{
+    grid-template-columns:1fr 78px;
+    padding:16px 14px;
   }
 
-  .logo{
-    margin:14px 0 18px !important;
-  }
-
-  .brand-logo{
-    width:135px !important;
-  }
-
-  .card{
-    padding:20px 14px !important;
-    border-radius:20px !important;
-  }
-
-  .head h2{
-    font-size:23px !important;
-    letter-spacing:3px !important;
-  }
-
-  .head p{
-    font-size:14px !important;
-  }
-
-  .timeline{
-    max-width:100% !important;
-  }
-
-  .step{
-    gap:12px !important;
-    padding-bottom:24px !important;
-  }
-
-  .icon{
-    width:46px !important;
-    height:46px !important;
-    min-width:46px !important;
-    font-size:21px !important;
-  }
-
-  .step::after{
-    left:22px !important;
-    top:47px !important;
-  }
-
-  .info h3,
-  .step-box h3{
-    font-size:19px !important;
-  }
-
-  .info p,
-  .step-box p{
-    font-size:13.5px !important;
-  }
-
-  .time{
-    font-size:12.5px !important;
-  }
-
-  .footer{
-    font-size:14px !important;
-    padding:14px !important;
-    border-radius:16px !important;
-  }
+  .art img{max-width:76px}
+  .step-card h3{font-size:18px}
+  .step-card p{font-size:13px}
 }
-
-
-/* live-tracker-logo-rider-fix-v1 */
-
-/* Bring Fruities logo closer */
-.logo{
-  margin:10px 0 14px !important;
-}
-
-.brand-logo{
-  width:145px !important;
-  max-width:58% !important;
-}
-
-/* Remove too much empty top space */
-body{
-  padding-top:0 !important;
-}
-
-.card{
-  margin-top:0 !important;
-}
-
-/* Show rider image only when Out for Delivery is active */
-.rider-img{
-  display:none !important;
-}
-
-.step[data-step="out"].active .rider-img{
-  display:block !important;
-  width:82px !important;
-  right:8px !important;
-  bottom:6px !important;
-  opacity:1 !important;
-}
-
-/* Keep active out step clean with small rider image */
-.step[data-step="out"].active .step-box,
-.step[data-step="out"].active .info{
-  padding-right:92px !important;
-  position:relative !important;
-}
-
-/* Mobile tighter spacing */
-@media(max-width:520px){
-  .logo{
-    margin:6px 0 10px !important;
-  }
-
-  .brand-logo{
-    width:128px !important;
-  }
-
-  .card{
-    border-radius:22px !important;
-  }
-
-  .step[data-step="out"].active .rider-img{
-    width:70px !important;
-    right:0 !important;
-    bottom:6px !important;
-  }
-
-  .step[data-step="out"].active .step-box,
-  .step[data-step="out"].active .info{
-    padding-right:76px !important;
-  }
-}
-
-/* Desktop logo/card spacing */
-@media(min-width:768px){
-  .logo{
-    margin:8px 0 18px !important;
-  }
-
-  .brand-logo{
-    width:165px !important;
-  }
-
-  .step[data-step="out"].active .rider-img{
-    width:96px !important;
-    right:10px !important;
-  }
-
-  .step[data-step="out"].active .step-box,
-  .step[data-step="out"].active .info{
-    padding-right:112px !important;
-  }
-}
-
-
-/* live-tracker-rider-position-fix-v1 */
-
-/* keep Out for Delivery text cleaner */
-.step[data-step="out"].active h3{
-  max-width:220px !important;
-}
-
-/* mobile: rider closer, not too far right */
-.step[data-step="out"].active .rider-img{
-  width:72px !important;
-  right:28px !important;
-  bottom:12px !important;
-}
-
-.step[data-step="out"].active .step-box,
-.step[data-step="out"].active .info{
-  padding-right:118px !important;
-}
-
-/* very small phones */
-@media(max-width:420px){
-  .step[data-step="out"].active h3{
-    max-width:150px !important;
-  }
-
-  .step[data-step="out"].active .rider-img{
-    width:66px !important;
-    right:14px !important;
-    bottom:18px !important;
-  }
-
-  .step[data-step="out"].active .step-box,
-  .step[data-step="out"].active .info{
-    padding-right:88px !important;
-  }
-}
-
-/* desktop/tablet: rider stays near text, not far edge */
-@media(min-width:768px){
-  .timeline{
-    max-width:560px !important;
-  }
-
-  .step[data-step="out"].active .rider-img{
-    width:86px !important;
-    right:34px !important;
-    bottom:10px !important;
-  }
-
-  .step[data-step="out"].active .step-box,
-  .step[data-step="out"].active .info{
-    padding-right:130px !important;
-  }
-
-  .step[data-step="out"].active h3{
-    max-width:260px !important;
-  }
-}
-
-/* large desktop: keep tracker compact */
-@media(min-width:1024px){
-  .timeline{
-    max-width:520px !important;
-  }
-
-  .step[data-step="out"].active .rider-img{
-    right:24px !important;
-  }
-}
-
-
-/* live-tracker-desktop-rider-big-v1 */
-
-/* Mobile stays same. Desktop/tablet only gets bigger rider. */
-@media(min-width:768px){
-  .timeline{
-    max-width:600px !important;
-  }
-
-  .step[data-step="out"].active .rider-img{
-    display:block !important;
-    width:125px !important;
-    right:24px !important;
-    bottom:-2px !important;
-    max-width:none !important;
-  }
-
-  .step[data-step="out"].active .step-box,
-  .step[data-step="out"].active .info{
-    position:relative !important;
-    padding-right:165px !important;
-    min-height:86px !important;
-  }
-
-  .step[data-step="out"].active h3{
-    max-width:320px !important;
-    white-space:normal !important;
-  }
-}
-
-/* Larger desktop: keep it close, not floating too far */
-@media(min-width:1024px){
-  .timeline{
-    max-width:620px !important;
-  }
-
-  .step[data-step="out"].active .rider-img{
-    width:135px !important;
-    right:32px !important;
-    bottom:-4px !important;
-  }
-
-  .step[data-step="out"].active .step-box,
-  .step[data-step="out"].active .info{
-    padding-right:180px !important;
-    min-height:92px !important;
-  }
-}
-
-
-/* live-tracker-rider-desktop-final-pos-v1 */
-@media(min-width:768px){
-  .step[data-step="out"].active .rider-img{
-    width:128px !important;
-    right:4px !important;
-    bottom:-12px !important;
-  }
-
-  .step[data-step="out"].active .step-box,
-  .step[data-step="out"].active .info{
-    padding-right:150px !important;
-    min-height:96px !important;
-  }
-}
-
-@media(min-width:1024px){
-  .step[data-step="out"].active .rider-img{
-    width:138px !important;
-    right:6px !important;
-    bottom:-14px !important;
-  }
-
-  .step[data-step="out"].active .step-box,
-  .step[data-step="out"].active .info{
-    padding-right:165px !important;
-    min-height:102px !important;
-  }
-}
-
 </style>
-
-<!-- firebase-realtime-listener-v1 -->
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
 </head>
 
 <body>
-<div class="wrap">
-
-  <div class="logo">
-    <img class="brand-logo" src="/assets/logo.png" alt="Fruities Logo">
+<div class="page">
+  <div class="topbar">
+    <button onclick="history.back()">‹</button>
+    <a href="/">Help</a>
   </div>
 
-  <div class="card">
-    <div class="head">
-      <h2>ORDER TRACKING</h2>
-      <p>Thank you! Your order is on the way. 💚</p>
+  <div class="logo">
+    <img src="/assets/tracker/fruities-logo.png" alt="Fruities">
+  </div>
+
+  <div class="tracker">
+    <div class="rail">
+      <div class="rail-fill" id="railFill"></div>
+      <div class="dots">
+        <div class="dot" data-dot="confirmed">✓</div>
+        <div class="dot" data-dot="preparing">✓</div>
+        <div class="dot" data-dot="out">✓</div>
+        <div class="dot" data-dot="delivered">●</div>
+      </div>
     </div>
 
-    <div class="timeline">
-
-      <div class="step" data-step="placed">
-        <div class="icon">🧾</div>
-        <div class="info">
-          <h3>Order Placed</h3>
-          <p>Your order has been placed successfully.</p>
-          <div class="time" id="time-placed"></div>
+    <div class="cards">
+      <section class="step-card" data-step="confirmed">
+        <div>
+          <h3>Order confirmed</h3>
+          <p>Your order is confirmed.</p>
+          <div class="time" id="time-confirmed"></div>
         </div>
-      </div>
+        <div class="art"><img src="/assets/tracker/order-confirmed.png" alt=""></div>
+      </section>
 
-      <div class="step" data-step="preparing">
-        <div class="icon">👨‍🍳</div>
-        <div class="info">
+      <section class="step-card" data-step="preparing">
+        <div>
           <h3>Preparing</h3>
-          <p>We're preparing your fresh fruits.</p>
+          <p>We’re preparing your order.</p>
           <div class="time" id="time-preparing"></div>
         </div>
-      </div>
+        <div class="art"><img src="/assets/tracker/preparing.png" alt=""></div>
+      </section>
 
-      <div class="step" data-step="out">
-        <div class="icon">🏍️</div>
-        <div class="info">
-          <div class="step-box">
-            <h3>Out for Delivery</h3>
-            <p>Your rider is on the way!</p>
-            <div class="time" id="time-out"></div>
-            <div class="badge"><span class="dot"></span> Our rider is on the way</div>
-            <img class="rider-img" src="/assets/riderslogo.png" alt="Delivery Rider">
-          </div>
+      <section class="step-card" data-step="out">
+        <div>
+          <h3>Out for delivery</h3>
+          <p>Your rider is on the way to deliver your order.</p>
+          <div class="time" id="time-out"></div>
         </div>
-      </div>
+        <div class="art"><img src="/assets/tracker/out-for-delivery.png" alt=""></div>
+      </section>
 
-      <div class="step" data-step="delivered">
-        <div class="icon">✅</div>
-        <div class="info">
+      <section class="step-card delivered" data-step="delivered">
+        <div>
           <h3>Delivered</h3>
-          <p>Your order has been delivered.</p>
+          <p id="deliveredText">We’ll update you here once your order is delivered.</p>
           <div class="time" id="time-delivered"></div>
         </div>
-      </div>
-
+        <div class="art"><img src="/assets/tracker/delivered.png" alt=""></div>
+      </section>
     </div>
+  </div>
 
-    <div class="footer">✅ We're handling your order with care. Thank you for choosing Fruities!</div>
+  <div class="footer" id="footerNote">
+    ✅ We’re handling your order with care. Thank you for choosing Fruities!
   </div>
 </div>
 
 <script>
-const DB_URL = 'https://fruities-pos-default-rtdb.asia-southeast1.firebasedatabase.app';
-const STORE_ID = 'fruit-story-main';
+const firebaseConfig = {
+  apiKey: "AIzaSyAq7mXoVMsBKGHzzh6JaRQTVy1Aqq41XbQ",
+  authDomain: "fruities-pos.firebaseapp.com",
+  databaseURL: "https://fruities-pos-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "fruities-pos",
+  storageBucket: "fruities-pos.firebasestorage.app",
+  messagingSenderId: "263637850283",
+  appId: "1:263637850283:web:8b487bcdb0f25c7b063fee"
+};
 
-function setLiveStep(currentStep){
-  const steps = ['placed','preparing','out','delivered'];
-  const currentIndex = Math.max(0, steps.indexOf(currentStep));
+const STORE_ID = "fruit-story-main";
+const STEPS = ["confirmed","preparing","out","delivered"];
 
-  document.querySelectorAll('[data-step]').forEach(el=>{
-    const stepIndex = steps.indexOf(el.dataset.step);
-    const box = el.querySelector('.step-box');
+function setLiveStep(step){
+  if(step === "placed") step = "confirmed";
+  const index = Math.max(0, STEPS.indexOf(step));
 
-    el.classList.remove('done','active','pending');
-    if(box) box.classList.remove('active-box');
-
-    if(stepIndex < currentIndex){
-      el.classList.add('done');
-    }else if(stepIndex === currentIndex){
-      el.classList.add('active');
-      if(box) box.classList.add('active-box');
-    }else{
-      el.classList.add('pending');
-    }
+  document.querySelectorAll(".step-card").forEach((card,i)=>{
+    card.classList.remove("done","active","pending");
+    if(i < index) card.classList.add("done");
+    else if(i === index) card.classList.add("active");
+    else card.classList.add("pending");
   });
-}
 
-function detectStep(order){
-  const status = String(order.status || '').toLowerCase();
-  const kit = String(order.kitStatus || order.kitchenStatus || '').toLowerCase();
-  const delivery = String(order.deliveryStatus || '').toLowerCase();
+  document.querySelectorAll(".dot").forEach((dot,i)=>{
+    dot.classList.remove("done","active");
+    if(i < index) dot.classList.add("done");
+    if(i === index) dot.classList.add("active");
+  });
 
-  if(status === 'delivered' || delivery === 'delivered'){
-    return 'delivered';
+  const fillHeights = ["0px","110px","220px","330px"];
+  const railFill = document.getElementById("railFill");
+  if(railFill) railFill.style.height = fillHeights[index] || "0px";
+
+  const footer = document.getElementById("footerNote");
+  const deliveredText = document.getElementById("deliveredText");
+
+  if(step === "delivered"){
+    if(footer) footer.textContent = "✅ Delivered successfully. Thank you for choosing Fruities!";
+    if(deliveredText) deliveredText.textContent = "Your order has been delivered successfully.";
+  }else if(step === "out"){
+    if(footer) footer.textContent = "🛵 Your rider is on the way. Thank you for choosing Fruities!";
+    if(deliveredText) deliveredText.textContent = "We’ll update you here once your order is delivered.";
+  }else if(step === "preparing"){
+    if(footer) footer.textContent = "🍓 We’re preparing your order with care.";
+    if(deliveredText) deliveredText.textContent = "We’ll update you here once your order is delivered.";
+  }else{
+    if(footer) footer.textContent = "✅ We’re handling your order with care. Thank you for choosing Fruities!";
+    if(deliveredText) deliveredText.textContent = "We’ll update you here once your order is delivered.";
   }
-
-  if(kit === 'out' || delivery === 'out' || delivery === 'out_for_delivery'){
-    return 'out';
-  }
-
-  if(kit === 'preparing' || kit === 'ready'){
-    return 'preparing';
-  }
-
-  return 'placed';
 }
 
 function fmtTime(v){
-  if(!v) return '';
+  if(!v) return "";
   try{
-    return new Date(v).toLocaleString('en-PH',{
-      year:'numeric',
-      month:'long',
-      day:'numeric',
-      hour:'numeric',
-      minute:'2-digit',
+    return new Date(v).toLocaleString("en-PH",{
+      year:"numeric",
+      month:"long",
+      day:"numeric",
+      hour:"numeric",
+      minute:"2-digit",
       hour12:true
     });
-  }catch(e){
-    return '';
-  }
+  }catch(e){ return ""; }
 }
 
 function applyTimes(order){
-  document.getElementById('time-placed').textContent =
+  document.getElementById("time-confirmed").textContent =
     fmtTime(order.time || order.createdAt || order.createdByAt);
 
-  document.getElementById('time-preparing').textContent =
+  document.getElementById("time-preparing").textContent =
     fmtTime(order.kitStart || order.preparingAt);
 
-  document.getElementById('time-out').textContent =
+  document.getElementById("time-out").textContent =
     fmtTime(order.outForDeliveryAt || order.deliveryOutAt || order.kitOutAt);
 
-  document.getElementById('time-delivered').textContent =
-    fmtTime(order.deliveredAt || order.deliveryDeliveredAt);
+  document.getElementById("time-delivered").textContent =
+    fmtTime(order.deliveredAt || order.deliveryDeliveredAt || order.deliveryDoneAt);
+}
+
+function detectStep(order){
+  order = order || {};
+  const delivery = String(order.deliveryStatus || order.delivery_status || "").toLowerCase();
+  const kit = String(order.kitStatus || "").toLowerCase();
+  const kitchen = String(order.kitchenStatus || "").toLowerCase();
+  const status = String(order.status || "").toLowerCase();
+
+  if(delivery === "delivered" || delivery === "done" || status === "delivered") return "delivered";
+  if(delivery === "out" || delivery === "out_for_delivery" || kit === "out" || kitchen === "out") return "out";
+  if(kit === "preparing" || kitchen === "preparing" || kit === "ready" || kitchen === "ready") return "preparing";
+  return "confirmed";
+}
+
+function cleanKey(v){
+  return String(v || "").replace(/[.#$[\]/]/g,"_");
 }
 
 function loadLiveOrder(){
   const params = new URLSearchParams(location.search);
-  const orderId = params.get('id') || params.get('order');
+  const orderId = params.get("id") || params.get("order");
 
   if(!orderId){
-    setLiveStep(params.get('step') || 'out');
+    setLiveStep(params.get("step") || "confirmed");
     return;
   }
 
   try{
-    const firebaseConfig = {
-      apiKey: "AIzaSyAq7mXoVMsBKGHzzh6JaRQTVy1Aqq41XbQ",
-      authDomain: "fruities-pos.firebaseapp.com",
-      databaseURL: DB_URL,
-      projectId: "fruities-pos",
-      storageBucket: "fruities-pos.firebasestorage.app",
-      messagingSenderId: "263637850283",
-      appId: "1:263637850283:web:8b487bcdb0f25c7b063fee"
-    };
+    if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const key = cleanKey(orderId);
+    const ref = firebase.database().ref("stores/" + STORE_ID + "/orders/" + key);
 
-    if(!firebase.apps.length){
-      firebase.initializeApp(firebaseConfig);
-    }
-
-    const key = encodeURIComponent(orderId);
-    const ref = firebase.database().ref('stores/' + STORE_ID + '/orders/' + key);
-
-    ref.on('value', function(snapshot){
-      const order = snapshot.val();
-
+    ref.on("value", snap=>{
+      const order = snap.val();
       if(!order){
-        setLiveStep('placed');
+        setLiveStep("confirmed");
         return;
       }
-
       setLiveStep(detectStep(order));
       applyTimes(order);
-    }, function(){
-      setLiveStep(params.get('step') || 'out');
+    }, ()=>{
+      setLiveStep(params.get("step") || "confirmed");
     });
-
   }catch(e){
-    console.warn('Firebase realtime tracker failed:', e);
-    setLiveStep(params.get('step') || 'out');
+    console.warn(e);
+    setLiveStep(params.get("step") || "confirmed");
   }
 }
 
 loadLiveOrder();
 </script>
-
 </body>
 </html>
