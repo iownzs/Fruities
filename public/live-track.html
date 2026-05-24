@@ -373,6 +373,304 @@ body{
   display:none;
 }
 
+
+/* live-tracker-minimal-responsive-v1 */
+
+/* Base minimalist style */
+body{
+  background:#f7fbf7 !important;
+  padding:0 14px 20px !important;
+  color:#122016 !important;
+}
+
+.wrap{
+  max-width:860px !important;
+  margin:0 auto !important;
+}
+
+.logo{
+  margin:18px 0 22px !important;
+  text-align:center !important;
+}
+
+.brand-logo{
+  width:150px !important;
+  max-width:58% !important;
+}
+
+.card{
+  background:#fff !important;
+  border:1px solid rgba(22,101,52,.08) !important;
+  border-radius:24px !important;
+  padding:24px 18px !important;
+  box-shadow:0 10px 30px rgba(15,23,42,.06) !important;
+}
+
+.head{
+  margin-bottom:26px !important;
+  text-align:center !important;
+}
+
+.head h2{
+  font-size:28px !important;
+  letter-spacing:4px !important;
+  line-height:1.1 !important;
+  margin:0 !important;
+  color:#0b5d22 !important;
+}
+
+.head p{
+  font-size:15px !important;
+  margin:12px 0 0 !important;
+  color:#4b5563 !important;
+}
+
+.timeline{
+  max-width:620px !important;
+  margin:0 auto !important;
+}
+
+.step{
+  gap:14px !important;
+  padding-bottom:26px !important;
+}
+
+.step::after{
+  left:23px !important;
+  top:49px !important;
+  width:3px !important;
+  height:calc(100% - 38px) !important;
+  background:#e5e7eb !important;
+}
+
+.step.done::after,
+.step.active::after{
+  background:#1faf3c !important;
+}
+
+.icon{
+  width:48px !important;
+  height:48px !important;
+  min-width:48px !important;
+  font-size:22px !important;
+  box-shadow:none !important;
+}
+
+.info,
+.step-box{
+  padding-top:0 !important;
+}
+
+.info h3,
+.step-box h3{
+  font-size:21px !important;
+  line-height:1.2 !important;
+  margin:0 0 6px !important;
+  font-weight:850 !important;
+}
+
+.info p,
+.step-box p{
+  font-size:14px !important;
+  line-height:1.35 !important;
+  margin:0 !important;
+  color:#4b5563 !important;
+}
+
+.time{
+  font-size:13px !important;
+  margin-top:8px !important;
+  color:#14883a !important;
+  font-weight:800 !important;
+}
+
+.step.pending{
+  opacity:.32 !important;
+}
+
+.step.done,
+.step.active{
+  opacity:1 !important;
+}
+
+/* Remove heavy active card style */
+.step-box.active-box,
+.info.active-box{
+  background:transparent !important;
+  border:none !important;
+  border-radius:0 !important;
+  padding:0 !important;
+  min-height:0 !important;
+  box-shadow:none !important;
+}
+
+.step-box.active-box h3,
+.info.active-box h3,
+.step.active h3{
+  color:#0d8d29 !important;
+}
+
+.badge,
+.rider-img{
+  display:none !important;
+}
+
+.footer{
+  max-width:620px !important;
+  margin:18px auto 0 !important;
+  background:#eef8ef !important;
+  border:1px solid rgba(22,101,52,.06) !important;
+  border-radius:18px !important;
+  padding:16px !important;
+  font-size:15px !important;
+  line-height:1.35 !important;
+  box-shadow:none !important;
+}
+
+/* Desktop polish */
+@media(min-width:768px){
+  body{
+    padding:22px 24px 36px !important;
+  }
+
+  .logo{
+    margin:8px 0 28px !important;
+  }
+
+  .brand-logo{
+    width:175px !important;
+  }
+
+  .card{
+    padding:34px 44px !important;
+    border-radius:28px !important;
+  }
+
+  .head{
+    margin-bottom:34px !important;
+  }
+
+  .head h2{
+    font-size:36px !important;
+    letter-spacing:6px !important;
+  }
+
+  .head p{
+    font-size:17px !important;
+  }
+
+  .timeline{
+    max-width:660px !important;
+  }
+
+  .step{
+    gap:18px !important;
+    padding-bottom:30px !important;
+  }
+
+  .icon{
+    width:56px !important;
+    height:56px !important;
+    min-width:56px !important;
+    font-size:25px !important;
+  }
+
+  .step::after{
+    left:27px !important;
+    top:56px !important;
+  }
+
+  .info h3,
+  .step-box h3{
+    font-size:25px !important;
+  }
+
+  .info p,
+  .step-box p{
+    font-size:15px !important;
+  }
+
+  .time{
+    font-size:14px !important;
+  }
+
+  .footer{
+    max-width:660px !important;
+    font-size:16px !important;
+    padding:18px !important;
+  }
+}
+
+/* Small mobile polish */
+@media(max-width:420px){
+  body{
+    padding:0 10px 16px !important;
+  }
+
+  .logo{
+    margin:14px 0 18px !important;
+  }
+
+  .brand-logo{
+    width:135px !important;
+  }
+
+  .card{
+    padding:20px 14px !important;
+    border-radius:20px !important;
+  }
+
+  .head h2{
+    font-size:23px !important;
+    letter-spacing:3px !important;
+  }
+
+  .head p{
+    font-size:14px !important;
+  }
+
+  .timeline{
+    max-width:100% !important;
+  }
+
+  .step{
+    gap:12px !important;
+    padding-bottom:24px !important;
+  }
+
+  .icon{
+    width:46px !important;
+    height:46px !important;
+    min-width:46px !important;
+    font-size:21px !important;
+  }
+
+  .step::after{
+    left:22px !important;
+    top:47px !important;
+  }
+
+  .info h3,
+  .step-box h3{
+    font-size:19px !important;
+  }
+
+  .info p,
+  .step-box p{
+    font-size:13.5px !important;
+  }
+
+  .time{
+    font-size:12.5px !important;
+  }
+
+  .footer{
+    font-size:14px !important;
+    padding:14px !important;
+    border-radius:16px !important;
+  }
+}
+
 </style>
 
 <!-- firebase-realtime-listener-v1 -->
