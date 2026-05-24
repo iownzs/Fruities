@@ -18069,7 +18069,10 @@ font-size:14px">Okay</button>'
     var o = orderOf(d);
     var s = statusOf(d,o);
     var p = priorityOf(o,d);
-    var id = d.id || d.orderId || o.id || o.orderNumber || '-';
+    var realOrderId = o.id || o.orderNumber || o.orderId || d.orderId || d.oid || d.order || d.id || '-';
+    var id = String(realOrderId).startsWith('DEL-')
+      ? 'ORD-' + String(realOrderId).replace(/^DEL-/,'')
+      : realOrderId;
     var a = address(o,d);
     var shortAddr = String(a).length > 26 ? String(a).slice(0,26) + '...' : String(a);
 
