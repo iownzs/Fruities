@@ -1856,6 +1856,92 @@ body{
   }
 }
 
+
+/* tracker-visible-circle-pulse-v1 */
+
+/* Make sure pulse is not clipped */
+.cards,
+.step-card{
+  overflow:visible !important;
+}
+
+/* Active circle: visible expanding ring */
+.step-card.active::before{
+  z-index:20 !important;
+  background:#0db83f !important;
+  color:#fff !important;
+  content:"•" !important;
+  animation:visibleActiveCirclePulse 1.25s ease-out infinite !important;
+  box-shadow:
+    0 0 0 0 rgba(13,184,63,.70),
+    0 0 18px rgba(13,184,63,.95),
+    0 0 34px rgba(13,184,63,.55) !important;
+}
+
+/* Keep done circles still */
+.step-card.done:not(.active)::before{
+  animation:none !important;
+  box-shadow:
+    0 0 0 3px rgba(13,184,63,.16),
+    0 6px 14px rgba(13,184,63,.26) !important;
+}
+
+/* Strong visible pulse */
+@keyframes visibleActiveCirclePulse{
+  0%{
+    transform:translate(-50%,-50%) scale(1);
+    box-shadow:
+      0 0 0 0 rgba(13,184,63,.75),
+      0 0 16px rgba(13,184,63,.95),
+      0 0 30px rgba(13,184,63,.55);
+  }
+  60%{
+    transform:translate(-50%,-50%) scale(1.08);
+    box-shadow:
+      0 0 0 18px rgba(13,184,63,0),
+      0 0 24px rgba(13,184,63,.95),
+      0 0 44px rgba(13,184,63,.65);
+  }
+  100%{
+    transform:translate(-50%,-50%) scale(1);
+    box-shadow:
+      0 0 0 24px rgba(13,184,63,0),
+      0 0 16px rgba(13,184,63,.75),
+      0 0 30px rgba(13,184,63,.45);
+  }
+}
+
+/* Mobile: make pulse ring larger because it is harder to see */
+@media(max-width:700px){
+  .step-card.active::before{
+    animation:visibleActiveCirclePulseMobile 1.15s ease-out infinite !important;
+  }
+
+  @keyframes visibleActiveCirclePulseMobile{
+    0%{
+      transform:translate(-50%,-50%) scale(1);
+      box-shadow:
+        0 0 0 0 rgba(13,184,63,.85),
+        0 0 18px rgba(13,184,63,1),
+        0 0 34px rgba(13,184,63,.65);
+    }
+    60%{
+      transform:translate(-50%,-50%) scale(1.12);
+      box-shadow:
+        0 0 0 16px rgba(13,184,63,0),
+        0 0 26px rgba(13,184,63,1),
+        0 0 48px rgba(13,184,63,.75);
+    }
+    100%{
+      transform:translate(-50%,-50%) scale(1);
+      box-shadow:
+        0 0 0 22px rgba(13,184,63,0),
+        0 0 18px rgba(13,184,63,.85),
+        0 0 34px rgba(13,184,63,.55);
+    }
+  }
+}
+
 </style>
 </head>
 
