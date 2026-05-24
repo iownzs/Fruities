@@ -671,6 +671,95 @@ body{
   }
 }
 
+
+/* live-tracker-logo-rider-fix-v1 */
+
+/* Bring Fruities logo closer */
+.logo{
+  margin:10px 0 14px !important;
+}
+
+.brand-logo{
+  width:145px !important;
+  max-width:58% !important;
+}
+
+/* Remove too much empty top space */
+body{
+  padding-top:0 !important;
+}
+
+.card{
+  margin-top:0 !important;
+}
+
+/* Show rider image only when Out for Delivery is active */
+.rider-img{
+  display:none !important;
+}
+
+.step[data-step="out"].active .rider-img{
+  display:block !important;
+  width:82px !important;
+  right:8px !important;
+  bottom:6px !important;
+  opacity:1 !important;
+}
+
+/* Keep active out step clean with small rider image */
+.step[data-step="out"].active .step-box,
+.step[data-step="out"].active .info{
+  padding-right:92px !important;
+  position:relative !important;
+}
+
+/* Mobile tighter spacing */
+@media(max-width:520px){
+  .logo{
+    margin:6px 0 10px !important;
+  }
+
+  .brand-logo{
+    width:128px !important;
+  }
+
+  .card{
+    border-radius:22px !important;
+  }
+
+  .step[data-step="out"].active .rider-img{
+    width:70px !important;
+    right:0 !important;
+    bottom:6px !important;
+  }
+
+  .step[data-step="out"].active .step-box,
+  .step[data-step="out"].active .info{
+    padding-right:76px !important;
+  }
+}
+
+/* Desktop logo/card spacing */
+@media(min-width:768px){
+  .logo{
+    margin:8px 0 18px !important;
+  }
+
+  .brand-logo{
+    width:165px !important;
+  }
+
+  .step[data-step="out"].active .rider-img{
+    width:96px !important;
+    right:10px !important;
+  }
+
+  .step[data-step="out"].active .step-box,
+  .step[data-step="out"].active .info{
+    padding-right:112px !important;
+  }
+}
+
 </style>
 
 <!-- firebase-realtime-listener-v1 -->
