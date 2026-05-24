@@ -6,3 +6,10 @@ dist
 .DS_Store
 firebase-debug.log
 *.log
+
+# local backup files
+*.bak*
+*.backup*
+index-backup-before-*.html
+public/*.bak*
+public/*.backup*
