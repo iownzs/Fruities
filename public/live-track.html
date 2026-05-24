@@ -60,6 +60,42 @@ document.querySelectorAll(".art img, .logo img").forEach(img => {
   });
 });
 
+
+/* tracker-card-attached-timeline-v1 */
+function syncTrackerCircles(){
+  const cardsBox = document.querySelector(".cards");
+  const cards = Array.from(document.querySelectorAll(".step-card"));
+  if(!cardsBox || !cards.length) return;
+
+  const first = cards[0].offsetTop + cards[0].offsetHeight / 2;
+  const last = cards[cards.length - 1].offsetTop + cards[cards.length - 1].offsetHeight / 2;
+
+  const stepName = CURRENT_TRACKER_STEP === "placed" ? "confirmed" : CURRENT_TRACKER_STEP;
+  const stepIndex = Math.max(0, STEPS.indexOf(stepName));
+  const active = cards[stepIndex]
+    ? cards[stepIndex].offsetTop + cards[stepIndex].offsetHeight / 2
+    : first;
+
+  cardsBox.style.setProperty("--track-top", first + "px");
+  cardsBox.style.setProperty("--track-height", Math.max(0, last - first) + "px");
+  cardsBox.style.setProperty("--track-fill", Math.max(0, active - first) + "px");
+}
+
+window.addEventListener("resize", function(){
+  setTimeout(syncTrackerCircles, 50);
+});
+
+window.addEventListener("load", function(){
+  setTimeout(syncTrackerCircles, 100);
+  setTimeout(syncTrackerCircles, 500);
+});
+
+document.querySelectorAll(".art img,.logo img").forEach(function(img){
+  img.addEventListener("load", function(){
+    setTimeout(syncTrackerCircles, 80);
+  });
+});
+
 </script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -594,6 +630,140 @@ body{
 .rail-fill{
   top:var(--rail-top, 0px) !important;
   height:var(--rail-fill, 0px) !important;
+}
+
+
+/* tracker-card-attached-timeline-v1 */
+
+/* Stop using the separate rail because it misaligns on mobile */
+.tracker{
+  display:block !important;
+  max-width:760px !important;
+  margin:0 auto !important;
+}
+
+.rail{
+  display:none !important;
+}
+
+/* Cards now own the timeline */
+.cards{
+  position:relative !important;
+  padding-left:64px !important;
+  gap:22px !important;
+}
+
+/* gray full line */
+.cards::before{
+  content:"";
+  position:absolute;
+  left:24px;
+  top:var(--track-top, 60px);
+  width:6px;
+  height:var(--track-height, 0px);
+  background:rgba(13,184,63,.14);
+  border-radius:999px;
+  z-index:0;
+}
+
+/* green progress line */
+.cards::after{
+  content:"";
+  position:absolute;
+  left:24px;
+  top:var(--track-top, 60px);
+  width:6px;
+  height:var(--track-fill, 0px);
+  background:#0db83f;
+  border-radius:999px;
+  z-index:1;
+}
+
+.step-card{
+  position:relative !important;
+  z-index:2 !important;
+}
+
+/* circle attached to exact middle of each card */
+.step-card::before{
+  content:"";
+  position:absolute;
+  left:-40px;
+  top:50%;
+  transform:translate(-50%,-50%);
+  width:48px;
+  height:48px;
+  border-radius:50%;
+  background:#e7eee8;
+  border:5px solid #fff;
+  box-shadow:0 8px 22px rgba(0,0,0,.08);
+  z-index:3;
+  display:grid;
+  place-items:center;
+  color:#fff;
+  font-weight:900;
+}
+
+/* completed card circle */
+.step-card.done::before{
+  content:"✓";
+  background:#0db83f;
+  font-size:25px;
+  box-shadow:0 6px 16px rgba(13,184,63,.18);
+}
+
+/* active card circle */
+.step-card.active::before{
+  content:"•";
+  background:#0db83f;
+  font-size:32px;
+  line-height:1;
+  box-shadow:
+    0 0 0 8px rgba(13,184,63,.16),
+    0 0 24px rgba(13,184,63,.38);
+}
+
+/* pending circle */
+.step-card.pending::before{
+  content:"";
+  background:#eef1ee;
+  box-shadow:0 6px 16px rgba(0,0,0,.05);
+}
+
+/* mobile */
+@media(max-width:700px){
+  .tracker{
+    max-width:620px !important;
+  }
+
+  .cards{
+    padding-left:52px !important;
+    gap:18px !important;
+  }
+
+  .cards::before,
+  .cards::after{
+    left:21px;
+    width:5px;
+  }
+
+  .step-card::before{
+    left:-31px;
+    width:42px;
+    height:42px;
+    border-width:4px;
+  }
+
+  .step-card.done::before{
+    font-size:21px;
+  }
+
+  .step-card.active::before{
+    font-size:28px;
+    box-shadow:
+      0 0 0 7px rgba(13,184,63,.15),
+      0 0 18px rgba(13,184,63,.30);
+  }
 }
 
 </style>
