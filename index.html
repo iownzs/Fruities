@@ -4771,12 +4771,35 @@ function rOrds(){
     <td style="font-size:11px;color:var(--t3)">${ordersExactCreatedCell(o)}</td>
     <td style="white-space:nowrap">
       <button class="btn bw bsm" onclick="openBQR('${o.id}')" title="QR &amp; Barcode" style="padding:5px 8px;margin-right:3px">&#x1F516;</button>
+      <button class="btn bw bsm" onclick="copyOrderTrackLink('${o.id}')" title="Copy tracking link" style="padding:5px 8px;margin-right:3px">🔗 Track</button>
       ${perm('canRefund')&&(o.status==='completed'||o.status==='cod')?`<button class="btn br bsm" onclick="refund('${o.id}')">Refund</button> `:''}
       ${perm('canMarkPaid')&&(o.status==='pending'||o.status==='cod')?`<button class="btn bg bsm" onclick="markPaid('${o.id}')">Mark Paid</button>`:''}
     </td>
   </tr>`).join(''):'<tr><td colspan="12" style="text-align:center;color:var(--t3);padding:22px">No orders found</td></tr>';
   updBadge();
 }
+
+// copy-track-link-orders-v1
+function getLiveTrackUrl(orderId){
+  return "https://fruities-six.vercel.app/live-track.html?order=" + encodeURIComponent(orderId || "");
+}
+
+function copyOrderTrackLink(orderId){
+  var url = getLiveTrackUrl(orderId);
+
+  function ok(){
+    try{ toast("🔗 Tracking link copied"); }catch(e){ alert("Tracking link copied"); }
+  }
+
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(ok).catch(function(){
+      prompt("Copy tracking link:", url);
+    });
+  }else{
+    prompt("Copy tracking link:", url);
+  }
+}
+
 function refund(id){
   if(!perm('canRefund')){toast('\u26d4 Admin only: Refund','err');return;}
   if(!confirm('Refund this order?'))return;
