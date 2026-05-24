@@ -1142,6 +1142,89 @@ body{
   }
 }
 
+
+/* tracker-circle-size-balanced-v1 */
+
+/* Desktop/tablet circle size */
+.step-card::before{
+  width:54px !important;
+  height:54px !important;
+  font-size:27px !important;
+  border-width:5px !important;
+  left:-62px !important;
+}
+
+.step-card:not(:last-child)::after{
+  left:-62px !important;
+  top:calc(50% + 27px) !important;
+  height:calc(100% + 26px - 54px) !important;
+  width:5px !important;
+}
+
+.step-card.active::before{
+  font-size:29px !important;
+  box-shadow:
+    0 0 0 7px rgba(13,184,63,.14),
+    0 0 20px rgba(13,184,63,.30) !important;
+}
+
+.cards{
+  padding-left:100px !important;
+}
+
+/* Mobile circle size */
+@media(max-width:700px){
+  .cards{
+    padding-left:64px !important;
+  }
+
+  .step-card::before{
+    width:42px !important;
+    height:42px !important;
+    font-size:21px !important;
+    border-width:4px !important;
+    left:-35px !important;
+  }
+
+  .step-card:not(:last-child)::after{
+    left:-35px !important;
+    top:calc(50% + 21px) !important;
+    height:calc(100% + 16px - 42px) !important;
+    width:4px !important;
+  }
+
+  .step-card.active::before{
+    font-size:24px !important;
+    box-shadow:
+      0 0 0 6px rgba(13,184,63,.14),
+      0 0 16px rgba(13,184,63,.28) !important;
+  }
+}
+
+/* Small phones */
+@media(max-width:390px){
+  .cards{
+    padding-left:58px !important;
+  }
+
+  .step-card::before{
+    width:38px !important;
+    height:38px !important;
+    font-size:19px !important;
+    left:-31px !important;
+  }
+
+  .step-card:not(:last-child)::after{
+    left:-31px !important;
+    top:calc(50% + 19px) !important;
+    height:calc(100% + 14px - 38px) !important;
+  }
+
+  .step-card.active::before{
+    font-size:22px !important;
+  }
+}
+
 </style>
 </head>
 
