@@ -442,6 +442,71 @@ body{
   }
 }
 
+
+/* tracker-absolute-dot-align-v1 */
+
+/* Make timeline dots align by fixed positions, not flex gap */
+.rail{
+  padding-top:0 !important;
+  min-height:560px !important;
+}
+
+.dots{
+  position:relative !important;
+  display:block !important;
+  height:560px !important;
+}
+
+.dot{
+  position:absolute !important;
+  left:50% !important;
+  transform:translateX(-50%) !important;
+}
+
+.dot:nth-child(1){ top:48px !important; }
+.dot:nth-child(2){ top:164px !important; }
+.dot:nth-child(3){ top:280px !important; }
+.dot:nth-child(4){ top:396px !important; }
+
+.rail::before{
+  left:35px !important;
+  top:76px !important;
+  bottom:auto !important;
+  height:368px !important;
+}
+
+.rail-fill{
+  left:35px !important;
+  top:76px !important;
+}
+
+/* match JS fill heights to dot centers visually */
+@media(max-width:700px){
+  .rail{
+    min-height:500px !important;
+  }
+
+  .dots{
+    height:500px !important;
+  }
+
+  .dot:nth-child(1){ top:42px !important; }
+  .dot:nth-child(2){ top:146px !important; }
+  .dot:nth-child(3){ top:250px !important; }
+  .dot:nth-child(4){ top:354px !important; }
+
+  .rail::before{
+    left:27px !important;
+    top:66px !important;
+    height:336px !important;
+  }
+
+  .rail-fill{
+    left:27px !important;
+    top:66px !important;
+  }
+}
+
 </style>
 </head>
 
@@ -542,7 +607,7 @@ function setLiveStep(step){
     if(i === index) dot.classList.add("active");
   });
 
-  const fillHeights = ["0px","110px","220px","385px"];
+  const fillHeights = ["0px","104px","208px","336px"];
   const railFill = document.getElementById("railFill");
   if(railFill) railFill.style.height = fillHeights[index] || "0px";
 
