@@ -374,6 +374,11 @@ body{
 }
 
 </style>
+
+<!-- firebase-realtime-listener-v1 -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
 </head>
 
 <body>
@@ -513,7 +518,7 @@ function applyTimes(order){
     fmtTime(order.deliveredAt || order.deliveryDeliveredAt);
 }
 
-async function loadLiveOrder(){
+function loadLiveOrder(){
   const params = new URLSearchParams(location.search);
   const orderId = params.get('id') || params.get('order');
 
@@ -523,22 +528,39 @@ async function loadLiveOrder(){
   }
 
   try{
-    const res = await fetch(
-      DB_URL + '/stores/' + STORE_ID + '/orders/' + encodeURIComponent(orderId) + '.json',
-      {cache:'no-store'}
-    );
+    const firebaseConfig = {
+      apiKey: "AIzaSyAq7mXoVMsBKGHzzh6JaRQTVy1Aqq41XbQ",
+      authDomain: "fruities-pos.firebaseapp.com",
+      databaseURL: DB_URL,
+      projectId: "fruities-pos",
+      storageBucket: "fruities-pos.firebasestorage.app",
+      messagingSenderId: "263637850283",
+      appId: "1:263637850283:web:8b487bcdb0f25c7b063fee"
+    };
 
-    const order = await res.json();
-
-    if(!order){
-      setLiveStep('placed');
-      return;
+    if(!firebase.apps.length){
+      firebase.initializeApp(firebaseConfig);
     }
 
-    setLiveStep(detectStep(order));
-    applyTimes(order);
+    const key = encodeURIComponent(orderId);
+    const ref = firebase.database().ref('stores/' + STORE_ID + '/orders/' + key);
+
+    ref.on('value', function(snapshot){
+      const order = snapshot.val();
+
+      if(!order){
+        setLiveStep('placed');
+        return;
+      }
+
+      setLiveStep(detectStep(order));
+      applyTimes(order);
+    }, function(){
+      setLiveStep(params.get('step') || 'out');
+    });
 
   }catch(e){
+    console.warn('Firebase realtime tracker failed:', e);
     setLiveStep(params.get('step') || 'out');
   }
 }
