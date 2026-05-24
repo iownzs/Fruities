@@ -18031,25 +18031,64 @@ font-size:14px">Okay</button>'
     return window.S && Array.isArray(S.orders) ? S.orders : [];
   }
 
+  function isDeliveryOrder(o){
+    var type = String(o.orderType || o.fulfillmentType || o.type || '').toLowerCase();
+    return (
+      type === 'delivery' ||
+      o.deliveryAddress ||
+      o.addr ||
+      o.recipient ||
+      o.recipientPhone
+    );
+  }
+
+  function isSentToDelivery(o,d){
+    var ks = String(o.kitchenStatus || o.kitStatus || '').toLowerCase();
+    var ds = String(o.deliveryStatus || d.deliveryStatus || d.status || '').toLowerCase();
+
+    // Already active/completed delivery should remain visible.
+    if(ds === 'out_for_delivery' || ds === 'out' || ds === 'delivered') return true;
+    if(o.rider || o.riderName || d.rider || d.riderName) return true;
+    if(o.deliveredAt || d.deliveredAt || o.outForDeliveryAt || o.deliveryOutAt) return true;
+
+    // Only waiting orders that Kitchen actually sent should appear.
+    if(
+      ks === 'sent_to_delivery' ||
+      ks === 'out' ||
+      ks === 'delivery' ||
+      o.sentToDeliveryAt ||
+      o.deliverySentAt ||
+      o.deliverySyncedAt ||
+      d.sentToDeliveryAt ||
+      d.deliverySentAt
+    ){
+      return true;
+    }
+
+    return false;
+  }
+
   function deliveries(){
+    var list = [];
+
     if(window.S && Array.isArray(S.deliveries) && S.deliveries.length){
-      return S.deliveries;
+      list = S.deliveries.filter(function(d){
+        var o = orderOf(d);
+        return isDeliveryOrder(o) && isSentToDelivery(o,d);
+      });
+
+      return list;
     }
 
     return orders()
       .filter(function(o){
-        return (
-          o.orderType === 'delivery' ||
-          o.fulfillmentType === 'delivery' ||
-          o.deliveryStatus ||
-          o.deliveryAddress ||
-          o.addr
-        );
+        return isDeliveryOrder(o) && isSentToDelivery(o,{});
       })
       .map(function(o){
         return {
-          id: o.id || o.orderNumber || o.orderId,
+          id: 'DEL-' + String(o.id || o.orderNumber || o.orderId).replace(/^ORD-/,'').replace(/^DEL-/,''),
           orderId: o.id || o.orderNumber || o.orderId,
+          oid: o.id || o.orderNumber || o.orderId,
           status: o.deliveryStatus || 'waiting',
           deliveryStatus: o.deliveryStatus || 'waiting',
           rider: o.rider || '',
