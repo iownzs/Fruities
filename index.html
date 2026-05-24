@@ -5496,16 +5496,78 @@ function quickAssignRider(delId){
   alert('Assign rider modal is not available.');
 }
 
+
+// sync-rider-out-to-firebase-v1
+function syncRiderOutToFirebaseOrder(orderId, rider, notes){
+  try{
+    if(!orderId) return;
+
+    var now = Date.now();
+    var clean = String(orderId).replace(/[.#$[\]/]/g, "_");
+
+    var payload = {
+      deliveryStatus: "out_for_delivery",
+      kitStatus: "out",
+      kitchenStatus: "out",
+      rider: rider || "",
+      riderName: rider || "",
+      riderNotes: notes || "",
+      assignedAt: now,
+      outForDeliveryAt: now,
+      deliveryOutAt: now,
+      updatedAt: now
+    };
+
+    // update local order too
+    try{
+      var o = (S.orders || []).find(function(x){
+        return String(x.id) === String(orderId) || String(x.orderNumber) === String(orderId);
+      });
+
+      if(o){
+        o.deliveryStatus = "out_for_delivery";
+        o.kitStatus = "out";
+        o.kitchenStatus = "out";
+        o.rider = rider || "";
+        o.riderName = rider || "";
+        o.riderNotes = notes || "";
+        o.assignedAt = o.assignedAt || now;
+        o.outForDeliveryAt = o.outForDeliveryAt || now;
+        o.deliveryOutAt = o.deliveryOutAt || now;
+        o.updatedAt = now;
+      }
+    }catch(e){}
+
+    fetch("https://fruities-pos-default-rtdb.asia-southeast1.firebasedatabase.app/stores/fruit-story-main/orders/" + clean + ".json", {
+      method: "PATCH",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify(payload)
+    }).catch(function(e){
+      console.warn("sync rider firebase failed", e);
+    });
+  }catch(e){
+    console.warn("syncRiderOutToFirebaseOrder error", e);
+  }
+}
+
 function assignRider(){
   const delId=$('dord-hidden').value;
   const rider=$('drider').value.trim();
   if(!rider){toast('Enter a rider name','err');$('drider').focus();return;}
   const d=S.deliveries.find(x=>x.id===delId);if(!d)return;
   d.rider=rider;
+  d.riderName=rider;
   d.status='out';
+  d.deliveryStatus='out_for_delivery';
   d.outAt=Date.now();
+  d.startedAt=d.startedAt||d.outAt;
+  d.assignedAt=d.assignedAt||d.outAt;
   d.timerStart=Date.now();
   d.timerEnd=null;
+
+  var oid = d.oid || d.orderId || d.order || delId;
+  syncRiderOutToFirebaseOrder(oid, rider, '');
+
   addAct('🏍️','Rider Assigned',`${delId} → ${rider}`,'var(--ol)');
   sv();closeM('mdel');rDel();
   toast('🏍️ '+rider+' dispatched! Timer started.');
@@ -18244,10 +18306,15 @@ font-size:14px">Okay</button>'
       o.riderName = rider;
       o.riderNotes = notes || o.riderNotes || '';
       o.deliveryStatus = 'out_for_delivery';
+      o.kitStatus = 'out';
+      o.kitchenStatus = 'out';
       o.assignedAt = o.assignedAt || now;
       o.outForDeliveryAt = o.outForDeliveryAt || now;
       o.deliveryOutAt = o.deliveryOutAt || now;
+      o.updatedAt = now;
     }
+
+    syncRiderOutToFirebaseOrder(orderId || d.orderId || d.oid, rider, notes || '');
 
     try{ if(typeof sv === 'function') sv(); }catch(e){}
     try{ if(typeof toast === 'function') toast('🏍️ Rider assigned'); }catch(e){}
