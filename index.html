@@ -20741,18 +20741,7 @@ font-size:14px">Okay</button>'
       debounceApply();
     };
 
-    var clearBtn = document.createElement('button');
-    clearBtn.type = 'button';
-    clearBtn.className = 'dx-chip';
-    clearBtn.textContent = 'All Dates';
-    clearBtn.onclick = function(){
-      window.dxFilterState.date = 'all';
-      dateInput.value = '';
-      debounceApply();
-    };
-
     wrap.appendChild(dateInput);
-    wrap.appendChild(clearBtn);
     dateSelect.replaceWith(wrap);
 
     row.__calendarEnhancedV2 = true;
@@ -21153,6 +21142,23 @@ font-size:14px">Okay</button>'
   }, 1200);
 })();
 </script>
+
+
+<style id="delivery-filter-no-flicker-v5">
+#deliveryExcelRoot .dx-chip-row .dx-chip{
+  min-height:44px;
+}
+#deliveryExcelRoot .dx-date-wrap{
+  display:block !important;
+}
+#deliveryExcelRoot .dx-date-wrap input[type="date"]{
+  width:100% !important;
+}
+#deliveryExcelRoot .dx-date-wrap button,
+#deliveryExcelRoot .dx-date-clear{
+  display:none !important;
+}
+</style>
 
 </body>
 </html>
