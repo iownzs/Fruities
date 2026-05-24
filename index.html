@@ -18054,11 +18054,8 @@ font-size:14px">Okay</button>'
     // Only waiting orders that Kitchen actually sent should appear.
     if(
       ks === 'sent_to_delivery' ||
-      ks === 'out' ||
-      ks === 'delivery' ||
       o.sentToDeliveryAt ||
       o.deliverySentAt ||
-      o.deliverySyncedAt ||
       d.sentToDeliveryAt ||
       d.deliverySentAt
     ){
