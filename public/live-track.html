@@ -831,6 +831,55 @@ body{
   }
 }
 
+
+/* live-tracker-desktop-rider-big-v1 */
+
+/* Mobile stays same. Desktop/tablet only gets bigger rider. */
+@media(min-width:768px){
+  .timeline{
+    max-width:600px !important;
+  }
+
+  .step[data-step="out"].active .rider-img{
+    display:block !important;
+    width:125px !important;
+    right:24px !important;
+    bottom:-2px !important;
+    max-width:none !important;
+  }
+
+  .step[data-step="out"].active .step-box,
+  .step[data-step="out"].active .info{
+    position:relative !important;
+    padding-right:165px !important;
+    min-height:86px !important;
+  }
+
+  .step[data-step="out"].active h3{
+    max-width:320px !important;
+    white-space:normal !important;
+  }
+}
+
+/* Larger desktop: keep it close, not floating too far */
+@media(min-width:1024px){
+  .timeline{
+    max-width:620px !important;
+  }
+
+  .step[data-step="out"].active .rider-img{
+    width:135px !important;
+    right:32px !important;
+    bottom:-4px !important;
+  }
+
+  .step[data-step="out"].active .step-box,
+  .step[data-step="out"].active .info{
+    padding-right:180px !important;
+    min-height:92px !important;
+  }
+}
+
 </style>
 
 <!-- firebase-realtime-listener-v1 -->
