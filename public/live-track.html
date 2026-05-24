@@ -5,7 +5,62 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Fruities Order Tracking</title>
 
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js">
+/* tracker-smart-circle-align-v1 */
+let CURRENT_TRACKER_STEP = "confirmed";
+
+function syncTrackerCircles(){
+  const tracker = document.querySelector(".tracker");
+  const rail = document.querySelector(".rail");
+  const cards = Array.from(document.querySelectorAll(".step-card"));
+  const dots = Array.from(document.querySelectorAll(".dot"));
+  const fill = document.getElementById("railFill");
+
+  if(!tracker || !rail || !cards.length || !dots.length) return;
+
+  const trackerTop = tracker.getBoundingClientRect().top;
+  const centers = cards.map(card => {
+    const r = card.getBoundingClientRect();
+    return (r.top - trackerTop) + (r.height / 2);
+  });
+
+  dots.forEach((dot, i) => {
+    if(centers[i] != null){
+      dot.style.top = centers[i] + "px";
+    }
+  });
+
+  const first = centers[0] || 0;
+  const last = centers[centers.length - 1] || first;
+  rail.style.setProperty("--rail-top", first + "px");
+  rail.style.setProperty("--rail-height", Math.max(0, last - first) + "px");
+
+  const stepIndex = Math.max(0, STEPS.indexOf(CURRENT_TRACKER_STEP === "placed" ? "confirmed" : CURRENT_TRACKER_STEP));
+  const activeCenter = centers[stepIndex] || first;
+
+  rail.style.setProperty("--rail-fill", Math.max(0, activeCenter - first) + "px");
+
+  const railHeight = (tracker.getBoundingClientRect().height || last + 80);
+  rail.style.minHeight = railHeight + "px";
+
+  if(fill){
+    fill.style.height = Math.max(0, activeCenter - first) + "px";
+  }
+}
+
+window.addEventListener("resize", syncTrackerCircles);
+window.addEventListener("load", function(){
+  setTimeout(syncTrackerCircles, 80);
+  setTimeout(syncTrackerCircles, 400);
+});
+
+document.querySelectorAll(".art img, .logo img").forEach(img => {
+  img.addEventListener("load", function(){
+    setTimeout(syncTrackerCircles, 60);
+  });
+});
+
+</script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <style>
@@ -507,6 +562,40 @@ body{
   }
 }
 
+
+/* tracker-smart-circle-align-v1 */
+.tracker{
+  align-items:start !important;
+}
+
+.rail{
+  position:relative !important;
+  padding-top:0 !important;
+}
+
+.dots{
+  position:relative !important;
+  display:block !important;
+  height:100% !important;
+}
+
+.dot{
+  position:absolute !important;
+  left:50% !important;
+  transform:translate(-50%, -50%) !important;
+}
+
+.rail::before{
+  top:var(--rail-top, 0px) !important;
+  height:var(--rail-height, 0px) !important;
+  bottom:auto !important;
+}
+
+.rail-fill{
+  top:var(--rail-top, 0px) !important;
+  height:var(--rail-fill, 0px) !important;
+}
+
 </style>
 </head>
 
@@ -592,6 +681,7 @@ const STEPS = ["confirmed","preparing","out","delivered"];
 
 function setLiveStep(step){
   if(step === "placed") step = "confirmed";
+  CURRENT_TRACKER_STEP = step;
   const index = Math.max(0, STEPS.indexOf(step));
 
   document.querySelectorAll(".step-card").forEach((card,i)=>{
@@ -627,6 +717,8 @@ function setLiveStep(step){
     if(footer) footer.textContent = "✅ We’re handling your order with care. Thank you for choosing Fruities!";
     if(deliveredText) deliveredText.textContent = "We’ll update you here once your order is delivered.";
   }
+
+  setTimeout(syncTrackerCircles, 40);
 }
 
 function fmtTime(v){
