@@ -17678,6 +17678,15 @@ font-size:14px">Okay</button>'
       o.riderName = o.riderName || d.riderName || d.rider || '';
     }
 
+    try{
+      var oid = (o && (o.id || o.orderNumber)) || (d && (d.orderId || d.oid || d.order));
+      if(typeof syncDeliveryDoneToFirebaseOrder === 'function'){
+        syncDeliveryDoneToFirebaseOrder(oid);
+      }
+    }catch(e){
+      console.warn('dxMarkDelivered firebase sync failed', e);
+    }
+
     try{ if(typeof addAct === 'function') addAct('✅','Delivery Done',String(delId),'var(--green)'); }catch(e){}
     try{ if(typeof sv === 'function') sv(); }catch(e){}
     try{ if(typeof toast === 'function') toast('Delivery marked delivered'); }catch(e){}
