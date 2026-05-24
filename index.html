@@ -5573,6 +5573,53 @@ function assignRider(){
   toast('🏍️ '+rider+' dispatched! Timer started.');
 }
 
+
+// sync-delivery-done-to-firebase-v1
+function syncDeliveryDoneToFirebaseOrder(orderId){
+  try{
+    if(!orderId) return;
+
+    var now = Date.now();
+    var clean = String(orderId).replace(/[.#$[\]/]/g, "_");
+
+    var payload = {
+      deliveryStatus: "delivered",
+      kitStatus: "out",
+      kitchenStatus: "out",
+      deliveredAt: now,
+      deliveryDeliveredAt: now,
+      deliveryDoneAt: now,
+      updatedAt: now,
+      status: "completed"
+    };
+
+    try{
+      var o = (S.orders || []).find(function(x){
+        return String(x.id) === String(orderId) || String(x.orderNumber) === String(orderId);
+      });
+
+      if(o){
+        o.deliveryStatus = "delivered";
+        o.deliveredAt = o.deliveredAt || now;
+        o.deliveryDeliveredAt = o.deliveryDeliveredAt || now;
+        o.deliveryDoneAt = o.deliveryDoneAt || now;
+        o.status = o.status === "cancelled" ? o.status : "completed";
+        o.updatedAt = now;
+      }
+    }catch(e){}
+
+    fetch("https://fruities-pos-default-rtdb.asia-southeast1.firebasedatabase.app/stores/fruit-story-main/orders/" + clean + ".json", {
+      method: "PATCH",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify(payload)
+    }).catch(function(e){
+      console.warn("sync delivered firebase failed", e);
+    });
+  }catch(e){
+    console.warn("syncDeliveryDoneToFirebaseOrder error", e);
+  }
+}
+
 function updDel(id, st){
   const d = S.deliveries.find(x=>String(x.id)===String(id));
   if(!d) return;
@@ -5595,6 +5642,9 @@ function updDel(id, st){
     d.timerEnd = now;
     d.status = 'delivered';
     d.deliveryStatus = 'delivered';
+
+    var oid = d.oid || d.orderId || d.order || id;
+    syncDeliveryDoneToFirebaseOrder(oid);
 
     toast('✅ Delivered in '+fmtElapsed(d.timerEnd-d.timerStart));
   }
@@ -18016,8 +18066,13 @@ font-size:14px">Okay</button>'
       o.deliveryStatus = 'delivered';
       o.deliveredAt = o.deliveredAt || now;
       o.deliveryDeliveredAt = o.deliveryDeliveredAt || now;
+      o.deliveryDoneAt = o.deliveryDoneAt || now;
+      o.deliveryStatus = 'delivered';
       o.status = o.status === 'cancelled' ? o.status : 'completed';
+      o.updatedAt = now;
     }
+
+    syncDeliveryDoneToFirebaseOrder(orderId || (d && (d.orderId || d.oid)));
 
     try{ if(typeof sv === 'function') sv(); }catch(e){}
     try{ if(typeof toast === 'function') toast('✅ Delivery done'); }catch(e){}
