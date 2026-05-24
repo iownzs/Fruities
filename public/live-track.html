@@ -1770,6 +1770,92 @@ body{
   }
 }
 
+
+/* tracker-active-circle-pulse-ring-v1 */
+
+/* Make active circle visible with animated pulse rings */
+.step-card.active::before{
+  content:"•" !important;
+  background:#0db83f !important;
+  color:#fff !important;
+  animation:activeCircleDotPulse 1.35s ease-in-out infinite !important;
+  box-shadow:
+    0 0 0 5px rgba(13,184,63,.18),
+    0 0 18px rgba(13,184,63,.55) !important;
+}
+
+/* Pulse ring outside active circle */
+.step-card.active::after{
+  animation:activeCircleLinePulse 1.6s ease-in-out infinite !important;
+}
+
+/* Add actual visible ring using inset-safe outline */
+.step-card.active{
+  overflow:visible !important;
+}
+
+.step-card.active .track-pulse-ring{
+  display:block;
+}
+
+/* Use card pseudo support: ring around active circle */
+.step-card.active{
+  --pulse-ring-color: rgba(13,184,63,.28);
+}
+
+.step-card.active::marker{
+  color:transparent;
+}
+
+@keyframes activeCircleDotPulse{
+  0%,100%{
+    transform:translate(-50%,-50%) scale(1);
+    box-shadow:
+      0 0 0 4px rgba(13,184,63,.18),
+      0 0 16px rgba(13,184,63,.50);
+  }
+  50%{
+    transform:translate(-50%,-50%) scale(1.12);
+    box-shadow:
+      0 0 0 9px rgba(13,184,63,.18),
+      0 0 28px rgba(13,184,63,.75);
+  }
+}
+
+/* make line also breathe subtly near active step */
+@keyframes activeCircleLinePulse{
+  0%,100%{
+    filter:drop-shadow(0 0 0 rgba(13,184,63,0));
+  }
+  50%{
+    filter:drop-shadow(0 0 6px rgba(13,184,63,.55));
+  }
+}
+
+/* Stronger mobile visibility */
+@media(max-width:700px){
+  .step-card.active::before{
+    box-shadow:
+      0 0 0 5px rgba(13,184,63,.22),
+      0 0 18px rgba(13,184,63,.65) !important;
+  }
+
+  @keyframes activeCircleDotPulse{
+    0%,100%{
+      transform:translate(-50%,-50%) scale(1);
+      box-shadow:
+        0 0 0 4px rgba(13,184,63,.20),
+        0 0 14px rgba(13,184,63,.55);
+    }
+    50%{
+      transform:translate(-50%,-50%) scale(1.16);
+      box-shadow:
+        0 0 0 9px rgba(13,184,63,.24),
+        0 0 26px rgba(13,184,63,.80);
+    }
+  }
+}
+
 </style>
 </head>
 
