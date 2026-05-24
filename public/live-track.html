@@ -301,6 +301,82 @@ body{
   }
 }
 
+
+/* tracker-active-glow-fix-v1 */
+
+/* completed cards: clean, no glow */
+.step-card.done{
+  opacity:1 !important;
+  border-color:transparent !important;
+  box-shadow:0 8px 22px rgba(20,80,35,.07) !important;
+}
+
+/* pending cards: faded */
+.step-card.pending{
+  opacity:.42 !important;
+  border-color:transparent !important;
+  box-shadow:0 8px 18px rgba(20,80,35,.04) !important;
+}
+
+/* active card: main glow */
+.step-card.active{
+  opacity:1 !important;
+  border-color:#51e86e !important;
+  background:rgba(255,255,255,.96) !important;
+  box-shadow:
+    0 0 0 2px rgba(34,197,94,.14),
+    0 0 26px rgba(34,197,94,.28),
+    0 14px 36px rgba(20,80,35,.12) !important;
+  transform:translateY(-1px);
+}
+
+/* active heading */
+.step-card.active h3{
+  color:#08752a !important;
+}
+
+/* delivered active: success glow */
+.step-card[data-step="delivered"].active{
+  background:linear-gradient(90deg,#ffffff,#f0fff3) !important;
+  border-color:#38e85f !important;
+  box-shadow:
+    0 0 0 2px rgba(34,197,94,.18),
+    0 0 34px rgba(34,197,94,.35),
+    0 16px 42px rgba(20,80,35,.14) !important;
+}
+
+/* active dot glow */
+.dot.active{
+  background:#0db83f !important;
+  box-shadow:
+    0 0 0 8px rgba(13,184,63,.16),
+    0 0 24px rgba(13,184,63,.38) !important;
+}
+
+/* done dots normal */
+.dot.done:not(.active){
+  background:#0db83f !important;
+  box-shadow:0 6px 16px rgba(13,184,63,.16) !important;
+}
+
+/* mobile: keep glow softer */
+@media(max-width:700px){
+  .step-card.active{
+    box-shadow:
+      0 0 0 1px rgba(34,197,94,.16),
+      0 0 18px rgba(34,197,94,.24),
+      0 10px 24px rgba(20,80,35,.10) !important;
+    transform:none;
+  }
+
+  .step-card[data-step="delivered"].active{
+    box-shadow:
+      0 0 0 1px rgba(34,197,94,.18),
+      0 0 22px rgba(34,197,94,.28),
+      0 10px 26px rgba(20,80,35,.10) !important;
+  }
+}
+
 </style>
 </head>
 
