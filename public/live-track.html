@@ -96,6 +96,9 @@ document.querySelectorAll(".art img,.logo img").forEach(function(img){
   });
 });
 
+
+
+
 </script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -2029,6 +2032,84 @@ body{
   }
 }
 
+
+/* tracker-real-active-circle-pulse-v1 */
+
+/* Real animated pulse overlay on active circle */
+.active-dot-pulse{
+  position:absolute;
+  left:-56px;
+  top:50%;
+  width:48px;
+  height:48px;
+  border-radius:999px;
+  transform:translate(-50%,-50%);
+  pointer-events:none;
+  z-index:30;
+  border:3px solid rgba(13,184,63,.90);
+  box-shadow:
+    0 0 0 0 rgba(13,184,63,.60),
+    0 0 22px rgba(13,184,63,.85);
+  animation:realActiveCirclePulse 1.15s ease-out infinite;
+}
+
+.active-dot-pulse::after{
+  content:"";
+  position:absolute;
+  inset:8px;
+  border-radius:999px;
+  background:#0db83f;
+  box-shadow:0 0 18px rgba(13,184,63,.85);
+}
+
+@keyframes realActiveCirclePulse{
+  0%{
+    transform:translate(-50%,-50%) scale(.92);
+    opacity:1;
+    box-shadow:
+      0 0 0 0 rgba(13,184,63,.70),
+      0 0 22px rgba(13,184,63,.90);
+  }
+  70%{
+    transform:translate(-50%,-50%) scale(1.18);
+    opacity:.78;
+    box-shadow:
+      0 0 0 18px rgba(13,184,63,0),
+      0 0 36px rgba(13,184,63,.95);
+  }
+  100%{
+    transform:translate(-50%,-50%) scale(.92);
+    opacity:1;
+    box-shadow:
+      0 0 0 0 rgba(13,184,63,0),
+      0 0 22px rgba(13,184,63,.70);
+  }
+}
+
+@media(max-width:700px){
+  .active-dot-pulse{
+    left:-31px;
+    width:38px;
+    height:38px;
+  }
+
+  .active-dot-pulse::after{
+    inset:7px;
+  }
+}
+
+@media(max-width:390px){
+  .active-dot-pulse{
+    left:-27px;
+    width:34px;
+    height:34px;
+  }
+
+  .active-dot-pulse::after{
+    inset:6px;
+  }
+}
+
 </style>
 </head>
 
@@ -2152,6 +2233,7 @@ function setLiveStep(step){
   }
 
   setTimeout(syncTrackerCircles, 40);
+  setTimeout(refreshActiveDotPulse, 50);
 }
 
 function fmtTime(v){
@@ -2230,7 +2312,24 @@ function loadLiveOrder(){
   }
 }
 
+
+/* tracker-real-active-circle-pulse-js-v2 */
+function refreshActiveDotPulse(){
+  document.querySelectorAll(".active-dot-pulse").forEach(function(el){
+    el.remove();
+  });
+
+  var active = document.querySelector(".step-card.active");
+  if(!active) return;
+
+  var pulse = document.createElement("span");
+  pulse.className = "active-dot-pulse";
+  active.appendChild(pulse);
+}
+
 loadLiveOrder();
+setTimeout(refreshActiveDotPulse, 700);
+setTimeout(refreshActiveDotPulse, 500);
 </script>
 </body>
 </html>
