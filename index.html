@@ -20726,183 +20726,152 @@ font-size:14px">Okay</button>'
 })();
 </script>
 
-
-<style id="delivery-filter-chips-v1">
-/* Make delivery filters faster by using chips instead of dropdowns */
-#deliveryFastFilters .delivery-chip-label{
-  flex:0 0 auto;
-  height:34px;
-  display:inline-flex;
-  align-items:center;
-  padding:0 2px;
-  font-size:11px;
-  font-weight:900;
-  color:var(--t3,#6b7280);
-  white-space:nowrap;
+<style id="delivery-filter-compact-dropdowns-v1">
+/* Compact delivery filter layout: status buttons + dropdown filters */
+#deliveryFastFilters{
+  padding:10px 12px !important;
+  margin:0 0 12px !important;
+  background:var(--w,#fff) !important;
+  border:1px solid var(--b,#e5e7eb) !important;
+  border-radius:18px !important;
 }
 
-#deliveryFastFilters .delivery-fast-filter[data-priority],
-#deliveryFastFilters .delivery-fast-filter[data-rider]{
-  min-width:auto;
+#deliveryFastFilters .delivery-fast-row{
+  display:flex !important;
+  flex-wrap:nowrap !important;
+  gap:7px !important;
+  overflow-x:auto !important;
+  -webkit-overflow-scrolling:touch !important;
+  scrollbar-width:none !important;
+  padding-bottom:2px !important;
+}
+
+#deliveryFastFilters .delivery-fast-row::-webkit-scrollbar{
+  display:none !important;
+}
+
+#deliveryFastFilters .delivery-fast-filter{
+  flex:0 0 auto !important;
+  height:34px !important;
+  min-width:86px !important;
+  max-width:155px !important;
+  padding:7px 10px !important;
+  border-radius:999px !important;
+  font-size:12px !important;
+  font-weight:800 !important;
+  white-space:nowrap !important;
+}
+
+#deliveryFastFilters select.delivery-fast-filter{
+  min-width:118px !important;
+}
+
+#deliveryFastFilters input[type="date"].delivery-fast-filter{
+  min-width:142px !important;
+}
+
+#deliveryFastFilters [data-reset]{
+  min-width:78px !important;
+}
+
+#deliveryFastFilters .delivery-fast-filter.on,
+#deliveryFastFilters .delivery-fast-filter.active{
+  border-color:var(--green,#15803d) !important;
+  background:var(--gl,#e9f7ef) !important;
+  color:var(--gd,#166534) !important;
+}
+
+@media(max-width:768px){
+  #deliveryFastFilters{
+    margin-left:-2px !important;
+    margin-right:-2px !important;
+  }
+
+  #deliveryFastFilters .delivery-fast-filter{
+    min-width:82px !important;
+  }
+
+  #deliveryFastFilters select.delivery-fast-filter{
+    min-width:112px !important;
+  }
+
+  #deliveryFastFilters input[type="date"].delivery-fast-filter{
+    min-width:135px !important;
+  }
 }
 </style>
 
-<script id="delivery-filter-chips-v1">
+<script id="delivery-filter-compact-dropdowns-v1">
 (function(){
-  if(window.__deliveryFilterChipsV1) return;
-  window.__deliveryFilterChipsV1 = true;
+  if(window.__deliveryFilterCompactDropdownsV1) return;
+  window.__deliveryFilterCompactDropdownsV1 = true;
 
-  function waitForFastFilters(){
-    return document.getElementById('deliveryFastFilters');
+  function cleanupChipArtifacts(){
+    var root = document.getElementById('deliveryFastFilters');
+    if(!root) return;
+
+    root.querySelectorAll('.delivery-chip-label,[data-priority],[data-rider]').forEach(function(el){
+      // Only remove chip experiment buttons/labels, not normal selects.
+      if(el.tagName !== 'SELECT'){
+        el.remove();
+      }
+    });
+
+    root.querySelectorAll('[data-hidden-priority-select],[data-hidden-rider-select]').forEach(function(sel){
+      sel.style.display = '';
+      sel.classList.add('delivery-fast-filter');
+    });
   }
 
-  function patchBuildFilters(){
-    if(typeof window.renderDeliveryExcel !== 'function') return false;
-    if(window.renderDeliveryExcel.__filterChipsV1) return true;
+  function relabelDropdowns(){
+    var root = document.getElementById('deliveryFastFilters');
+    if(!root) return;
 
-    var oldRender = window.renderDeliveryExcel;
+    var p = root.querySelector('select[data-key="priority"]');
+    if(p && p.options.length){
+      p.options[0].textContent = 'Priority';
+    }
+
+    var r = root.querySelector('select[data-key="rider"]');
+    if(r && r.options.length){
+      r.options[0].textContent = 'Rider';
+    }
+  }
+
+  function wrapRender(){
+    if(typeof window.renderDeliveryExcel !== 'function') return false;
+    if(window.renderDeliveryExcel.__compactDropdownsV1) return true;
+
+    var old = window.renderDeliveryExcel;
 
     window.renderDeliveryExcel = function(){
-      var result = oldRender.apply(this, arguments);
-      setTimeout(convertFiltersToChips, 0);
-      setTimeout(convertFiltersToChips, 120);
+      var result = old.apply(this, arguments);
+      setTimeout(function(){
+        cleanupChipArtifacts();
+        relabelDropdowns();
+      }, 0);
+      setTimeout(function(){
+        cleanupChipArtifacts();
+        relabelDropdowns();
+      }, 100);
       return result;
     };
 
-    window.renderDeliveryExcel.__filterChipsV1 = true;
+    window.renderDeliveryExcel.__compactDropdownsV1 = true;
     return true;
   }
 
-  function getStateFromUI(){
-    var root = waitForFastFilters();
-    var state = {
-      priority:'all',
-      rider:'all'
-    };
+  setTimeout(function(){
+    cleanupChipArtifacts();
+    relabelDropdowns();
+    wrapRender();
+  }, 300);
 
-    if(!root) return state;
-
-    var p = root.querySelector('[data-priority].on');
-    var r = root.querySelector('[data-rider].on');
-
-    if(p) state.priority = p.getAttribute('data-priority') || 'all';
-    if(r) state.rider = r.getAttribute('data-rider') || 'all';
-
-    return state;
-  }
-
-  function dispatchChange(el){
-    if(!el) return;
-    el.dispatchEvent(new Event('change', { bubbles:true }));
-  }
-
-  function convertFiltersToChips(){
-    var root = waitForFastFilters();
-    if(!root || root.__chipsConvertedV1) return;
-
-    var row = root.querySelector('.delivery-fast-row');
-    if(!row) return;
-
-    var prioritySelect = row.querySelector('select[data-key="priority"]');
-    var riderSelect = row.querySelector('select[data-key="rider"]');
-
-    if(!prioritySelect || !riderSelect) return;
-
-    var currentPriority = prioritySelect.value || 'all';
-    var currentRider = riderSelect.value || 'all';
-
-    var hiddenPriority = prioritySelect.cloneNode(true);
-    hiddenPriority.style.display = 'none';
-    hiddenPriority.setAttribute('data-hidden-priority-select','1');
-
-    var hiddenRider = riderSelect.cloneNode(true);
-    hiddenRider.style.display = 'none';
-    hiddenRider.setAttribute('data-hidden-rider-select','1');
-
-    function chip(label, key, value, current){
-      var b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'delivery-fast-filter' + (String(value) === String(current) ? ' on active' : '');
-      b.textContent = label;
-      b.setAttribute(key, value);
-      return b;
-    }
-
-    var frag = document.createDocumentFragment();
-
-    var pLabel = document.createElement('span');
-    pLabel.className = 'delivery-chip-label';
-    pLabel.textContent = 'Priority:';
-    frag.appendChild(pLabel);
-
-    [
-      ['All','all'],
-      ['Rush','rush'],
-      ['Normal','normal'],
-      ['Low','low']
-    ].forEach(function(x){
-      frag.appendChild(chip(x[0], 'data-priority', x[1], currentPriority));
-    });
-
-    var rLabel = document.createElement('span');
-    rLabel.className = 'delivery-chip-label';
-    rLabel.textContent = 'Rider:';
-    frag.appendChild(rLabel);
-
-    [
-      ['All','all'],
-      ['Assigned','assigned'],
-      ['Not assigned','unassigned']
-    ].forEach(function(x){
-      frag.appendChild(chip(x[0], 'data-rider', x[1], currentRider));
-    });
-
-    prioritySelect.replaceWith(hiddenPriority);
-    riderSelect.replaceWith(hiddenRider);
-
-    var dateInput = row.querySelector('input[type="date"]');
-    if(dateInput){
-      row.insertBefore(frag, dateInput);
-    }else{
-      row.appendChild(frag);
-    }
-
-    row.addEventListener('click', function(e){
-      var pBtn = e.target.closest('[data-priority]');
-      var rBtn = e.target.closest('[data-rider]');
-
-      if(pBtn){
-        row.querySelectorAll('[data-priority]').forEach(function(b){
-          b.classList.remove('on','active');
-        });
-        pBtn.classList.add('on','active');
-
-        hiddenPriority.value = pBtn.getAttribute('data-priority') || 'all';
-        dispatchChange(hiddenPriority);
-      }
-
-      if(rBtn){
-        row.querySelectorAll('[data-rider]').forEach(function(b){
-          b.classList.remove('on','active');
-        });
-        rBtn.classList.add('on','active');
-
-        hiddenRider.value = rBtn.getAttribute('data-rider') || 'all';
-        dispatchChange(hiddenRider);
-      }
-    });
-
-    root.__chipsConvertedV1 = true;
-  }
-
-  function boot(){
-    patchBuildFilters();
-    convertFiltersToChips();
-  }
-
-  setTimeout(boot, 300);
-  setTimeout(boot, 1000);
-  setTimeout(boot, 2000);
+  setTimeout(function(){
+    cleanupChipArtifacts();
+    relabelDropdowns();
+    wrapRender();
+  }, 1200);
 })();
 </script>
 
