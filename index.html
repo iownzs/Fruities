@@ -8752,12 +8752,12 @@ window.addEventListener('load',function(){
       if(d){
         setTimeout(function(){
           var box = byId('rchtml');
-          if(box && !box.querySelector('[data-delivery-date-v69]')){
+          if(box && !box.querySelector('[data-dx-date-v69]')){
             var rows = box.querySelectorAll('.rcr');
             var insertAfter = rows.length > 2 ? rows[2] : rows[rows.length-1];
             var div = document.createElement('div');
             div.className = 'rcr';
-            div.setAttribute('data-delivery-date-v69','1');
+            div.setAttribute('data-dx-date-v69','1');
             div.innerHTML = '<span>Delivery Date:</span><span>' + esc(formatDeliveryDate(d)) + '</span>';
             if(insertAfter) insertAfter.insertAdjacentElement('afterend', div);
             else box.prepend(div);
@@ -8772,7 +8772,7 @@ window.addEventListener('load',function(){
 
   function decorateOrderCardDates(){
     document.querySelectorAll('[data-order-id]').forEach(function(card){
-      if(card.querySelector('[data-delivery-date-v69]')) return;
+      if(card.querySelector('[data-dx-date-v69]')) return;
       var oid = card.getAttribute('data-order-id');
       var order = null;
       try{
@@ -8788,7 +8788,7 @@ window.addEventListener('load',function(){
       if(chipRow){
         var chip = document.createElement('div');
         chip.className = 'delivery-date-chip-v69';
-        chip.setAttribute('data-delivery-date-v69','1');
+        chip.setAttribute('data-dx-date-v69','1');
         chip.textContent = '📅 Delivery: ' + formatDeliveryDate(d);
         chipRow.appendChild(chip);
       }
@@ -8796,10 +8796,10 @@ window.addEventListener('load',function(){
       var paymentBox = Array.from(card.querySelectorAll('.i66-box,.m65-cardbox,.p64-panel,.gcr-panel,.chat-order-detail')).find(function(el){
         return /Contact|Payment|Delivery|Address/i.test(el.textContent || '');
       });
-      if(paymentBox && !paymentBox.querySelector('[data-delivery-date-panel-v69]')){
+      if(paymentBox && !paymentBox.querySelector('[data-dx-date-panel-v69]')){
         var panel = document.createElement('div');
         panel.className = 'delivery-date-panel-v69';
-        panel.setAttribute('data-delivery-date-panel-v69','1');
+        panel.setAttribute('data-dx-date-panel-v69','1');
         panel.innerHTML = '<span class="lbl">Delivery Date</span>' + esc(formatDeliveryDate(d));
         paymentBox.appendChild(panel);
       }
@@ -9133,7 +9133,7 @@ window.addEventListener('load',function(){
         setTimeout(function(){
           var box = byId('rchtml');
           if(box && !box.querySelector('[data-delivery-time-v70]')){
-            var existingDate = box.querySelector('[data-delivery-date-v69]');
+            var existingDate = box.querySelector('[data-dx-date-v69]');
             if(existingDate){
               existingDate.innerHTML = '<span>Delivery Date/Time:</span><span>' + esc(label) + '</span>';
               existingDate.setAttribute('data-delivery-time-v70','1');
@@ -9172,7 +9172,7 @@ window.addEventListener('load',function(){
       var label = deliveryDateTimeLabel(d,t);
       if(!label) return;
 
-      var oldDateChip = card.querySelector('[data-delivery-date-v69]');
+      var oldDateChip = card.querySelector('[data-dx-date-v69]');
       if(oldDateChip){
         oldDateChip.textContent = '📅 Delivery: ' + label;
         oldDateChip.setAttribute('data-delivery-time-v70','1');
@@ -9187,7 +9187,7 @@ window.addEventListener('load',function(){
         }
       }
 
-      var existingPanel = card.querySelector('[data-delivery-date-panel-v69],[data-delivery-time-panel-v70]');
+      var existingPanel = card.querySelector('[data-dx-date-panel-v69],[data-delivery-time-panel-v70]');
       if(existingPanel){
         existingPanel.classList.add('delivery-time-panel-v70');
         existingPanel.innerHTML = '<span class="lbl">Delivery Date/Time</span>' + esc(label);
@@ -20543,10 +20543,10 @@ font-size:14px">Okay</button>'
       section.querySelectorAll('tbody tr').forEach(function(row){
         var show = true;
 
-        var status = row.getAttribute('data-delivery-status') || '';
-        var priority = row.getAttribute('data-delivery-priority') || '';
-        var date = row.getAttribute('data-delivery-date') || '';
-        var rider = row.getAttribute('data-delivery-rider') || '';
+        var status = row.getAttribute('data-dx-status') || '';
+        var priority = row.getAttribute('data-dx-priority') || '';
+        var date = row.getAttribute('data-dx-date') || '';
+        var rider = row.getAttribute('data-dx-rider') || '';
 
         if(state.status !== 'all' && status !== state.status) show = false;
         if(state.priority !== 'all' && priority !== state.priority) show = false;
