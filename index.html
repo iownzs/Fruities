@@ -20327,56 +20327,51 @@ font-size:14px">Okay</button>'
 })();
 </script>
 
-<style id="delivery-collapse-history-v1">
-/* Collapse Delivered History by default */
-#deliveryExcelRoot .dx-section.dx-delivered-collapsed .dx-scroll,
-#deliveryExcelRoot .dx-section.dx-delivered-collapsed .dx-empty{
+<style id="delivery-history-toggle-fix-v3">
+/* Clean Delivered History collapse */
+#deliveryExcelRoot .dx-section.dx-history-collapsed .dx-scroll,
+#deliveryExcelRoot .dx-section.dx-history-collapsed .dx-empty{
   display:none !important;
 }
 
-#deliveryExcelRoot .dx-section-head{
-  cursor:pointer;
+#deliveryExcelRoot .dx-section.dx-history-section .dx-section-head{
+  cursor:pointer !important;
+  user-select:none !important;
 }
 
 #deliveryExcelRoot .dx-history-toggle{
+  margin-left:auto;
   font-size:11px;
   font-weight:900;
-  opacity:.8;
-  margin-left:auto;
+  color:var(--t3,#6b7280);
 }
 </style>
 
-<script id="delivery-collapse-history-v1">
+<script id="delivery-history-toggle-fix-v3">
 (function(){
-  if(window.__deliveryCollapseHistoryV1) return;
-  window.__deliveryCollapseHistoryV1 = true;
+  if(window.__deliveryHistoryToggleFixV3) return;
+  window.__deliveryHistoryToggleFixV3 = true;
 
-  window.dxDeliveredHistoryOpen = window.dxDeliveredHistoryOpen || false;
+  window.dxDeliveredHistoryOpen = false;
 
-  function applyDeliveredCollapse(){
+  function isDeliveredSection(section){
+    var head = section && section.querySelector ? section.querySelector('.dx-section-head') : null;
+    var txt = head ? (head.textContent || '').toLowerCase() : '';
+    return txt.indexOf('delivered history') !== -1 || txt.indexOf('delivered') !== -1;
+  }
+
+  function applyHistoryState(){
     var root = document.getElementById('deliveryExcelRoot');
     if(!root) return;
 
     root.querySelectorAll('.dx-section').forEach(function(section){
+      if(!isDeliveredSection(section)) return;
+
+      section.classList.add('dx-history-section');
+      section.classList.toggle('dx-history-collapsed', !window.dxDeliveredHistoryOpen);
+
       var head = section.querySelector('.dx-section-head');
       if(!head) return;
-
-      var title = (head.textContent || '').toLowerCase();
-      var isDelivered = title.indexOf('delivered') !== -1;
-
-      if(!isDelivered) return;
-
-      section.classList.toggle('dx-delivered-collapsed', !window.dxDeliveredHistoryOpen);
-
-      if(!head.__deliveryToggleInstalled){
-        head.__deliveryToggleInstalled = true;
-
-        head.addEventListener('click', function(e){
-          e.preventDefault();
-          window.dxDeliveredHistoryOpen = !window.dxDeliveredHistoryOpen;
-          applyDeliveredCollapse();
-        });
-      }
 
       var toggle = head.querySelector('.dx-history-toggle');
       if(!toggle){
@@ -20391,115 +20386,50 @@ font-size:14px">Okay</button>'
 
   function wrapRender(){
     if(typeof window.renderDeliveryExcel !== 'function') return false;
-    if(window.renderDeliveryExcel.__collapseHistoryV1) return true;
+    if(window.renderDeliveryExcel.__historyToggleFixV3) return true;
 
     var old = window.renderDeliveryExcel;
 
     window.renderDeliveryExcel = function(){
       var result = old.apply(this, arguments);
-      setTimeout(applyDeliveredCollapse, 0);
-      setTimeout(applyDeliveredCollapse, 120);
+      applyHistoryState();
+      setTimeout(applyHistoryState, 0);
+      setTimeout(applyHistoryState, 100);
       return result;
     };
 
-    window.renderDeliveryExcel.__collapseHistoryV1 = true;
+    window.renderDeliveryExcel.__historyToggleFixV3 = true;
     return true;
   }
 
-  setTimeout(function(){
-    wrapRender();
-    applyDeliveredCollapse();
-  }, 300);
+  document.addEventListener('click', function(e){
+    var head = e.target && e.target.closest ? e.target.closest('#deliveryExcelRoot .dx-section-head') : null;
+    if(!head) return;
+
+    var section = head.closest('.dx-section');
+    if(!section || !isDeliveredSection(section)) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    window.dxDeliveredHistoryOpen = !window.dxDeliveredHistoryOpen;
+    applyHistoryState();
+  }, true);
 
   setTimeout(function(){
     wrapRender();
-    applyDeliveredCollapse();
-  }, 1200);
-})();
-</script>
-
-
-<style id="delivery-collapse-no-flicker-v2">
-/* Prevent Delivered History flicker on first Delivery tab load */
-#deliveryExcelRoot .dx-section:has(.dx-section-head){
-  transition:none !important;
-}
-
-/* JS will add this class immediately after render */
-#deliveryExcelRoot .dx-section.dx-delivered-hidden-first .dx-scroll,
-#deliveryExcelRoot .dx-section.dx-delivered-hidden-first .dx-empty{
-  display:none !important;
-}
-</style>
-
-<script id="delivery-collapse-no-flicker-v2">
-(function(){
-  if(window.__deliveryCollapseNoFlickerV2) return;
-  window.__deliveryCollapseNoFlickerV2 = true;
-
-  function hideDeliveredFast(){
-    var root = document.getElementById('deliveryExcelRoot');
-    if(!root) return;
-
-    root.querySelectorAll('.dx-section').forEach(function(section){
-      var head = section.querySelector('.dx-section-head');
-      if(!head) return;
-
-      var text = (head.textContent || '').toLowerCase();
-      if(text.indexOf('delivered') !== -1 && !window.dxDeliveredHistoryOpen){
-        section.classList.add('dx-delivered-hidden-first');
-        section.classList.add('dx-delivered-collapsed');
-      }
-    });
-  }
-
-  function syncWithCollapsePatch(){
-    hideDeliveredFast();
-
-    setTimeout(function(){
-      document.querySelectorAll('#deliveryExcelRoot .dx-section.dx-delivered-hidden-first').forEach(function(section){
-        if(window.dxDeliveredHistoryOpen){
-          section.classList.remove('dx-delivered-hidden-first');
-        }
-      });
-    }, 80);
-  }
-
-  function wrapRender(){
-    if(typeof window.renderDeliveryExcel !== 'function') return false;
-    if(window.renderDeliveryExcel.__collapseNoFlickerV2) return true;
-
-    var old = window.renderDeliveryExcel;
-
-    window.renderDeliveryExcel = function(){
-      var result = old.apply(this, arguments);
-
-      hideDeliveredFast();
-      setTimeout(syncWithCollapsePatch, 0);
-      setTimeout(syncWithCollapsePatch, 60);
-      setTimeout(syncWithCollapsePatch, 160);
-
-      return result;
-    };
-
-    window.renderDeliveryExcel.__collapseNoFlickerV2 = true;
-    return true;
-  }
+    applyHistoryState();
+  }, 200);
 
   setTimeout(function(){
     wrapRender();
-    hideDeliveredFast();
-  }, 100);
+    applyHistoryState();
+  }, 800);
 
   setTimeout(function(){
     wrapRender();
-    hideDeliveredFast();
-  }, 500);
-
-  setTimeout(function(){
-    wrapRender();
-    hideDeliveredFast();
-  }, 1200);
+    applyHistoryState();
+  }, 1600);
 })();
 </script>
 
