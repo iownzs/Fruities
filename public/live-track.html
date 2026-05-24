@@ -2233,6 +2233,8 @@ function setLiveStep(step){
   }
 
   setTimeout(syncTrackerCircles, 40);
+  setTimeout(refreshActiveDotPulse, 60);
+  setTimeout(startPulseActiveWatcher, 120);
   setTimeout(refreshActiveDotPulse, 50);
 }
 
@@ -2313,7 +2315,10 @@ function loadLiveOrder(){
 }
 
 
-/* tracker-real-active-circle-pulse-js-v2 */
+
+
+
+/* tracker-pulse-follow-active-card-v3 */
 function refreshActiveDotPulse(){
   document.querySelectorAll(".active-dot-pulse").forEach(function(el){
     el.remove();
@@ -2322,12 +2327,37 @@ function refreshActiveDotPulse(){
   var active = document.querySelector(".step-card.active");
   if(!active) return;
 
+  active.style.overflow = "visible";
+
   var pulse = document.createElement("span");
   pulse.className = "active-dot-pulse";
   active.appendChild(pulse);
 }
 
+function startPulseActiveWatcher(){
+  var cards = document.querySelector(".cards");
+  if(!cards || cards.__pulseWatcherStarted) return;
+  cards.__pulseWatcherStarted = true;
+
+  var observer = new MutationObserver(function(){
+    clearTimeout(window.__pulseRefreshTimer);
+    window.__pulseRefreshTimer = setTimeout(function(){
+      refreshActiveDotPulse();
+    }, 40);
+  });
+
+  observer.observe(cards, {
+    subtree:true,
+    attributes:true,
+    attributeFilter:["class"]
+  });
+
+  refreshActiveDotPulse();
+}
+
 loadLiveOrder();
+setTimeout(startPulseActiveWatcher, 800);
+setTimeout(refreshActiveDotPulse, 900);
 setTimeout(refreshActiveDotPulse, 700);
 setTimeout(refreshActiveDotPulse, 500);
 </script>
