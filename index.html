@@ -20093,13 +20093,10 @@ font-size:14px">Okay</button>'
 
   function isPickupOrder(o){
     var type = String(o.orderType || o.fulfillmentType || '').toLowerCase();
-    return (
-      type === 'pickup' ||
-      o.kitForPickup ||
-      o.kitPickup ||
-      o.pickupStatus === 'waiting' ||
-      o.pickupStatus === 'picked_up'
-    );
+
+    // Direct Send Delivery button is only shown on delivery cards.
+    // Block only explicit pickup type, not old pickup flags.
+    return type === 'pickup';
   }
 
   function makeDeliveryId(orderId){
