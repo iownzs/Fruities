@@ -17832,8 +17832,27 @@ font-size:14px">Okay</button>'
     return window.S && Array.isArray(S.orders) ? S.orders : [];
   }
 
-  function isDeliveryOrder(o){
+  function isPickupFlow(o){
     var type = String(o.orderType || o.fulfillmentType || o.type || '').toLowerCase();
+
+    return (
+      type === 'pickup' ||
+      o.pickupStatus === 'waiting' ||
+      o.pickupStatus === 'picked_up' ||
+      o.kitForPickup === true ||
+      o.kitPickup === true
+    );
+  }
+
+  function isDeliveryOrder(o){
+    if(!o) return false;
+
+    // Pickup flow should never appear in Delivery tab,
+    // even if old delivery/address fields still exist.
+    if(isPickupFlow(o)) return false;
+
+    var type = String(o.orderType || o.fulfillmentType || o.type || '').toLowerCase();
+
     return (
       type === 'delivery' ||
       o.deliveryAddress ||
@@ -20251,6 +20270,10 @@ font-size:14px">Okay</button>'
     o.kitForPickup = true;
     o.kitPickup = false;
     o.pickupStatus = 'waiting';
+
+    // Important: no longer treat as Kitchen sent-to-delivery.
+    o.kitchenStatus = 'sent_to_pickup';
+    o.kitStatus = 'out';
 
     // Clear delivery flow
     o.deliveryStatus = 'none';
