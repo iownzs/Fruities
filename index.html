@@ -17632,578 +17632,6 @@ font-size:14px">Okay</button>'
   },5000);
 })();
 </script>
-
-
-<script id="delivery-excel-force-v2">
-(function(){
-  if(window.__deliveryExcelForceV2) return;
-  window.__deliveryExcelForceV2 = true;
-
-  function forceDeliveryExcel(){
-    try{
-      if(typeof window.renderDeliveryExcel === "function"){
-        window.renderDeliveryExcel();
-      }
-    }catch(e){
-      console.error("forceDeliveryExcel failed", e);
-    }
-  }
-
-  var oldGo = window.go;
-  if(typeof oldGo === "function" && !oldGo.__deliveryExcelForceV2){
-    window.go = function(view){
-      var res = oldGo.apply(this, arguments);
-
-      if(String(view) === "delivery"){
-        setTimeout(forceDeliveryExcel, 100);
-        setTimeout(forceDeliveryExcel, 500);
-        setTimeout(forceDeliveryExcel, 1200);
-      }
-
-      return res;
-    };
-    window.go.__deliveryExcelForceV2 = true;
-  }
-
-  document.addEventListener("click", function(e){
-    var nav = e.target.closest('[data-v="delivery"], .mni[data-v="delivery"]');
-    if(nav){
-      setTimeout(forceDeliveryExcel, 100);
-      setTimeout(forceDeliveryExcel, 500);
-      setTimeout(forceDeliveryExcel, 1200);
-    }
-  });
-
-  document.addEventListener("DOMContentLoaded", function(){
-    setTimeout(function(){
-      var isDelivery =
-        location.hash.includes("delivery") ||
-        document.querySelector('[data-v="delivery"].on') ||
-        document.querySelector('.mni[data-v="delivery"].on');
-
-      if(isDelivery) forceDeliveryExcel();
-    }, 1000);
-  });
-})();
-</script>
-
-
-<script id="delivery-excel-boot-v3">
-(function(){
-  if(window.__deliveryExcelBootV3) return;
-  window.__deliveryExcelBootV3 = true;
-
-  function isDeliveryView(){
-    return (
-      location.search.includes('v=delivery') ||
-      location.hash.includes('delivery') ||
-      (window.curV === 'delivery') ||
-      document.getElementById('view-delivery')?.classList.contains('on') ||
-      document.getElementById('view-delivery')?.style.display !== 'none'
-    );
-  }
-
-  function bootDeliveryExcel(){
-    try{
-      if(typeof window.renderDeliveryExcel === 'function'){
-        window.renderDeliveryExcel();
-      }
-    }catch(e){
-      console.error('Delivery Excel boot failed:', e);
-    }
-  }
-
-  function bootMany(){
-    setTimeout(bootDeliveryExcel, 100);
-    setTimeout(bootDeliveryExcel, 400);
-    setTimeout(bootDeliveryExcel, 900);
-    setTimeout(bootDeliveryExcel, 1600);
-    setTimeout(bootDeliveryExcel, 2500);
-  }
-
-  window.addEventListener('load', function(){
-    if(isDeliveryView()) bootMany();
-  });
-
-  document.addEventListener('DOMContentLoaded', function(){
-    if(isDeliveryView()) bootMany();
-  });
-
-  document.addEventListener('click', function(e){
-    if(e.target.closest('[data-v="delivery"]') || e.target.closest('[onclick*="delivery"]')){
-      bootMany();
-    }
-  });
-
-  var oldGo = window.go;
-  if(typeof oldGo === 'function'){
-    window.go = function(v){
-      var result = oldGo.apply(this, arguments);
-      if(String(v) === 'delivery') bootMany();
-      return result;
-    };
-  }
-
-  setInterval(function(){
-    if(isDeliveryView() && !document.getElementById('deliveryExcelRoot')){
-      bootDeliveryExcel();
-    }
-  }, 1500);
-})();
-</script>
-
-
-<script id="delivery-excel-runner-v4">
-(function(){
-  if(window.__deliveryExcelRunnerV4) return;
-  window.__deliveryExcelRunnerV4 = true;
-
-  function onDeliveryPage(){
-    var v = document.getElementById('view-delivery');
-    if(!v) return false;
-
-    return (
-      location.search.indexOf('v=delivery') !== -1 ||
-      window.curV === 'delivery' ||
-      v.classList.contains('on') ||
-      v.offsetParent !== null
-    );
-  }
-
-  function runExcel(){
-    try{
-      if(onDeliveryPage() && typeof window.renderDeliveryExcel === 'function'){
-        window.renderDeliveryExcel();
-      }
-    }catch(e){
-      console.error('delivery excel runner error', e);
-      var root = document.getElementById('deliveryExcelRoot');
-      if(root){
-        root.innerHTML = '<div class="dx-empty">Delivery Excel failed to load. Check console.</div>';
-      }
-    }
-  }
-
-  window.addEventListener('load', function(){
-    setTimeout(runExcel, 300);
-    setTimeout(runExcel, 1000);
-    setTimeout(runExcel, 2500);
-    setTimeout(runExcel, 5000);
-  });
-
-  document.addEventListener('DOMContentLoaded', function(){
-    setTimeout(runExcel, 300);
-    setTimeout(runExcel, 1000);
-    setTimeout(runExcel, 2500);
-  });
-
-  // Disabled: clicking inside delivery table should not re-render and reset horizontal scroll.
-  document.addEventListener('click', function(e){
-    if(e.target.closest('[data-v="delivery"]')){
-      setTimeout(runExcel, 300);
-    }
-  });
-
-  // Disabled old runExcel interval to prevent horizontal scroll reset.
-})();
-</script>
-
-
-<script id="delivery-excel-simple-v5">
-(function(){
-  if(window.__deliveryExcelSimpleV5) return;
-  window.__deliveryExcelSimpleV5 = true;
-
-  function esc(v){
-    return String(v == null ? '' : v)
-      .replaceAll('&','&amp;')
-      .replaceAll('<','&lt;')
-      .replaceAll('>','&gt;')
-      .replaceAll('"','&quot;')
-      .replaceAll("'","&#039;");
-  }
-
-  function money(v){
-    var n = Number(v || 0);
-    return '₱' + n.toLocaleString('en-PH',{maximumFractionDigits:2});
-  }
-
-  function orders(){
-    return window.S && Array.isArray(S.orders) ? S.orders : [];
-  }
-
-  function isPickupFlow(o){
-    var type = String(o.orderType || o.fulfillmentType || o.type || '').toLowerCase();
-
-    return (
-      type === 'pickup' ||
-      o.pickupStatus === 'waiting' ||
-      o.pickupStatus === 'picked_up' ||
-      o.kitForPickup === true ||
-      o.kitPickup === true
-    );
-  }
-
-  function isDeliveryOrder(o){
-    if(!o) return false;
-
-    // Pickup flow should never appear in Delivery tab,
-    // even if old delivery/address fields still exist.
-    if(isPickupFlow(o)) return false;
-
-    var type = String(o.orderType || o.fulfillmentType || o.type || '').toLowerCase();
-
-    return (
-      type === 'delivery' ||
-      o.deliveryAddress ||
-      o.addr ||
-      o.recipient ||
-      o.recipientPhone
-    );
-  }
-
-  function isSentToDelivery(o,d){
-    var ks = String(o.kitchenStatus || o.kitStatus || '').toLowerCase();
-    var ds = String(o.deliveryStatus || d.deliveryStatus || d.status || '').toLowerCase();
-
-    // Already active/completed delivery should remain visible.
-    if(ds === 'out_for_delivery' || ds === 'out' || ds === 'delivered') return true;
-    if(o.rider || o.riderName || d.rider || d.riderName) return true;
-    if(o.deliveredAt || d.deliveredAt || o.outForDeliveryAt || o.deliveryOutAt) return true;
-
-    // Only waiting orders that Kitchen actually sent should appear.
-    if(
-      ks === 'sent_to_delivery' ||
-      ks === 'out' ||
-      o.sentToDeliveryAt ||
-      o.deliverySentAt ||
-      d.sentToDeliveryAt ||
-      d.deliverySentAt
-    ){
-      return true;
-    }
-
-    return false;
-  }
-
-  function deliveryFromOrder(o){
-    var oid = o.id || o.orderNumber || o.orderId;
-    return {
-      id: 'DEL-' + String(oid || '').replace(/^ORD-/,'').replace(/^DEL-/,''),
-      orderId: oid,
-      oid: oid,
-      status: o.deliveryStatus || 'waiting',
-      deliveryStatus: o.deliveryStatus || 'waiting',
-      rider: o.rider || '',
-      riderName: o.riderName || '',
-      createdAt: o.createdAt || o.time,
-      items: o.items || [],
-      total: o.total || 0,
-      sentToDeliveryAt: o.sentToDeliveryAt || o.deliverySentAt || o.kitOutAt || ''
-    };
-  }
-
-  function deliveries(){
-    var existing = (window.S && Array.isArray(S.deliveries)) ? S.deliveries : [];
-    var result = [];
-
-    existing.forEach(function(d){
-      var o = orderOf(d);
-      if(isDeliveryOrder(o) && isSentToDelivery(o,d)){
-        result.push(d);
-      }
-    });
-
-    var seen = {};
-    result.forEach(function(d){
-      var oid = d.orderId || d.oid || d.order || d.id;
-      if(oid) seen[String(oid)] = true;
-      if(d.id) seen[String(d.id)] = true;
-    });
-
-    orders().forEach(function(o){
-      var oid = o.id || o.orderNumber || o.orderId;
-      if(!oid) return;
-
-      if(seen[String(oid)]) return;
-      if(seen['DEL-' + String(oid).replace(/^ORD-/,'').replace(/^DEL-/,'')]) return;
-
-      if(isDeliveryOrder(o) && isSentToDelivery(o,{})){
-        result.push(deliveryFromOrder(o));
-      }
-    });
-
-    return result;
-  }
-
-  function orderOf(d){
-    var id = d.orderId || d.oid || d.order || d.id;
-    return orders().find(function(o){
-      return String(o.id || o.orderNumber || o.orderId) === String(id);
-    }) || {};
-  }
-
-  function statusOf(d,o){
-    var s = String(o.deliveryStatus || d.deliveryStatus || d.status || '').toLowerCase();
-
-    if(s === 'delivered' || o.deliveredAt || d.deliveredAt) return 'delivered';
-    if(s === 'out_for_delivery' || s === 'out' || s === 'out for delivery') return 'out';
-    if(o.rider || o.riderName || d.rider || d.riderName){
-      if(s !== 'waiting') return 'out';
-    }
-
-    return 'waiting';
-  }
-
-  function statusLabel(s){
-    if(s === 'out') return 'Out for Delivery';
-    if(s === 'delivered') return 'Delivered';
-    return 'Waiting for Rider';
-  }
-
-  function priorityOf(o,d){
-    var p = String(o.priority || d.priority || 'normal').toLowerCase();
-    if(p !== 'rush' && p !== 'low') p = 'normal';
-    return p;
-  }
-
-  function created(o,d){
-    var raw = o.createdAt || o.time || d.createdAt || d.time || '';
-    if(!raw) return '-';
-    try{
-      var dt = new Date(raw);
-      if(isNaN(dt.getTime())) return raw;
-      return dt.toLocaleTimeString('en-PH',{hour:'numeric',minute:'2-digit'});
-    }catch(e){
-      return raw;
-    }
-  }
-
-  function customer(o,d){
-    return o.cust || o.customerName || o.name || d.cust || d.customerName || '-';
-  }
-
-  function customerPhone(o,d){
-    return o.phone || o.customerPhone || o.customerNumber || d.phone || d.customerPhone || '-';
-  }
-
-  function recipient(o,d){
-    return o.recipient || o.recipientName || d.recipient || d.recipientName || customer(o,d);
-  }
-
-  function recipientPhone(o,d){
-    return o.recipientPhone || o.recipientNumber || d.recipientPhone || d.recipientNumber || customerPhone(o,d);
-  }
-
-  function address(o,d){
-    return o.deliveryAddress || o.addr || o.address || d.deliveryAddress || d.addr || d.address || '-';
-  }
-
-  function cityOf(o,d){
-    var c = o.city || d.city || '';
-    if(c) return c;
-
-    var a = String(address(o,d)).toLowerCase();
-    var cities = ['caloocan','manila','quezon city','valenzuela','malabon','navotas','makati','pasig','taguig','pasay'];
-    for(var i=0;i<cities.length;i++){
-      if(a.indexOf(cities[i]) !== -1){
-        return cities[i].replace(/\b\w/g,function(x){return x.toUpperCase();});
-      }
-    }
-    return 'Other';
-  }
-
-  function deliveryDate(o,d){
-    var date = o.deliveryDate || o.delivery_date || o.scheduledDate || d.deliveryDate || '';
-    var time = o.deliveryTime || o.delivery_time || o.scheduledTime || d.deliveryTime || '';
-    return (date || '-') + (time ? '<br>' + esc(time) : '');
-  }
-
-  function itemText(o,d){
-    var items = Array.isArray(o.items) ? o.items : (Array.isArray(d.items) ? d.items : []);
-    var total = o.total || d.total || 0;
-    var count = items.length;
-    return (count ? count + ' item' + (count === 1 ? '' : 's') : 'Items') + '<br><b>' + money(total) + '</b>';
-  }
-
-  function riderTimer(d,o,s){
-    var rider = o.rider || o.riderName || d.rider || d.riderName || '';
-
-    if(s === 'waiting'){
-      return '<span class="dx-muted">Not assigned<br>-</span>';
-    }
-
-    var start =
-      Number(o.outForDeliveryAt || o.deliveryOutAt || o.assignedAt || d.outAt || d.startedAt || d.assignedAt || 0);
-
-    var deliveredAt = Number(o.deliveredAt || o.deliveryDeliveredAt || d.deliveredAt || 0);
-
-    if(s === 'delivered'){
-      var finalText = 'Delivered';
-      if(start && deliveredAt && deliveredAt > start){
-        finalText = 'Delivered in ' + dxFormatDuration(deliveredAt - start);
-      }
-      return esc(rider || '-') + '<br><span class="dx-timer">' + esc(finalText) + '</span>';
-    }
-
-    return esc(rider || '-') +
-      '<br><span class="dx-timer dx-live-timer" data-start="' + esc(start || Date.now()) + '">Running</span>';
-  }
-
-  function action(d,o,s){
-    var delId = esc(d.id || '');
-    var orderId = esc(o.id || o.orderNumber || d.orderId || d.oid || d.order || d.id || '');
-
-    if(s === 'out'){
-      return '<button type="button" class="dx-action" data-dx-action="done" data-del-id="'+delId+'" data-order-id="'+orderId+'">Done</button>';
-    }
-
-    if(s === 'delivered'){
-      return '<button type="button" class="dx-action view" data-dx-action="view" data-del-id="'+delId+'" data-order-id="'+orderId+'">View</button>';
-    }
-
-    return '<button type="button" class="dx-action assign" data-dx-action="assign-sheet" data-del-id="'+delId+'" data-order-id="'+orderId+'">Assign</button>';
-  }
-
-  function row(d){
-    var o = orderOf(d);
-    var s = statusOf(d,o);
-    var p = priorityOf(o,d);
-    var realOrderId = o.id || o.orderNumber || o.orderId || d.orderId || d.oid || d.order || d.id || '-';
-    var id = String(realOrderId).startsWith('DEL-')
-      ? 'ORD-' + String(realOrderId).replace(/^DEL-/,'')
-      : realOrderId;
-    var a = address(o,d);
-    var shortAddr = String(a).length > 26 ? String(a).slice(0,26) + '...' : String(a);
-
-    var rowCity = String(cityOf(o,d) || 'Other').toLowerCase();
-    var rowRider = String(o.rider || o.riderName || d.rider || d.riderName || '').toLowerCase();
-    var rowDate = String(o.deliveryDate || o.delivery_date || o.scheduledDate || d.deliveryDate || d.delivery_date || '').slice(0,10);
-
-    return '<tr data-dx-status="'+esc(s)+'" data-dx-priority="'+esc(p)+'" data-dx-city="'+esc(rowCity)+'" data-dx-rider="'+esc(rowRider)+'" data-dx-date="'+esc(rowDate)+'">' +
-      '<td><div class="dx-order">'+esc(id)+'</div><span class="dx-prio '+esc(p)+'">'+esc(p.charAt(0).toUpperCase()+p.slice(1))+'</span></td>' +
-      '<td><span class="dx-status '+(s === 'out' ? 'out' : s === 'delivered' ? 'delivered' : 'wait')+'">'+esc(statusLabel(s))+'</span></td>' +
-      '<td>'+esc(created(o,d))+'</td>' +
-      '<td><div class="dx-name">'+esc(customer(o,d))+'</div><div class="dx-phone">'+esc(customerPhone(o,d))+'</div></td>' +
-      '<td><div class="dx-name">'+esc(recipient(o,d))+'</div><div class="dx-phone">'+esc(recipientPhone(o,d))+'</div></td>' +
-      '<td style="min-width:180px">'+esc(shortAddr)+'<br><span class="dx-muted">'+esc(cityOf(o,d))+'</span><br><button type="button" class="dx-link" data-dx-action="address" data-del-id="'+esc(d.id || '')+'" data-order-id="'+esc(o.id || o.orderNumber || d.orderId || d.oid || d.order || d.id || '')+'">[View]</button></td>' +
-      '<td style="min-width:110px">'+deliveryDate(o,d)+'</td>' +
-      '<td style="min-width:110px">'+itemText(o,d)+'<br><button type="button" class="dx-link" data-dx-action="items" data-del-id="'+esc(d.id || '')+'" data-order-id="'+esc(o.id || o.orderNumber || d.orderId || d.oid || d.order || d.id || '')+'">[View]</button></td>' +
-      '<td style="min-width:115px">'+riderTimer(d,o,s)+'</td>' +
-      '<td>'+action(d,o,s)+'</td>' +
-    '</tr>';
-  }
-
-  function table(list){
-    if(!list.length){
-      return '<div class="dx-empty">No delivery orders found.</div>';
-    }
-
-    return '<div class="dx-scroll"><table class="dx-table">' +
-      '<thead><tr>' +
-      '<th>Order # / Prio</th>' +
-      '<th>Status</th>' +
-      '<th>Created</th>' +
-      '<th>Customer</th>' +
-      '<th>Recipient</th>' +
-      '<th>Address</th>' +
-      '<th>Delivery Date</th>' +
-      '<th>Items / Total</th>' +
-      '<th>Rider / Timer</th>' +
-      '<th>Action</th>' +
-      '</tr></thead><tbody>' + list.map(row).join('') + '</tbody></table></div>';
-  }
-
-  function section(title, cls, list){
-    return '<section class="dx-section">' +
-      '<div class="dx-section-head '+cls+'"><span>'+esc(title)+' ('+list.length+')</span><span>⌃</span></div>' +
-      table(list) +
-    '</section>';
-  }
-
-  window.renderDeliveryExcel = function(){
-    var root = document.getElementById('deliveryExcelRoot');
-    if(!root) return;
-
-    var all = deliveries();
-
-    var active = [];
-    var waiting = [];
-    var delivered = [];
-
-    all.forEach(function(d){
-      var o = orderOf(d);
-      var s = statusOf(d,o);
-      if(s === 'out') active.push(d);
-      else if(s === 'delivered') delivered.push(d);
-      else waiting.push(d);
-    });
-
-    root.innerHTML =
-      '<div class="dx-top">' +
-        '<div class="dx-search-row"><input class="dx-search" placeholder="Search order / customer / recipient / address"></div>' +
-        '<div class="dx-chip-row">' +
-          '<button class="dx-chip on">All</button>' +
-          '<button class="dx-chip">Active</button>' +
-          '<button class="dx-chip">Waiting</button>' +
-          '<button class="dx-chip">Delivered</button>' +
-          '<button class="dx-chip">🔴 Rush</button>' +
-        '</div>' +
-        '<div class="dx-filter-row">' +
-          '<select class="dx-select"><option>Priority: All</option></select>' +
-          '<select class="dx-select"><option>City: All</option></select>' +
-          '<select class="dx-select"><option>Delivery Date: All</option></select>' +
-          '<select class="dx-select"><option>Rider: All</option></select>' +
-        '</div>' +
-      '</div>' +
-      section('OUT FOR DELIVERY','out',active) +
-      section('WAITING FOR RIDER','wait',waiting) +
-      section('DELIVERED HISTORY','done',delivered.slice(0,20)) +
-      '<div class="dx-muted" style="padding:8px 2px 18px;font-weight:800">Showing '+all.length+' delivery orders</div>';
-  };
-
-  window.dxSimpleDone = function(id){
-    var d = deliveries().find(function(x){return String(x.id || x.orderId) === String(id);});
-    if(!d) return alert('Delivery not found: ' + id);
-
-    var o = orderOf(d);
-    d.status = 'delivered';
-    d.deliveryStatus = 'delivered';
-    d.deliveredAt = Date.now();
-
-    if(o){
-      o.deliveryStatus = 'delivered';
-      o.deliveredAt = Date.now();
-      o.status = 'completed';
-    }
-
-    try{ if(typeof sv === 'function') sv(); }catch(e){}
-    try{ if(typeof toast === 'function') toast('Delivery marked done'); }catch(e){}
-    renderDeliveryExcel();
-  };
-
-  function boot(){
-    if(document.getElementById('deliveryExcelRoot')){
-      renderDeliveryExcel();
-    }
-  }
-
-  window.addEventListener('load',function(){
-    setTimeout(boot,300);
-    setTimeout(boot,1000);
-    setTimeout(boot,2500);
-  });
-
-  document.addEventListener('DOMContentLoaded',function(){
-    setTimeout(boot,300);
-    setTimeout(boot,1000);
-  });
-
-  // Disabled old boot interval to prevent horizontal scroll reset.
-})();
-</script>
-
-
 <script id="delivery-live-timer-v7">
 (function(){
   if(window.__deliveryLiveTimerV7) return;
@@ -20948,6 +20376,61 @@ input[type="date"].dx-ifilter{
   setTimeout(function(){
     try{ window.renderDeliveryExcel(); }catch(e){}
   },300);
+})();
+</script>
+
+
+<script id="delivery-integrated-boot-v1">
+(function(){
+  if(window.__deliveryIntegratedBootV1) return;
+  window.__deliveryIntegratedBootV1 = true;
+
+  function isDeliveryView(){
+    var v = document.getElementById('view-delivery');
+    return (
+      window.curV === 'delivery' ||
+      location.search.indexOf('v=delivery') !== -1 ||
+      location.hash.indexOf('delivery') !== -1 ||
+      (v && (v.classList.contains('on') || v.offsetParent !== null))
+    );
+  }
+
+  function bootDelivery(){
+    if(!isDeliveryView()) return;
+
+    try{
+      if(typeof window.renderDeliveryExcel === 'function'){
+        window.renderDeliveryExcel();
+      }
+    }catch(e){
+      console.error('delivery integrated boot failed', e);
+    }
+  }
+
+  function bootSoon(){
+    setTimeout(bootDelivery, 80);
+    setTimeout(bootDelivery, 300);
+    setTimeout(bootDelivery, 800);
+  }
+
+  var oldGo = window.go;
+  if(typeof oldGo === 'function' && !oldGo.__deliveryIntegratedBootV1){
+    window.go = function(view){
+      var result = oldGo.apply(this, arguments);
+      if(String(view) === 'delivery') bootSoon();
+      return result;
+    };
+    window.go.__deliveryIntegratedBootV1 = true;
+  }
+
+  document.addEventListener('click', function(e){
+    if(e.target.closest && e.target.closest('[data-v="delivery"], .mni[data-v="delivery"]')){
+      bootSoon();
+    }
+  });
+
+  window.addEventListener('load', bootSoon);
+  document.addEventListener('DOMContentLoaded', bootSoon);
 })();
 </script>
 
