@@ -760,6 +760,77 @@ body{
   }
 }
 
+
+/* live-tracker-rider-position-fix-v1 */
+
+/* keep Out for Delivery text cleaner */
+.step[data-step="out"].active h3{
+  max-width:220px !important;
+}
+
+/* mobile: rider closer, not too far right */
+.step[data-step="out"].active .rider-img{
+  width:72px !important;
+  right:28px !important;
+  bottom:12px !important;
+}
+
+.step[data-step="out"].active .step-box,
+.step[data-step="out"].active .info{
+  padding-right:118px !important;
+}
+
+/* very small phones */
+@media(max-width:420px){
+  .step[data-step="out"].active h3{
+    max-width:150px !important;
+  }
+
+  .step[data-step="out"].active .rider-img{
+    width:66px !important;
+    right:14px !important;
+    bottom:18px !important;
+  }
+
+  .step[data-step="out"].active .step-box,
+  .step[data-step="out"].active .info{
+    padding-right:88px !important;
+  }
+}
+
+/* desktop/tablet: rider stays near text, not far edge */
+@media(min-width:768px){
+  .timeline{
+    max-width:560px !important;
+  }
+
+  .step[data-step="out"].active .rider-img{
+    width:86px !important;
+    right:34px !important;
+    bottom:10px !important;
+  }
+
+  .step[data-step="out"].active .step-box,
+  .step[data-step="out"].active .info{
+    padding-right:130px !important;
+  }
+
+  .step[data-step="out"].active h3{
+    max-width:260px !important;
+  }
+}
+
+/* large desktop: keep tracker compact */
+@media(min-width:1024px){
+  .timeline{
+    max-width:520px !important;
+  }
+
+  .step[data-step="out"].active .rider-img{
+    right:24px !important;
+  }
+}
+
 </style>
 
 <!-- firebase-realtime-listener-v1 -->
