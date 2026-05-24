@@ -21526,26 +21526,41 @@ font-size:14px">Okay</button>'
 })();
 </script>
 
+<style id="delivery-compact-filter-click-fix-v9">
+/* Hide old filter UI until Orders-style compact filter replaces it */
+#deliveryExcelRoot .dx-top:not(.delivery-order-filter-card){
+  opacity:0 !important;
+  height:0 !important;
+  overflow:hidden !important;
+  margin:0 !important;
+  padding:0 !important;
+}
 
-<style id="delivery-filter-no-search-preserve-scroll-v8">
-/* Hide/remove search from Delivery compact filters */
+/* Remove search from compact filter */
 #deliveryExcelRoot .delivery-mini-filter[data-dx-filter-key="q"]{
   display:none !important;
 }
+
+/* Make compact controls easier to tap */
+#deliveryExcelRoot .delivery-filter-min-v7{
+  pointer-events:auto !important;
+}
+
+#deliveryExcelRoot .delivery-mini-filter,
+#deliveryExcelRoot .delivery-reset-btn-v7{
+  pointer-events:auto !important;
+  cursor:pointer !important;
+}
 </style>
 
-<script id="delivery-filter-no-search-preserve-scroll-v8">
+<script id="delivery-compact-filter-click-fix-v9">
 (function(){
-  if(window.__deliveryFilterNoSearchPreserveScrollV8) return;
-  window.__deliveryFilterNoSearchPreserveScrollV8 = true;
+  if(window.__deliveryCompactFilterClickFixV9) return;
+  window.__deliveryCompactFilterClickFixV9 = true;
 
   function saveScroll(){
     return Array.from(document.querySelectorAll('#deliveryExcelRoot .dx-scroll')).map(function(el){
-      return {
-        el: el,
-        left: el.scrollLeft || 0,
-        top: el.scrollTop || 0
-      };
+      return { el: el, left: el.scrollLeft || 0, top: el.scrollTop || 0 };
     });
   }
 
@@ -21560,29 +21575,7 @@ font-size:14px">Okay</button>'
     });
   }
 
-  function state(){
-    window.dxFilterState = window.dxFilterState || {
-      q:'',
-      status:'all',
-      priority:'all',
-      city:'all',
-      date:'all',
-      rider:'all'
-    };
-    return window.dxFilterState;
-  }
-
-  function applyKeepScroll(){
-    var pos = saveScroll();
-
-    if(typeof window.dxApplyRowFilters === 'function'){
-      window.dxApplyRowFilters();
-    }
-
-    restoreScroll(pos);
-  }
-
-  function removeSearchBox(){
+  function removeSearch(){
     var root = document.getElementById('deliveryExcelRoot');
     if(!root) return;
 
@@ -21591,98 +21584,27 @@ font-size:14px">Okay</button>'
     });
   }
 
-  function patchFilterFns(){
-    var st = state();
+  function wrapFn(name){
+    var fn = window[name];
+    if(typeof fn !== 'function') return false;
+    if(fn.__compactClickFixV9) return true;
 
-    window.dxDeliveryOrdersFilterSet = function(key, value){
-      st[key] = value || 'all';
-      applyKeepScroll();
-
-      if(typeof window.dxDeliveryOrdersFilterReset !== 'function'){
-        return false;
-      }
-
-      return false;
-    };
-
-    window.dxDeliveryOrdersFilterStatus = function(v){
-      st.status = v || 'all';
-      updateVisuals();
-      applyKeepScroll();
-      return false;
-    };
-
-    window.dxDeliveryOrdersFilterSearch = function(){
-      st.q = '';
-      applyKeepScroll();
-      return false;
-    };
-
-    window.dxDeliveryOrdersFilterReset = function(){
-      st.q = '';
-      st.status = 'all';
-      st.priority = 'all';
-      st.city = 'all';
-      st.date = 'all';
-      st.rider = 'all';
-
-      var root = document.getElementById('deliveryExcelRoot');
-      if(root){
-        root.querySelectorAll('select.delivery-mini-filter').forEach(function(sel){
-          sel.value = 'all';
-        });
-
-        root.querySelectorAll('input[type="date"]').forEach(function(input){
-          input.value = '';
-        });
-      }
-
-      updateVisuals();
-      applyKeepScroll();
-      return false;
-    };
-  }
-
-  function updateVisuals(){
-    var root = document.getElementById('deliveryExcelRoot');
-    if(!root) return;
-
-    var st = state();
-
-    root.querySelectorAll('[data-dx-status-pill]').forEach(function(btn){
-      var on = btn.getAttribute('data-dx-status-pill') === st.status;
-      btn.classList.toggle('active', on);
-      btn.classList.toggle('on', on);
-    });
-
-    root.querySelectorAll('select.delivery-mini-filter,input.delivery-mini-filter').forEach(function(el){
-      var key = el.getAttribute('data-dx-filter-key');
-      if(!key) return;
-      var active = st[key] && st[key] !== 'all';
-      el.classList.toggle('active', !!active);
-    });
-  }
-
-  function stopFilterClickScroll(){
-    document.addEventListener('click', function(e){
-      var filter = e.target && e.target.closest ? e.target.closest('#deliveryExcelRoot .delivery-filter-min-v7') : null;
-      if(!filter) return;
-
-      e.stopPropagation();
-
+    window[name] = function(){
       var pos = saveScroll();
-      setTimeout(function(){
-        restoreScroll(pos);
-      }, 0);
-      setTimeout(function(){
-        restoreScroll(pos);
-      }, 80);
-    }, true);
+      var result = fn.apply(this, arguments);
+      removeSearch();
+      restoreScroll(pos);
+      setTimeout(function(){ restoreScroll(pos); }, 60);
+      return result;
+    };
+
+    window[name].__compactClickFixV9 = true;
+    return true;
   }
 
   function wrapRender(){
     if(typeof window.renderDeliveryExcel !== 'function') return false;
-    if(window.renderDeliveryExcel.__noSearchPreserveScrollV8) return true;
+    if(window.renderDeliveryExcel.__compactClickFixV9) return true;
 
     var old = window.renderDeliveryExcel;
 
@@ -21691,41 +21613,34 @@ font-size:14px">Okay</button>'
       var result = old.apply(this, arguments);
 
       setTimeout(function(){
-        removeSearchBox();
-        patchFilterFns();
-        updateVisuals();
+        removeSearch();
         restoreScroll(pos);
       }, 0);
 
       setTimeout(function(){
-        removeSearchBox();
-        patchFilterFns();
-        updateVisuals();
+        removeSearch();
         restoreScroll(pos);
       }, 100);
 
       return result;
     };
 
-    window.renderDeliveryExcel.__noSearchPreserveScrollV8 = true;
+    window.renderDeliveryExcel.__compactClickFixV9 = true;
     return true;
   }
 
-  stopFilterClickScroll();
-
-  setTimeout(function(){
-    removeSearchBox();
-    patchFilterFns();
-    updateVisuals();
+  function install(){
+    removeSearch();
+    wrapFn('dxDeliveryOrdersFilterSet');
+    wrapFn('dxDeliveryOrdersFilterStatus');
+    wrapFn('dxDeliveryOrdersFilterReset');
     wrapRender();
-  }, 300);
+  }
 
-  setTimeout(function(){
-    removeSearchBox();
-    patchFilterFns();
-    updateVisuals();
-    wrapRender();
-  }, 1200);
+  // Important: no stopPropagation here, so select/date/buttons remain clickable.
+  setTimeout(install, 200);
+  setTimeout(install, 700);
+  setTimeout(install, 1500);
 })();
 </script>
 
