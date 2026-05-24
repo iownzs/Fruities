@@ -20433,8 +20433,7 @@ font-size:14px">Okay</button>'
 })();
 </script>
 
-
-<style id="delivery-simple-filters-v1">
+<style id="delivery-simple-filters-v2">
 #deliveryExcelRoot .dx-top{
   display:none !important;
 }
@@ -20501,10 +20500,10 @@ font-size:14px">Okay</button>'
 }
 </style>
 
-<script id="delivery-simple-filters-v1">
+<script id="delivery-simple-filters-v2">
 (function(){
-  if(window.__deliverySimpleFiltersV1) return;
-  window.__deliverySimpleFiltersV1 = true;
+  if(window.__deliverySimpleFiltersV2) return;
+  window.__deliverySimpleFiltersV2 = true;
 
   var state = {
     status:'all',
@@ -20512,6 +20511,8 @@ font-size:14px">Okay</button>'
     date:'all',
     rider:'all'
   };
+
+  var raf = null;
 
   function saveScroll(){
     return Array.from(document.querySelectorAll('#deliveryExcelRoot .dx-scroll')).map(function(el){
@@ -20530,17 +20531,18 @@ font-size:14px">Okay</button>'
     });
   }
 
-  function rows(){
-    return Array.from(document.querySelectorAll('#deliveryExcelRoot tbody tr'));
+  function getSections(){
+    return Array.from(document.querySelectorAll('#deliveryExcelRoot .dx-section'));
   }
 
-  function applyFilters(){
+  function applyNow(){
     var visibleTotal = 0;
 
-    document.querySelectorAll('#deliveryExcelRoot .dx-section').forEach(function(section){
+    getSections().forEach(function(section){
       var visible = 0;
+      var rows = Array.from(section.querySelectorAll('tbody tr'));
 
-      section.querySelectorAll('tbody tr').forEach(function(row){
+      rows.forEach(function(row){
         var show = true;
 
         var status = row.getAttribute('data-dx-status') || '';
@@ -20551,11 +20553,10 @@ font-size:14px">Okay</button>'
         if(state.status !== 'all' && status !== state.status) show = false;
         if(state.priority !== 'all' && priority !== state.priority) show = false;
         if(state.date !== 'all' && date !== state.date) show = false;
-
         if(state.rider === 'assigned' && !rider) show = false;
         if(state.rider === 'unassigned' && rider) show = false;
 
-        row.style.display = show ? '' : 'none';
+        row.hidden = !show;
 
         if(show){
           visible++;
@@ -20580,10 +20581,18 @@ font-size:14px">Okay</button>'
         : 'Showing delivery orders';
     }
 
-    updateFilterVisuals();
+    updateVisuals();
   }
 
-  function updateFilterVisuals(){
+  function scheduleApply(){
+    if(raf) cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(function(){
+      raf = null;
+      applyNow();
+    });
+  }
+
+  function updateVisuals(){
     var root = document.getElementById('deliverySimpleFilters');
     if(!root) return;
 
@@ -20648,7 +20657,7 @@ font-size:14px">Okay</button>'
       var statusBtn = e.target.closest('[data-status]');
       if(statusBtn){
         state.status = statusBtn.getAttribute('data-status') || 'all';
-        applyFilters();
+        scheduleApply();
         restoreScroll(pos);
         return;
       }
@@ -20659,7 +20668,7 @@ font-size:14px">Okay</button>'
         state.priority = 'all';
         state.date = 'all';
         state.rider = 'all';
-        applyFilters();
+        scheduleApply();
         restoreScroll(pos);
         return;
       }
@@ -20672,16 +20681,17 @@ font-size:14px">Okay</button>'
       if(!key) return;
 
       state[key] = e.target.value || 'all';
-      applyFilters();
+      scheduleApply();
       restoreScroll(pos);
     });
 
-    applyFilters();
+    updateVisuals();
+    scheduleApply();
   }
 
   function wrapRender(){
     if(typeof window.renderDeliveryExcel !== 'function') return false;
-    if(window.renderDeliveryExcel.__simpleFiltersV1) return true;
+    if(window.renderDeliveryExcel.__simpleFiltersV2) return true;
 
     var old = window.renderDeliveryExcel;
 
@@ -20695,7 +20705,7 @@ font-size:14px">Okay</button>'
       return result;
     };
 
-    window.renderDeliveryExcel.__simpleFiltersV1 = true;
+    window.renderDeliveryExcel.__simpleFiltersV2 = true;
     return true;
   }
 
