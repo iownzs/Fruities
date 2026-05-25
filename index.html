@@ -1889,6 +1889,15 @@ body.dark #chat-minimize-channels-btn.is-collapsed{background:#14281e!important;
   #view-chat .chat-tools .btn{font-size:10.5px!important;padding:7px 6px!important}
   #chat-minimize-channels-btn{font-size:10.5px!important}
 }
+
+/* remove-delivery-refresh-button-v1 */
+#view-delivery button[onclick*="renderDeliveryExcel"],
+#view-delivery button[onclick*="rDel"],
+#view-delivery .dx-refresh,
+#view-delivery .delivery-refresh-btn{
+  display:none !important;
+}
+
 </style>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -2647,7 +2656,7 @@ body.dark #chat-minimize-channels-btn.is-collapsed{background:#14281e!important;
           
           
         </div>
-        <button class="btn bg bsm" onclick="renderDeliveryExcel()">↻ Refresh</button>
+        
       </div>
 
       <div id="deliveryExcelRoot" class="dx-wrap">
@@ -2662,7 +2671,7 @@ body.dark #chat-minimize-channels-btn.is-collapsed{background:#14281e!important;
           <h2>🛍️ Pick up</h2>
           <div style="font-size:12px;color:var(--t3);margin-top:2px">Orders ready for customer pick up</div>
         </div>
-        <button class="btn bg bsm" onclick="rPickup()">↻ Refresh</button>
+        
       </div>
       <!-- Pick up tabs -->
       <div class="pu-tabs" id="pu-tabs">
