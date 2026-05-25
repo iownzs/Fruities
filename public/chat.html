@@ -1047,6 +1047,26 @@ body{
   }
 }
 
+
+/* chat-fix-drawer-after-search-remove-v1 */
+@media(max-width:760px){
+  .channels{
+    top:250px !important;
+    bottom:auto !important;
+    height:460px !important;
+    max-height:calc(100vh - 330px) !important;
+    transform:translateY(120%) !important;
+  }
+
+  body.channels-open .channels{
+    transform:translateY(0) !important;
+  }
+
+  body.channels-hidden .channels{
+    transform:translateY(120%) !important;
+  }
+}
+
 </style>
 </head>
 
