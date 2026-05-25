@@ -967,6 +967,46 @@ body{
 
 
 
+
+/* chat-safe-channel-cards-up-v1 */
+@media(max-width:760px){
+  /* keep modal position stable, only tighten inside spacing */
+  .channels{
+    top:220px !important;
+    padding-top:10px !important;
+  }
+
+  .channels::before{
+    padding-top:0 !important;
+    padding-bottom:6px !important;
+    line-height:1.1 !important;
+  }
+
+  .drawer-close{
+    top:8px !important;
+  }
+
+  .channel-tabs{
+    margin-top:0 !important;
+    margin-bottom:8px !important;
+    padding-bottom:4px !important;
+  }
+
+  .channel-card:first-of-type{
+    margin-top:0 !important;
+  }
+
+  .channel-card{
+    margin-bottom:7px !important;
+  }
+}
+
+@media(max-width:390px){
+  .channels{
+    top:215px !important;
+  }
+}
+
 </style>
 </head>
 
