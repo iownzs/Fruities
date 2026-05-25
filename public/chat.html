@@ -1007,6 +1007,18 @@ body{
   }
 }
 
+
+/* chat-channel-list-final-v1 */
+@media(max-width:760px){
+  .channel-tabs{
+    grid-template-columns:1fr 1fr 1fr !important;
+  }
+
+  .create-channel{
+    display:none !important;
+  }
+}
+
 </style>
 </head>
 
@@ -1048,41 +1060,54 @@ body{
         <button class="active">All</button>
         <button>Teams</button>
         <button>Direct</button>
-        <button>☷</button>
       </div>
 
       <div class="channel-card active">
         <div class="ch-icon">#</div>
-        <div><h4>General</h4><p>119 new messages •</p></div>
+        <div><h4>General</h4><p>Daily team messages</p></div>
         <div class="badge">119</div>
       </div>
       <div class="channel-card">
-        <div class="ch-icon">📋</div>
-        <div><h4>Orders Updates</h4><p>@Admin: Promo live...</p></div>
+        <div class="ch-icon">🧾</div>
+        <div><h4>Order Updates</h4><p>Orders, payments, notes</p></div>
         <div class="badge">6</div>
       </div>
       <div class="channel-card">
         <div class="ch-icon">👨‍🍳</div>
-        <div><h4>Kitchen Board</h4><p>Kitchen: Prep done</p></div>
+        <div><h4>Kitchen Board</h4><p>Prep status and concerns</p></div>
         <div class="badge">3</div>
       </div>
       <div class="channel-card">
-        <div class="ch-icon">🛵</div>
-        <div><h4>Rider Hub</h4><p>Rider 07: On the way</p></div>
+        <div class="ch-icon">🚚</div>
+        <div><h4>Delivery</h4><p>Delivery updates and issues</p></div>
         <div class="badge">2</div>
       </div>
       <div class="channel-card">
-        <div class="ch-icon">📦</div>
-        <div><h4>Inventory Logs</h4><p>@Admin: Stock low ...</p></div>
+        <div class="ch-icon">📣</div>
+        <div><h4>Marketing Team</h4><p>Promos and campaigns</p></div>
+        <div style="color:var(--green)">●</div>
+      </div>
+      <div class="channel-card">
+        <div class="ch-icon">🛵</div>
+        <div><h4>Rider Hub</h4><p>Rider coordination</p></div>
+        <div class="badge">2</div>
+      </div>
+      <div class="channel-card">
+        <div class="ch-icon">📅</div>
+        <div><h4>Schedule</h4><p>Shifts and reminders</p></div>
         <div class="badge">1</div>
       </div>
       <div class="channel-card">
-        <div class="ch-icon">📣</div>
-        <div><h4>Marketing Team</h4><p>You: See attached</p></div>
+        <div class="ch-icon">⚠️</div>
+        <div><h4>Issues</h4><p>Bugs and urgent reports</p></div>
+        <div class="badge">1</div>
+      </div>
+      <div class="channel-card">
+        <div class="ch-icon">💬</div>
+        <div><h4>ChitChat</h4><p>Casual team chat</p></div>
         <div style="color:var(--green)">●</div>
       </div>
 
-      <button class="create-channel">＋ Create Channel</button>
     </aside>
 
     <section class="chat-panel">
