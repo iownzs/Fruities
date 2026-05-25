@@ -1101,81 +1101,85 @@ body{
 
 
 
-/* chat-bottom-nav-clean-match-pos-v4 */
+
+/* chat-copy-index-mnav-v1 */
 html body{
-  padding-bottom:70px !important;
+  padding-bottom:calc(64px + env(safe-area-inset-bottom)) !important;
 }
 
-html body .bottom-nav{
+#mnav{
   position:fixed !important;
   left:0 !important;
   right:0 !important;
   bottom:0 !important;
-  transform:none !important;
-  width:100% !important;
-  height:70px !important;
-  min-height:70px !important;
-  max-height:70px !important;
-  padding:0 !important;
-  display:grid !important;
-  grid-template-columns:repeat(6,1fr) !important;
+  height:calc(64px + env(safe-area-inset-bottom)) !important;
+  z-index:200 !important;
   background:#fff !important;
   border-top:1px solid rgba(0,0,0,.08) !important;
-  z-index:80 !important;
+  display:flex !important;
+  align-items:stretch !important;
+  overflow-x:auto !important;
+  overflow-y:hidden !important;
+  -webkit-overflow-scrolling:touch !important;
+  scrollbar-width:none !important;
+  padding-bottom:env(safe-area-inset-bottom) !important;
 }
 
-html body .bottom-nav a{
-  height:70px !important;
-  min-height:70px !important;
-  padding:5px 0 4px !important;
+#mnav::-webkit-scrollbar{
+  display:none !important;
+}
+
+#mnav .mni{
+  flex:1 0 0 !important;
+  min-width:54px !important;
+  height:64px !important;
   display:flex !important;
   flex-direction:column !important;
   align-items:center !important;
   justify-content:center !important;
-  gap:1px !important;
-  font-size:12px !important;
-  line-height:1.05 !important;
+  gap:2px !important;
   color:#8f9693 !important;
-  font-weight:500 !important;
   text-decoration:none !important;
+  font-size:12px !important;
+  line-height:1 !important;
+  font-weight:500 !important;
+  position:relative !important;
 }
 
-html body .bottom-nav a span{
+#mnav .mni-i{
   font-size:22px !important;
   line-height:1 !important;
-  margin:0 !important;
   display:block !important;
+  margin:0 !important;
 }
 
-html body .bottom-nav a.active{
+#mnav .mni-l{
+  font-size:12px !important;
+  line-height:1 !important;
+  display:block !important;
+  margin:0 !important;
+}
+
+#mnav .mni.on{
   color:#087b38 !important;
   font-weight:800 !important;
 }
 
+#mnav .mni.on::after{
+  content:"" !important;
+  position:absolute !important;
+  left:50% !important;
+  transform:translateX(-50%) !important;
+  bottom:2px !important;
+  width:28px !important;
+  height:3px !important;
+  border-radius:99px !important;
+  background:#087b38 !important;
+}
+
 @media(max-width:760px){
-  html body{
-    padding-bottom:70px !important;
-  }
-
-  html body .bottom-nav{
-    height:70px !important;
-    min-height:70px !important;
-    max-height:70px !important;
-  }
-
-  html body .bottom-nav a{
-    height:70px !important;
-    min-height:70px !important;
-    font-size:12px !important;
-    padding:5px 0 4px !important;
-  }
-
-  html body .bottom-nav a span{
-    font-size:22px !important;
-  }
-
   html body .input-bar{
-    bottom:70px !important;
+    bottom:calc(64px + env(safe-area-inset-bottom)) !important;
   }
 }
 
@@ -1337,14 +1341,16 @@ html body .bottom-nav a.active{
 </div>
 
 
-<nav class="bottom-nav">
-  <a href="/index.html?v=home"><span>📊</span>Home</a>
-  <a href="/index.html?v=pos"><span>🖥️</span>POS</a>
-  <a href="/index.html?v=orders"><span>🧾</span>Orders</a>
-  <a class="active" href="/chat.html"><span>💬</span>Chat</a>
-  <a href="/index.html?v=kitchen"><span>👨‍🍳</span>Kitchen</a>
-  <a href="/index.html?v=delivery"><span>🚚</span>Delivery</a>
+
+<nav id="mnav" aria-label="Mobile navigation">
+  <a class="mni" href="/index.html?v=dashboard"><span class="mni-i">📊</span><span class="mni-l">Home</span></a>
+  <a class="mni" href="/index.html?v=pos"><span class="mni-i">🖥️</span><span class="mni-l">POS</span></a>
+  <a class="mni" href="/index.html?v=orders"><span class="mni-i">🧾</span><span class="mni-l">Orders</span></a>
+  <a class="mni on" href="/chat.html"><span class="mni-i">💬</span><span class="mni-l">Chat</span></a>
+  <a class="mni" href="/index.html?v=kitchen"><span class="mni-i">👨‍🍳</span><span class="mni-l">Kitchen</span></a>
+  <a class="mni" href="/index.html?v=delivery"><span class="mni-i">🚚</span><span class="mni-l">Delivery</span></a>
 </nav>
+
 
 
 <script>
