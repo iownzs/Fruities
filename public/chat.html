@@ -1067,6 +1067,38 @@ body{
   }
 }
 
+
+/* chat-hide-channel-when-scrolling-v1 */
+@media(max-width:760px){
+  body.channels-hidden .channels{
+    opacity:0 !important;
+    visibility:hidden !important;
+    pointer-events:none !important;
+    transform:translateY(130%) !important;
+  }
+
+  body.channels-open .channels{
+    opacity:1 !important;
+    visibility:visible !important;
+    pointer-events:auto !important;
+    transform:translateY(0) !important;
+  }
+
+  body.channels-hidden .drawer-backdrop{
+    display:none !important;
+    opacity:0 !important;
+    visibility:hidden !important;
+    pointer-events:none !important;
+  }
+
+  body.channels-open .drawer-backdrop{
+    display:block !important;
+    opacity:1 !important;
+    visibility:visible !important;
+    pointer-events:auto !important;
+  }
+}
+
 </style>
 </head>
 
