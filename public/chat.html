@@ -1375,10 +1375,247 @@ html,body{
 }
 
 
+
+/* chat-copy-real-index-sidebar-v1 */
+#sb.chat-index-sidebar{
+  display:none;
+}
+
+@media(min-width:769px){
+  body{
+    padding-left:220px !important;
+    padding-bottom:0 !important;
+  }
+
+  #sb.chat-index-sidebar{
+    width:220px;
+    flex-shrink:0;
+    background:#155c38;
+    display:flex !important;
+    flex-direction:column;
+    overflow:hidden;
+    z-index:300;
+    position:fixed;
+    left:0;
+    top:0;
+    bottom:0;
+    transition:transform .28s cubic-bezier(.4,0,.2,1);
+    font-family:'Plus Jakarta Sans', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  }
+
+  #sb .sb-logo{
+    padding:20px 18px 15px;
+    border-bottom:1px solid rgba(255,255,255,.1);
+    position:relative;
+  }
+
+  #sb .sb-logo-row{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:10px;
+  }
+
+  #sb .sb-theme-toggle{
+    width:38px;
+    height:38px;
+    border-radius:12px;
+    border:1px solid rgba(255,255,255,.25);
+    background:rgba(255,255,255,.12);
+    color:#fff;
+    cursor:pointer;
+    font-size:17px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+  }
+
+  #sb .li{
+    font-size:26px;
+  }
+
+  #sb .lt{
+    font-family:'Fraunces', serif;
+    font-size:21px;
+    font-weight:900;
+    color:#fff;
+    margin-top:4px;
+    line-height:1;
+  }
+
+  #sb .ls{
+    color:rgba(255,255,255,.4);
+    font-size:11px;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    margin-top:2px;
+  }
+
+  #sb .sb-nav{
+    flex:1;
+    padding:10px 8px;
+    overflow-y:auto;
+  }
+
+  #sb .nsl{
+    color:rgba(255,255,255,.35);
+    font-size:10px;
+    font-weight:700;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    padding:10px 10px 4px;
+  }
+
+  #sb .ni{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 12px;
+    border-radius:8px;
+    color:rgba(255,255,255,.65);
+    cursor:pointer;
+    font-size:13px;
+    font-weight:500;
+    margin-bottom:1px;
+    transition:.15s;
+    text-decoration:none;
+  }
+
+  #sb .ni:hover{
+    background:rgba(255,255,255,.1);
+    color:#fff;
+  }
+
+  #sb .ni.on{
+    background:rgba(255,255,255,.18);
+    color:#fff;
+    font-weight:600;
+  }
+
+  #sb .ni-ico{
+    font-size:15px;
+    width:18px;
+    text-align:center;
+  }
+
+  #sb .sb-foot{
+    padding:12px 8px;
+    border-top:1px solid rgba(255,255,255,.1);
+  }
+
+  #sb .ub{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 12px;
+    background:rgba(255,255,255,.08);
+    border-radius:8px;
+    cursor:pointer;
+  }
+
+  #sb .uav{
+    width:32px;
+    height:32px;
+    border-radius:50%;
+    background:#ff6b35;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:700;
+    color:#fff;
+    font-size:13px;
+    flex-shrink:0;
+  }
+
+  #sb .un{
+    color:#fff;
+    font-size:13px;
+    font-weight:600;
+  }
+
+  #sb .ur{
+    color:rgba(255,255,255,.5);
+    font-size:11px;
+    margin-top:2px;
+  }
+
+  #mnav{
+    display:none !important;
+  }
+
+  .chat-page{
+    width:100% !important;
+    max-width:none !important;
+    margin:0 !important;
+    padding:18px 24px 24px !important;
+  }
+}
+
+@media(max-width:768px){
+  body{
+    padding-left:0 !important;
+  }
+
+  #sb.chat-index-sidebar{
+    display:none !important;
+  }
+
+  #mnav{
+    display:flex !important;
+  }
+}
+
 </style>
 </head>
 
 <body class="channels-hidden">
+
+<aside id="sb" class="chat-index-sidebar">
+  <div class="sb-logo">
+    <div class="sb-logo-row">
+      <div>
+        <div class="li"><span>🍓</span></div>
+        <div class="lt">Fruit Story</div>
+        <div class="ls">Point of Sale</div>
+      </div>
+      <button class="sb-theme-toggle" title="Toggle dark theme" type="button">🌙</button>
+    </div>
+  </div>
+
+  <nav class="sb-nav">
+    <div class="nsl">Main</div>
+    <a class="ni" href="/index.html?v=dashboard"><span class="ni-ico">📊</span>Dashboard</a>
+    <a class="ni" href="/index.html?v=pos"><span class="ni-ico">🖥️</span>POS Terminal</a>
+
+    <div class="nsl">Sales</div>
+    <a class="ni" href="/index.html?v=orders"><span class="ni-ico">🧾</span>Orders</a>
+    <a class="ni" href="/index.html?v=kitchen"><span class="ni-ico">👨‍🍳</span>Kitchen</a>
+    <a class="ni" href="/index.html?v=delivery"><span class="ni-ico">🚚</span>Delivery</a>
+    <a class="ni" href="/index.html?v=pickup"><span class="ni-ico">🛍️</span>Pick up</a>
+
+    <div class="nsl">Inventory</div>
+    <a class="ni" href="/index.html?v=stocks"><span class="ni-ico">📦</span>Stocks</a>
+    <a class="ni" href="/index.html?v=products"><span class="ni-ico">🏷️</span>Products</a>
+
+    <div class="nsl">Management</div>
+    <a class="ni" href="/index.html?v=accounts"><span class="ni-ico">👤</span>Accounts</a>
+    <a class="ni" href="/index.html?v=journal"><span class="ni-ico">📅</span>Journal</a>
+    <a class="ni" href="/index.html?v=system"><span class="ni-ico">💳</span>POS Billing</a>
+    <a class="ni on" href="/chat.html"><span class="ni-ico">💬</span>Group Chat</a>
+  </nav>
+
+  <div class="sb-foot">
+    <div class="ub">
+      <div class="uav">A</div>
+      <div>
+        <div class="un">Admin</div>
+        <div class="ur">Administrator</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
 
 
 <div class="chat-page">
