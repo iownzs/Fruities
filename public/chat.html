@@ -575,6 +575,62 @@ body{
   }
 }
 
+
+/* chat-fix-mobile-input-overlap-v1 */
+@media(max-width:760px){
+  body{
+    padding-bottom:132px !important;
+  }
+
+  .messages{
+    padding-bottom:130px !important;
+    max-height:calc(100vh - 365px) !important;
+  }
+
+  .input-bar{
+    bottom:74px !important;
+    left:8px !important;
+    right:8px !important;
+    padding:8px !important;
+    border-radius:18px !important;
+    grid-template-columns:42px 1fr 38px 42px !important;
+    gap:7px !important;
+  }
+
+  .input-bar button,
+  .input-bar input{
+    height:40px !important;
+  }
+
+  .input-bar input{
+    font-size:14px !important;
+    padding:0 13px !important;
+  }
+
+  .plus,
+  .send{
+    border-radius:15px !important;
+    font-size:20px !important;
+  }
+
+  .emoji{
+    font-size:18px !important;
+  }
+
+  .bottom-nav{
+    height:74px !important;
+  }
+
+  .bottom-nav span{
+    font-size:22px !important;
+  }
+
+  .bottom-nav a{
+    font-size:12px !important;
+    padding-top:6px !important;
+  }
+}
+
 </style>
 </head>
 
