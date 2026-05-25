@@ -1019,6 +1019,22 @@ body{
   }
 }
 
+
+/* chat-remove-channel-tabs-v1 */
+.channel-tabs{
+  display:none !important;
+}
+
+@media(max-width:760px){
+  .channels::before{
+    padding-bottom:14px !important;
+  }
+
+  .channel-card:first-of-type{
+    margin-top:0 !important;
+  }
+}
+
 </style>
 </head>
 
@@ -1056,11 +1072,6 @@ body{
   <main class="workspace">
     <aside class="channels">
       <button class="drawer-close chat-drawer-close-v1" onclick="hideChannels()">×</button>
-      <div class="channel-tabs">
-        <button class="active">All</button>
-        <button>Teams</button>
-        <button>Direct</button>
-      </div>
 
       <div class="channel-card active">
         <div class="ch-icon">#</div>
