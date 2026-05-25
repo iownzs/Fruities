@@ -1227,36 +1227,55 @@ html body{
 }
 
 
-/* chat-fix-mobile-zoom-layout-v1 */
-html, body{
-  width:100% !important;
-  max-width:100% !important;
-  overflow-x:hidden !important;
-  -webkit-text-size-adjust:100% !important;
-}
 
-@media(max-width:900px){
+/* chat-force-mobile-layout-1200-v2 */
+@media(max-width:1200px){
+  html,body{
+    width:100% !important;
+    max-width:100% !important;
+    overflow-x:hidden !important;
+    -webkit-text-size-adjust:100% !important;
+  }
+
   .chat-page{
     width:100% !important;
     max-width:100% !important;
+    margin:0 !important;
     padding:10px 10px 0 !important;
   }
 
   .topbar{
-    display:flex !important;
-    align-items:center !important;
     margin-bottom:10px !important;
+    gap:8px !important;
   }
 
   .brand{
     font-size:24px !important;
+    gap:8px !important;
+  }
+
+  .icon-btn{
+    width:42px !important;
+    height:42px !important;
+    border-radius:14px !important;
+    font-size:20px !important;
+  }
+
+  .new-sale{
+    padding:11px 15px !important;
+    font-size:14px !important;
+    border-radius:999px !important;
   }
 
   .announce{
     min-height:60px !important;
-    margin-bottom:12px !important;
+    margin:4px 0 12px !important;
     padding:12px 14px !important;
     border-radius:18px !important;
+  }
+
+  .announce strong{
+    font-size:12px !important;
   }
 
   .announce p{
@@ -1266,12 +1285,12 @@ html, body{
 
   .workspace{
     display:block !important;
-    min-height:calc(100vh - 300px) !important;
+    min-height:calc(100dvh - 300px) !important;
   }
 
   .chat-panel{
     width:100% !important;
-    min-height:calc(100vh - 310px) !important;
+    min-height:calc(100dvh - 310px) !important;
     border-radius:22px !important;
   }
 
@@ -1289,10 +1308,31 @@ html, body{
     line-height:1.25 !important;
   }
 
+  .avatars{
+    display:none !important;
+  }
+
+  .head-actions{
+    gap:6px !important;
+    margin-left:auto !important;
+  }
+
+  .toggle-channels{
+    padding:8px 10px !important;
+    font-size:12px !important;
+    border-radius:14px !important;
+  }
+
   .messages{
     padding:14px 12px 120px !important;
-    max-height:calc(100vh - 360px) !important;
+    max-height:calc(100dvh - 360px) !important;
     overflow:auto !important;
+  }
+
+  .day{
+    font-size:13px !important;
+    padding:6px 18px !important;
+    margin-bottom:14px !important;
   }
 
   .msg{
@@ -1303,6 +1343,15 @@ html, body{
   .face{
     width:42px !important;
     height:42px !important;
+    flex:0 0 42px !important;
+  }
+
+  .meta{
+    font-size:13px !important;
+  }
+
+  .bubble-wrap{
+    max-width:78vw !important;
   }
 
   .bubble{
@@ -1312,8 +1361,9 @@ html, body{
     border-radius:18px !important;
   }
 
-  .bubble-wrap{
-    max-width:78vw !important;
+  .react{
+    padding:5px 10px !important;
+    font-size:12px !important;
   }
 
   .input-bar{
@@ -1337,6 +1387,7 @@ html, body{
 
   .input-bar input{
     font-size:14px !important;
+    padding:0 13px !important;
   }
 
   #mnav .mni-i{
