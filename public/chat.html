@@ -1100,145 +1100,34 @@ body{
 }
 
 
-/* chat-match-index-bottom-nav-size-v1 */
-.bottom-nav{
-  height:72px !important;
-  padding:0 !important;
-  border-top:1px solid rgba(0,0,0,.08) !important;
-  background:rgba(255,255,255,.96) !important;
-}
 
-.bottom-nav a{
-  font-size:13px !important;
-  padding-top:8px !important;
-  gap:2px !important;
-  color:#8f9693 !important;
-  font-weight:500 !important;
-}
-
-.bottom-nav span{
-  font-size:25px !important;
-  line-height:1 !important;
-}
-
-.bottom-nav .active{
-  color:#087b38 !important;
-  font-weight:800 !important;
-}
-
-@media(max-width:760px){
-  body{
-    padding-bottom:72px !important;
-  }
-
-  .bottom-nav{
-    height:72px !important;
-  }
-
-  .bottom-nav a{
-    font-size:13px !important;
-    padding-top:7px !important;
-  }
-
-  .bottom-nav span{
-    font-size:25px !important;
-  }
-
-  .input-bar{
-    bottom:72px !important;
-  }
-}
-
-
-/* chat-force-pos-nav-size-final-v2 */
-html body .bottom-nav{
-  height:74px !important;
-  min-height:74px !important;
-  max-height:74px !important;
-  padding:0 !important;
-  display:grid !important;
-  grid-template-columns:repeat(6,1fr) !important;
-  align-items:stretch !important;
-  background:rgba(255,255,255,.96) !important;
-  border-top:1px solid rgba(0,0,0,.08) !important;
-}
-
-html body .bottom-nav a{
-  height:74px !important;
-  min-height:74px !important;
-  padding:7px 0 4px !important;
-  display:flex !important;
-  flex-direction:column !important;
-  align-items:center !important;
-  justify-content:center !important;
-  gap:3px !important;
-  font-size:13px !important;
-  line-height:1.1 !important;
-  text-decoration:none !important;
-  color:#8f9693 !important;
-  font-weight:500 !important;
-}
-
-html body .bottom-nav a span{
-  font-size:25px !important;
-  line-height:1 !important;
-  display:block !important;
-  margin:0 !important;
-}
-
-html body .bottom-nav a.active{
-  color:#087b38 !important;
-  font-weight:800 !important;
-}
-
-@media(max-width:760px){
-  html body{
-    padding-bottom:74px !important;
-  }
-
-  html body .bottom-nav{
-    height:74px !important;
-    min-height:74px !important;
-    max-height:74px !important;
-  }
-
-  html body .bottom-nav a{
-    height:74px !important;
-    min-height:74px !important;
-    font-size:13px !important;
-    padding:7px 0 4px !important;
-  }
-
-  html body .bottom-nav a span{
-    font-size:25px !important;
-  }
-
-  html body .input-bar{
-    bottom:74px !important;
-  }
-}
-
-
-/* chat-compact-pos-nav-final-v3 */
+/* chat-bottom-nav-clean-match-pos-v4 */
 html body{
-  padding-bottom:64px !important;
+  padding-bottom:70px !important;
 }
 
 html body .bottom-nav{
-  height:64px !important;
-  min-height:64px !important;
-  max-height:64px !important;
+  position:fixed !important;
+  left:0 !important;
+  right:0 !important;
+  bottom:0 !important;
+  transform:none !important;
+  width:100% !important;
+  height:70px !important;
+  min-height:70px !important;
+  max-height:70px !important;
   padding:0 !important;
   display:grid !important;
   grid-template-columns:repeat(6,1fr) !important;
-  background:rgba(255,255,255,.97) !important;
+  background:#fff !important;
   border-top:1px solid rgba(0,0,0,.08) !important;
+  z-index:80 !important;
 }
 
 html body .bottom-nav a{
-  height:64px !important;
-  min-height:64px !important;
-  padding:4px 0 3px !important;
+  height:70px !important;
+  min-height:70px !important;
+  padding:5px 0 4px !important;
   display:flex !important;
   flex-direction:column !important;
   align-items:center !important;
@@ -1248,6 +1137,7 @@ html body .bottom-nav a{
   line-height:1.05 !important;
   color:#8f9693 !important;
   font-weight:500 !important;
+  text-decoration:none !important;
 }
 
 html body .bottom-nav a span{
@@ -1264,21 +1154,20 @@ html body .bottom-nav a.active{
 
 @media(max-width:760px){
   html body{
-    padding-bottom:64px !important;
+    padding-bottom:70px !important;
   }
 
   html body .bottom-nav{
-    height:64px !important;
-    min-height:64px !important;
-    max-height:64px !important;
+    height:70px !important;
+    min-height:70px !important;
+    max-height:70px !important;
   }
 
   html body .bottom-nav a{
-    height:64px !important;
-    min-height:64px !important;
+    height:70px !important;
+    min-height:70px !important;
     font-size:12px !important;
-    padding:4px 0 3px !important;
-    gap:1px !important;
+    padding:5px 0 4px !important;
   }
 
   html body .bottom-nav a span{
@@ -1286,7 +1175,7 @@ html body .bottom-nav a.active{
   }
 
   html body .input-bar{
-    bottom:64px !important;
+    bottom:70px !important;
   }
 }
 
