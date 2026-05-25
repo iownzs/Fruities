@@ -1228,179 +1228,6 @@ html body{
 
 
 
-/* chat-force-mobile-layout-1200-v2 */
-@media(max-width:1200px){
-  html,body{
-    width:100% !important;
-    max-width:100% !important;
-    overflow-x:hidden !important;
-    -webkit-text-size-adjust:100% !important;
-  }
-
-  .chat-page{
-    width:100% !important;
-    max-width:100% !important;
-    margin:0 !important;
-    padding:10px 10px 0 !important;
-  }
-
-  .topbar{
-    margin-bottom:10px !important;
-    gap:8px !important;
-  }
-
-  .brand{
-    font-size:24px !important;
-    gap:8px !important;
-  }
-
-  .icon-btn{
-    width:42px !important;
-    height:42px !important;
-    border-radius:14px !important;
-    font-size:20px !important;
-  }
-
-  .new-sale{
-    padding:11px 15px !important;
-    font-size:14px !important;
-    border-radius:999px !important;
-  }
-
-  .announce{
-    min-height:60px !important;
-    margin:4px 0 12px !important;
-    padding:12px 14px !important;
-    border-radius:18px !important;
-  }
-
-  .announce strong{
-    font-size:12px !important;
-  }
-
-  .announce p{
-    font-size:15px !important;
-    line-height:1.25 !important;
-  }
-
-  .workspace{
-    display:block !important;
-    min-height:calc(100dvh - 300px) !important;
-  }
-
-  .chat-panel{
-    width:100% !important;
-    min-height:calc(100dvh - 310px) !important;
-    border-radius:22px !important;
-  }
-
-  .chat-head{
-    padding:12px !important;
-    gap:10px !important;
-  }
-
-  .chat-title h2{
-    font-size:19px !important;
-  }
-
-  .chat-title p{
-    font-size:14px !important;
-    line-height:1.25 !important;
-  }
-
-  .avatars{
-    display:none !important;
-  }
-
-  .head-actions{
-    gap:6px !important;
-    margin-left:auto !important;
-  }
-
-  .toggle-channels{
-    padding:8px 10px !important;
-    font-size:12px !important;
-    border-radius:14px !important;
-  }
-
-  .messages{
-    padding:14px 12px 120px !important;
-    max-height:calc(100dvh - 360px) !important;
-    overflow:auto !important;
-  }
-
-  .day{
-    font-size:13px !important;
-    padding:6px 18px !important;
-    margin-bottom:14px !important;
-  }
-
-  .msg{
-    gap:10px !important;
-    margin-bottom:14px !important;
-  }
-
-  .face{
-    width:42px !important;
-    height:42px !important;
-    flex:0 0 42px !important;
-  }
-
-  .meta{
-    font-size:13px !important;
-  }
-
-  .bubble-wrap{
-    max-width:78vw !important;
-  }
-
-  .bubble{
-    font-size:14px !important;
-    line-height:1.35 !important;
-    padding:12px 14px !important;
-    border-radius:18px !important;
-  }
-
-  .react{
-    padding:5px 10px !important;
-    font-size:12px !important;
-  }
-
-  .input-bar{
-    position:fixed !important;
-    left:10px !important;
-    right:10px !important;
-    bottom:calc(64px + env(safe-area-inset-bottom)) !important;
-    z-index:90 !important;
-    padding:8px !important;
-    border-radius:18px !important;
-    grid-template-columns:42px 1fr 38px 42px !important;
-    gap:7px !important;
-    background:rgba(255,255,255,.96) !important;
-    box-shadow:0 12px 32px rgba(0,0,0,.14) !important;
-  }
-
-  .input-bar button,
-  .input-bar input{
-    height:40px !important;
-  }
-
-  .input-bar input{
-    font-size:14px !important;
-    padding:0 13px !important;
-  }
-
-  #mnav .mni-i{
-    font-size:18px !important;
-  }
-
-  #mnav .mni-l{
-    font-size:10px !important;
-  }
-}
-
-
-/* chat-force-mobile-base-v1 */
 /* Force chat.html to stay mobile layout even if browser reports wide viewport */
 html,body{
   width:100% !important;
@@ -1547,10 +1374,221 @@ html,body{
   font-size:10px !important;
 }
 
+
+/* chat-desktop-sidebar-nav-v1 */
+.desktop-sidebar{
+  display:none;
+}
+
+@media(min-width:901px){
+  body{
+    padding-left:190px !important;
+    padding-bottom:0 !important;
+  }
+
+  .desktop-sidebar{
+    display:flex !important;
+    position:fixed;
+    left:0;
+    top:0;
+    bottom:0;
+    width:190px;
+    z-index:300;
+    background:#0b5b30;
+    color:#eaf8ef;
+    flex-direction:column;
+    padding:18px 12px;
+    overflow-y:auto;
+  }
+
+  .ds-logo{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:6px 4px 18px;
+    border-bottom:1px solid rgba(255,255,255,.12);
+    margin-bottom:14px;
+  }
+
+  .ds-fruit{
+    font-size:26px;
+  }
+
+  .ds-logo strong{
+    display:block;
+    font-size:22px;
+    line-height:.9;
+    font-weight:1000;
+    color:#fff;
+  }
+
+  .ds-logo span{
+    display:block;
+    font-size:9px;
+    letter-spacing:1.8px;
+    color:rgba(255,255,255,.65);
+    margin-top:4px;
+  }
+
+  .ds-section{
+    font-size:10px;
+    font-weight:900;
+    color:rgba(255,255,255,.45);
+    letter-spacing:1.4px;
+    margin:14px 6px 7px;
+  }
+
+  .desktop-sidebar a{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    color:rgba(255,255,255,.82);
+    text-decoration:none;
+    padding:10px 10px;
+    border-radius:10px;
+    font-size:13px;
+    font-weight:700;
+  }
+
+  .desktop-sidebar a.active,
+  .desktop-sidebar a:hover{
+    background:rgba(255,255,255,.12);
+    color:#fff;
+  }
+
+  .ds-user{
+    margin-top:auto;
+    display:flex;
+    align-items:center;
+    gap:9px;
+    padding:10px;
+    border-radius:12px;
+    background:rgba(255,255,255,.10);
+  }
+
+  .ds-avatar{
+    width:34px;
+    height:34px;
+    border-radius:50%;
+    display:grid;
+    place-items:center;
+    background:#f97316;
+    color:#fff;
+    font-weight:900;
+  }
+
+  .ds-user strong{
+    display:block;
+    font-size:12px;
+    color:#fff;
+  }
+
+  .ds-user small{
+    display:block;
+    font-size:10px;
+    color:rgba(255,255,255,.65);
+  }
+
+  .chat-page{
+    width:100% !important;
+    max-width:none !important;
+    margin:0 !important;
+    padding:18px 24px 24px !important;
+  }
+
+  .workspace{
+    display:grid !important;
+    grid-template-columns:360px minmax(0,1fr) !important;
+    gap:18px !important;
+    min-height:calc(100vh - 220px) !important;
+  }
+
+  .channels{
+    display:block !important;
+    position:static !important;
+    transform:none !important;
+    opacity:1 !important;
+    visibility:visible !important;
+    pointer-events:auto !important;
+    width:auto !important;
+    max-height:none !important;
+    height:auto !important;
+  }
+
+  .drawer-backdrop,
+  .drawer-close{
+    display:none !important;
+  }
+
+  #mnav{
+    display:none !important;
+  }
+
+  .input-bar{
+    position:static !important;
+    left:auto !important;
+    right:auto !important;
+    bottom:auto !important;
+    width:auto !important;
+    box-shadow:none !important;
+  }
+
+  .messages{
+    max-height:calc(100vh - 350px) !important;
+    overflow:auto !important;
+  }
+}
+
+@media(max-width:900px){
+  .desktop-sidebar{
+    display:none !important;
+  }
+
+  #mnav{
+    display:flex !important;
+  }
+}
+
 </style>
 </head>
 
 <body class="channels-hidden">
+
+<aside class="desktop-sidebar" aria-label="Desktop navigation">
+  <div class="ds-logo">
+    <div class="ds-fruit">🍎</div>
+    <div>
+      <strong>Fruit<br>Story</strong>
+      <span>POINT OF SALE</span>
+    </div>
+  </div>
+
+  <div class="ds-section">MAIN</div>
+  <a href="/index.html?v=dashboard">📊 <span>Dashboard</span></a>
+  <a href="/index.html?v=pos">🖥️ <span>POS Terminal</span></a>
+
+  <div class="ds-section">SALES</div>
+  <a href="/index.html?v=orders">🧾 <span>Orders</span></a>
+  <a href="/index.html?v=kitchen">👨‍🍳 <span>Kitchen</span></a>
+  <a href="/index.html?v=delivery">🚚 <span>Delivery</span></a>
+  <a href="/index.html?v=pickup">🛍️ <span>Pick up</span></a>
+
+  <div class="ds-section">INVENTORY</div>
+  <a href="/index.html?v=stocks">📦 <span>Stocks</span></a>
+  <a href="/index.html?v=products">🏷️ <span>Products</span></a>
+
+  <div class="ds-section">MANAGEMENT</div>
+  <a href="/index.html?v=accounts">👤 <span>Accounts</span></a>
+  <a href="/index.html?v=journal">📅 <span>Journal</span></a>
+  <a href="/index.html?v=billing">💳 <span>POS Billing</span></a>
+  <a class="active" href="/chat.html">💬 <span>Group Chat</span></a>
+
+  <div class="ds-user">
+    <div class="ds-avatar">A</div>
+    <div><strong>Admin</strong><small>Administrator</small></div>
+  </div>
+</aside>
+
 <div class="chat-page">
   <header class="topbar">
     <button class="icon-btn" onclick="toggleChannels()">☰</button>
